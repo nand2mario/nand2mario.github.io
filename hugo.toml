@@ -2,3 +2,30 @@ baseURL = 'http://nand2mario.github.io/'
 languageCode = 'en-us'
 title = 'nand2mario'
 theme = 'mainroad'
+paginate = "10"
+
+[Params]
+  description = "Writings about FPGA for retro gaming and computing, and others." 
+  twitter_cards = true
+  authorbox = true
+  readmore = true
+  pager = true
+  font_size = "l"
+  post_meta = ["date", "categories"] # Order of post meta information
+#  mainSections = ["blog", "about"]
+
+[Params.sidebar]
+  home = "right"   # Configure layout for home page
+  list = "right"   # Configure layout for list pages
+  single = "right" # Configure layout for single pages
+  # Enable widgets in given order
+  widgets = ["about", "recent", "categories", "taglist"]
+
+[Params.widgets]
+  recent_num = 5 # Set the number of articles in the "Recent articles" widget
+  categories_counter = false # Enable counter for each category in "Categories" widget
+  tags_counter = false # Enable counter for each tag in "Tags" widget
+
+[Params.widgets.social]
+  cached = false # activate cache if true
+  twitter = "nand2mario"

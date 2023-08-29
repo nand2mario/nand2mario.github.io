@@ -1,7 +1,8 @@
 ---
-title: "Making USB HID hosting easy for FPGA hobby projects"
+title: "Making USB HID hosting easy for FPGA projects"
 date: 2023-08-29T11:59:51+08:00
 draft: true
+sidebar: false
 ---
 
 A while ago I came across [hi631's work](https://qiita.com/hi631/items/4f263ca676e4be14b9f8) on adapting the very old ukp (USB keyboard processor) design to support USB gamepads on FPGAs. I ported that to [NESTang](https://github.com/nand2mario/nestang) and it worked well. Here I look at whether we can further extend it to support more devices, i.e. keyboards, mice and gamepads.
