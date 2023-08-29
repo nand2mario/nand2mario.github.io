@@ -1,0 +1,4 @@
+baseURL = 'http://nand2mario.github.io/'
+languageCode = 'en-us'
+title = 'nand2mario'
+theme = 'mainroad'
