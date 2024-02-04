@@ -1,25 +1,28 @@
 baseURL = 'http://nand2mario.github.io/'
 languageCode = 'en-us'
-title = 'nand2mario'
+title = 'Small things retro'
 theme = 'mainroad'
 paginate = "10"
 
 [Params]
   description = "Writings about FPGA for retro gaming and computing, and others." 
   twitter_cards = true
-  authorbox = true
+# authorbox = true
   readmore = true
   pager = true
   font_size = "l"
   post_meta = ["date", "categories"] # Order of post meta information
 #  mainSections = ["blog", "about"]
 
+[Params.logo]
+  title = "Small things retro"
+
 [Params.sidebar]
   home = "right"   # Configure layout for home page
   list = "right"   # Configure layout for list pages
   single = "right" # Configure layout for single pages
   # Enable widgets in given order
-  widgets = ["about", "recent", "categories", "taglist"]
+  widgets = ["recent", "categories", "taglist", "social"]
 
 [Params.widgets]
   recent_num = 5 # Set the number of articles in the "Recent articles" widget
@@ -29,3 +32,4 @@ paginate = "10"
 [Params.widgets.social]
   cached = false # activate cache if true
   twitter = "nand2mario"
+  github = "nand2mario"
