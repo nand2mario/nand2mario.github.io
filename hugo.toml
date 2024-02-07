@@ -7,12 +7,12 @@ paginate = "10"
 [Params]
   description = "Writings about FPGA for retro gaming and computing, and others." 
   twitter_cards = true
-# authorbox = true
   readmore = true
   pager = true
   font_size = "l"
   post_meta = ["date", "categories"] # Order of post meta information
 #  mainSections = ["blog", "about"]
+# authorbox = true
 
 [Params.logo]
   title = "Small things retro"
@@ -33,3 +33,11 @@ paginate = "10"
   cached = false # activate cache if true
   twitter = "nand2mario"
   github = "nand2mario"
+
+# Support image attributes
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.parser]
+      wrapStandAloneImageWithinParagraph = false
+      [markup.goldmark.parser.attribute]
+        block = true

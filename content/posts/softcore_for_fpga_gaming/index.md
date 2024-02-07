@@ -90,3 +90,4 @@ How big of a performance impact does this bring? Directory loading in the menu w
 
 In the next part of this article. We will discuss where the firmware program is stored and how the softcore boot process works.
 
+Continue to [part 2](../softcore_for_fpga_gaming_part_2).
