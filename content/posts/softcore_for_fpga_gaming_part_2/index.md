@@ -6,7 +6,9 @@ sidebar: false
 author: nand2mario
 ---
 
-In [part 1](../softcore_for_fpga_gaming), we discussed why we need a softcore for SNESTang, and how it can use SDRAM in a way that does not disrupt the gaming core. Now we need to provide a firmware program to to make the softcore useful, like displaying a menu.
+In [part 1](/posts/softcore_for_fpga_gaming), we discussed why we need a softcore for SNESTang, and how it can use SDRAM in a way that does not disrupt the gaming core. Now we need to provide a firmware program to to make the softcore useful, like displaying a menu. In this part, let's explore the building and loading of the RISC-V firmware to get the soft core to do useful work.
+
+<!--more--> 
 
 ![menu](menu_dir.jpg)
 {width="400"}

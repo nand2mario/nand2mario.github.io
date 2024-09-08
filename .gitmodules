@@ -1,0 +1,3 @@
+[submodule "themes/Mainroad"]
+	path = themes/Mainroad
+	url = git@github.com:nand2mario/Mainroad.git

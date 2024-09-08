@@ -8,6 +8,8 @@ author: nand2mario
 
 This documents the design of [SNESTang](https://github.com/nand2mario/snestang) 0.3 for my own reference and others who want to read the code. It also aims to be helpful to people porting other cores to Tang FPGAs.
 
+<!--more--> 
+
 ## The SNES architecture
 
 ```

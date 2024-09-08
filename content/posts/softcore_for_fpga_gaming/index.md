@@ -6,7 +6,9 @@ sidebar: false
 author: nand2mario
 ---
 
-In the recently released [SNESTang 0.3](https://github.com/nand2mario/snestang/releases/tag/v0.3), a softcore-based I/O system is added to enhance the menu system and file system support. Let us explore how this works.
+In the recently released [SNESTang 0.3](https://github.com/nand2mario/snestang/releases/tag/v0.3), a softcore-based I/O system is added to enhance the menu system and file system support. Let us explore how this works. Part one of the article discusses why the soft core is necessary, choice of CPU to use and how it works with the SDRAM.
+
+<!--more--> 
 
 A bit of background first. My FPGA cores, NESTang and SNESTang, used to be completely standalone, with everything written in Verilog. This helped keep things simple, easy to install and update for the enduser, which are one of the  goals of the projects. However, there are functions that are much easier to implement using a CPU rather than a hardware description language, like USB controllers, menu system, file systems, etc. Projects like MiSTer and MIST use separate ARM processors to handle these tasks. MiSTer even runs a full Linux OS on the ARM. Unfortunately the Sipeed Tang FPGA boards that NESTang/SNESTang run on do not have a processor chip for this purpose (at least not one that is currently available for developers to use). For this reason, we have resorted to implementing things like FAT32 with Verilog. Although they work, the downside is that as we add more of these I/O features, they take up precious FPGA logic space, which should be used for game logic.
 
