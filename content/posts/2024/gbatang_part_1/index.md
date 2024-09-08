@@ -1,5 +1,5 @@
 ---
-title: "Building GBATang - part 1"
+title: "Building GBATang part 1 - overall design and CPU"
 date: 2024-09-07T20:30:19+00:00
 draft: false
 sidebar: false
@@ -63,7 +63,7 @@ The risclite CPU, however, does not support Thumb at all. Fortunately, the CMU c
 
 An interesting corner case is the translation of the BL (“branch and link”) instruction. The 16-bit BL instruction is actually two consecutive instructions, each carrying 11 bits of the target address. This is fine. We just remember the first half of the target address when we see the first instruction, hold off doing the jump, and only execute the jump when we see the second instruction. But two complications arise. The first complication is that the CPU datasheet mandates that the jump target address is calculated based on the PC location of the first BL instruction. When we actually execute the jump in the second BL, this makes the jump target calculation wrong. So a flag has to be introduced to fix the address calculation. The second complication is buried deeper. There is a chance that an interrupt would preempt the second BL instruction, and if the interrupt handler contains a BL instruction, it would destroy our stored first-half target address. Does it mean this stored-and-assemble approach to translating the BL instruction is doomed, or we need to introduce complex special handling for interrupts? It turns out there is a very simple solution - one simply disables interrupts on the second BL instruction. Now that hidden and hideous problem is gone for good, with one line of code.
 
-After a few weeks of bug fixing, the CPU is now stable enough to pass all of [jsmolka's CPU tests](https://github.com/jsmolka/gba-tests), and run well enough to support GBATang 0.1. There could still be some minor bugs.
+After a few weeks of bug fixing, the CPU is now stable enough to pass all of [jsmolka's CPU tests](https://github.com/jsmolka/gba-tests), and runs well enough to support GBATang 0.1. There could still be some minor bugs.
 
 This concludes our post today. Thanks for reading. Next posts will discuss memory, DMA, interrupt handling and more.
 
