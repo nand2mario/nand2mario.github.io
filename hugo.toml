@@ -4,15 +4,26 @@ title = 'Small things retro'
 theme = 'Mainroad'
 paginate = "10"
 
+[services.disqus]
+  shortname = "nand2mario-github-io"
+
+[services.googleAnalytics]
+  ID = 'G-HPP04YGFN2'
+
+[Author]
+  name = "nand2mario"
+  bio = "Yours truly. Here to write about FPGA retro gaming and computing."
+  avatar = "img/n2m.jpg"
+
 [Params]
   description = "Writings about FPGA for retro gaming and computing, and others." 
   twitter_cards = true
   readmore = true
   pager = true
   font_size = "l"
-  post_meta = ["date", "categories"] # Order of post meta information
+  post_meta = ["author", "date", "categories"] # Order of post meta information
+#  authorbox = true
 #  mainSections = ["blog", "about"]
-# authorbox = true
 
 [Params.logo]
   title = "Small things retro"
@@ -41,3 +52,4 @@ paginate = "10"
       wrapStandAloneImageWithinParagraph = false
       [markup.goldmark.parser.attribute]
         block = true
+

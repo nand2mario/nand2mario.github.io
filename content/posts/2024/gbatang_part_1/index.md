@@ -3,6 +3,7 @@ title: "Building GBATang part 1 - overall design and CPU"
 date: 2024-09-07T20:30:19+00:00
 draft: false
 sidebar: false
+comment: true
 author: nand2mario
 ---
 
