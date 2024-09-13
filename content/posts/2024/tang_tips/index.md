@@ -1,6 +1,6 @@
 ---
 title: "Tips for Working with Tang FPGA boards / Gowin EDA"
-date: 2024-09-11T20:26:30+00:00
+date: 2024-09-13T07:26:30+00:00
 draft: false
 sidebar: false
 author: nand2mario
