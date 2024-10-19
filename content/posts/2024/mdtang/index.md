@@ -1,5 +1,5 @@
 ---
-title: "Blast Prcessing on the Tang FPGA boards"
+title: "Blast Processing on the Tang FPGA boards"
 date: 2024-10-19T20:34:20+08:00
 draft: false
 sidebar: false
