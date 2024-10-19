@@ -13,7 +13,7 @@ Today we discuss Sega Genesis (or Mega Drive). The 16-bit game consoles held a s
 
 ## Actually a port
 
-My last project GBATang was a [partial-rewrite](https://nand2mario.github.io/posts/2024/gbatang_part_1/) as I blogged about last month. [SNESTang](https://github.com/nand2mario/snestang) was also quite involved in changes. In contrast, MDTang is a straightforward port of the original core. The Geneis operatesd with a master clock of 53.69Mhz, which is the main frequency used by Genesis-MiSTer. The Motorola 68000 (m68k) CPU core and VDP display processor of the original core were very well written and their Fmax immediately satisfied the 53Mhz requirement. So I was able to quickly set up the CPU, VDP, add in an appropriate memory controller and video output. Test roms were running merely two days later.
+My last project GBATang was a [partial-rewrite](https://nand2mario.github.io/posts/2024/gbatang_part_1/) as I blogged about last month. [SNESTang](https://github.com/nand2mario/snestang) was also quite involved in changes. In contrast, MDTang is a straightforward port of the original core. The Genesis operated with a master clock of 53.69Mhz, which is the main frequency used by Genesis-MiSTer. The Motorola 68000 (m68k) CPU core and VDP display processor of the original core were very well written and their Fmax immediately satisfied the 53Mhz requirement. So I was able to quickly set up the CPU, VDP, add in an appropriate memory controller and video output. Test roms were running merely two days later.
 
 I'll focus the rest of our discussion on three parts where the Tang board presented idiosyncrasies and demanded some effort, a rare data layout used by the processor, the display interface / frame buffer, and the sound (Z80) processor.
 
@@ -71,7 +71,7 @@ The porting of the m68k and VDP proceeded smoothly. However, a minor obstacle em
 
 During the initial pass, the Z80 failed timing tests at 53Mhz. The maximum achievable frequency (Fmax) was approximately 40Mhz. While it is somewhat funny that the more performant m68k was able to pass the timing tests while the slower Z80 cannot, a closer look reveals the reason. The FX68K actually uses two master cycles (`phi1` and `phi2`) to execute a single m68k cycle, making it more FPAG-friendly. The T80 (Z80 clone) CPU here crams all work into a single cycle, resulting in the timing problem.
 
-Fortunately, the solution is not overly complex. Since the Z80 is enabled once every 15 master clock cycles, it actually has aample leeway to schedule its work. This is significantly different from the timing challenges in GBATang, where most cycles already have work scheduled. Thus, I fixed it by making the Z80 run from another clock that is half the speed of the main clock. To make this work, the enabler signals and bus state machines also required some adjustments. So it took an hour to get it right, which is a negligible amount of time in FPGA engineering. :)
+Fortunately, the solution is not overly complex. Since the Z80 is enabled once every 15 master clock cycles, it actually has ample leeway to schedule its work. This is significantly different from the timing challenges in GBATang, where most cycles already have work scheduled. Thus, I fixed it by making the Z80 run from another clock that is half the speed of the main clock. To make this work, the enabler signals and bus state machines also required some adjustments. So it took an hour to get it right, which is a negligible amount of time in FPGA engineering. :)
 
 ## Comparing Genesis, SNES and GBA
 
