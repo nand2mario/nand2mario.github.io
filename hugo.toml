@@ -10,11 +10,6 @@ paginate = "10"
 [services.googleAnalytics]
   ID = 'G-HPP04YGFN2'
 
-[Author]
-  name = "nand2mario"
-  bio = "Yours truly. Here to write about FPGA retro gaming and computing."
-  avatar = "img/n2m.jpg"
-
 [Params]
   description = "Writings about FPGA for retro gaming and computing, and others." 
   twitter_cards = true
@@ -24,6 +19,11 @@ paginate = "10"
   post_meta = ["author", "date", "categories"] # Order of post meta information
 #  authorbox = true
 #  mainSections = ["blog", "about"]
+
+[Params.author]
+  name = "nand2mario"
+  bio = "Yours truly. Here to write about FPGA retro gaming and computing."
+  avatar = "img/n2m.jpg"
 
 [Params.logo]
   title = "Small things retro"
@@ -53,3 +53,12 @@ paginate = "10"
       [markup.goldmark.parser.attribute]
         block = true
 
+[menus]
+  [[menus.main]]
+    name = 'Home'
+    pageRef = '/'
+    weight = 10
+  [[menus.main]]
+    name = 'Guides'
+    pageRef = '/guides'
+    weight = 20
