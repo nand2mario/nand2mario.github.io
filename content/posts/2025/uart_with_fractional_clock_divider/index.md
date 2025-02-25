@@ -75,19 +75,36 @@ The state machine largely resembles an integer-divider UART. For the receiver (R
 
 ```verilog
 case (state)
-    0: if (!rx) begin  // Start bit detection
-        state <= 1;
-        cnt <= 0;
+    0: begin // Idle
+        if (!rx) begin
+            state <= 1;
+            cnt <= 0;
+            bit_index <= 0;
+            rx_data <= 0;
+        end
     end
-    1: if (cnt_next >= DIV_NUM/2) begin  // Center-align
-        state <= 2;
-        cnt <= 0;
+    1: begin // Start bit, wait half a bit time
+        if (cnt_next >= DIV_NUM/2) begin
+            state <= 2;
+            cnt <= 0;
+        end 
     end
-    2: if (cnt_overflow) begin  // Data bit sampling
-        rx_data[bit_index] <= rx;
-        bit_index <= bit_index + 1;
+    2: begin // Data bits
+        if (cnt_overflow) begin
+            rx_data[bit_index] <= rx;
+            if (bit_index == 7) 
+                state <= 3;
+            else 
+                bit_index <= bit_index + 1;
+        end
     end
-    3: if (cnt_overflow) valid <= 1;  // Stop bit
+    3: begin // Stop bit
+        if (cnt_overflow) begin
+            valid <= 1;
+            data <= rx_data;
+            state <= 0;
+        end
+    end
 endcase
 ```
 
