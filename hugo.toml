@@ -2,7 +2,7 @@ baseURL = 'http://nand2mario.github.io/'
 languageCode = 'en-us'
 title = 'Small things retro'
 theme = 'Mainroad'
-paginate = "10"
+pagination.pagerSize = "10"
 
 [services.disqus]
   shortname = "nand2mario-github-io"
