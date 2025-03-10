@@ -1,5 +1,5 @@
 ---
-title: "Script to add title page to PDF"
+title: "Script to Add a Title Page to PDFs"
 date: 2025-03-10T12:30:20+08:00
 draft: false
 sidebar: false
