@@ -20,7 +20,7 @@ pagination.pagerSize = "10"
 #  authorbox = true
 #  mainSections = ["blog", "about"]
 
-[Params.author]
+[Params.Author]
   name = "nand2mario"
   bio = "Yours truly. Here to write about FPGA retro gaming and computing."
   avatar = "img/n2m.jpg"
