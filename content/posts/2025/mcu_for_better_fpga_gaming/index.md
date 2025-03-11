@@ -1,7 +1,7 @@
 ---
 title: "MCU for Better FPGA Gaming on Tang Console"
-date: 2025-03-10T12:30:20+08:00
-draft: true
+date: 2025-03-11T18:50:20+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
@@ -12,13 +12,13 @@ A year ago, I [added a softcore CPU to SNESTang](/posts/softcore_for_fpga_gaming
 ## Tapping the Onboard MCU 
 
 **Why Use an MCU?**
-As explained in my [softcore post](/posts/softcore_for_fpga_gaming), combining a CPU with an FPGA is a common design pattern for balancing performance and flexibility. The Tang series boards include a [Bouffalo BL616](https://en.bouffalolab.com/product/), a RISC-V MCU comparable to the ESP32. Originally used as a USB-JTAG/UART bridge for FPGA programming, the BL616’s capabilities were underutilized. Projects like [FPGA-Companion](https://github.com/harbaum/FPGA-Companion) have been trying to use the chip. However, developers (and I believe Sipeed) have yet to find a straightforward way to combine the official and custom firmware, and not bricking users' boards. So FPGA-Companion suggests using a separate board with BL616 (Sipeed M0S) and not flashing the on-board BL616, complicating the user's setup.
+As explained in my [softcore post](/posts/softcore_for_fpga_gaming), combining a CPU with an FPGA is a common design pattern for balancing performance and flexibility. The Tang series boards include a [Bouffalo BL616](https://en.bouffalolab.com/product/), a RISC-V MCU comparable to the ESP32. Originally used as a USB-JTAG/UART bridge for FPGA programming, the BL616’s capabilities were underutilized. Projects like [FPGA-Companion](https://github.com/harbaum/FPGA-Companion) have been trying to use the chip. However, developers (and I believe Sipeed) have yet to find a straightforward way to combine the official and custom firmware, and not easily bricking users' boards. So FPGA-Companion suggests using a separate board with BL616 (Sipeed M0S) and not flashing the on-board BL616, complicating the user's setup.
 
 **A New Solution.**
 A way to solve the problem surfaced in the last month after much discussion I had with the Sipeed team. Sipeed would upgraded their BL616 firmware to enable dual-mode operation,
 
 1. **PC Connected**: The BL616 acts as a standard JTAG/UART bridge, if it detects connection to a PC.
-2. **Standalone Mode**: The MCU runs custom TangCore firmware from a predefined flash address.
+2. **Standalone Mode**: The MCU runs custom TangCore firmware from a predefined flash address, if no connection to PC is detected.
 
 This approach preserves the board’s core functionality while enabling custom firmware. Users can now flash TangCore firmware seamlessly—no extra hardware needed.  
 
@@ -102,7 +102,7 @@ At least two things are missing now,
 * **Load/store support**. There's currently no SRAM/cartridge RAM load/store, or savestate load/store. These will be implement down the line.
 * **Core configuration**. A scheme similar to [MiSTer's configuration strings](https://mister-devel.github.io/MkDocs_MiSTer/developer/conf_str/) should be implemented. So that a per-core menu can be shown for configuration of core functionality.
 
-## Conclusions - BL616 strengths and weaknesses
+## Conclusion - BL616 strengths and weaknesses
 
 Strengths:
 
