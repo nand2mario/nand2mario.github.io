@@ -11,6 +11,8 @@ Yesterday I released [486Tang](https://github.com/nand2mario/486tang) v0.1 on Gi
 
 <!--more-->
 
+*Thanks to everyone coming from Hacker News! If 486Tang caught your eye, I share [progress updates and related projects](https://x.com/nand2mario) over on X.*
+
 ## 486Tang Architecture
 
 Every FPGA board is a little different. Porting a core means moving pieces around and rewiring things to fit. Here are the major components in 486Tang:
