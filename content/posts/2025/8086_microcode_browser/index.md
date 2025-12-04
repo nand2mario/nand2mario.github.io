@@ -7,7 +7,7 @@ comment: true
 author: nand2mario
 ---
 
-Since releasing [486Tang](/posts/2025/486tang_486_on_a_credit_card_size_FPGA_board), I’ve been working on recreating the 8086 with a design that stays as faithful as possible to the original chip. That exploration naturally led me deep into the original 8086 microcode — [extracted and disassembled](https://www.reenigne.org/blog/8086-microcode-disassembled/) by Andrew Jenner in 2020.
+Since releasing [486Tang](/posts/2025/486tang_486_on_a_credit_card_size_fpga_board/), I’ve been working on recreating the 8086 with a design that stays as faithful as possible to the original chip. That exploration naturally led me deep into the original 8086 microcode — [extracted and disassembled](https://www.reenigne.org/blog/8086-microcode-disassembled/) by Andrew Jenner in 2020.
 
 Like all microcoded CPUs, the 8086 hides a lot of subtle behavior below the assembly layer. While studying it I kept extensive notes, and those eventually evolved into something more useful: an interactive browser for the entire 8086 microcode ROM.
 

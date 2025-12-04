@@ -1418,7 +1418,7 @@
              {name:'JS', ops:'Jb', opcode:0x78}, {name:'JNS', ops:'Jb', opcode:0x79}, {name:'JPE', ops:'Jb', opcode:0x7A}, {name:'JPO', ops:'Jb', opcode:0x7B},
              {name:'JL', ops:'Jb', opcode:0x7C}, {name:'JGE', ops:'Jb', opcode:0x7D}, {name:'JLE', ops:'Jb', opcode:0x7E}, {name:'JG', ops:'Jb', opcode:0x7F}],
             // Row 8
-            [{name:'GRP1', ops:'', opcode:0x80}, {name:'GRP1', ops:'', opcode:0x81}, {name:'GRP1', ops:'', opcode:0x82}, {name:'GRP1', ops:'', opcode:0x83},
+            [{name:'GRP1', ops:'Eb,Ib', opcode:0x80}, {name:'GRP1', ops:'Ev,Iv', opcode:0x81}, {name:'GRP1', ops:'Eb,Ib', opcode:0x82}, {name:'GRP1', ops:'Ev,Ib', opcode:0x83},
              {name:'TEST', ops:'Gb Eb', opcode:0x84}, {name:'TEST', ops:'Gv Ev', opcode:0x85}, {name:'XCHG', ops:'Gb Eb', opcode:0x86}, {name:'XCHG', ops:'Gv Ev', opcode:0x87},
              {name:'MOV', ops:'Eb Gb', opcode:0x88}, {name:'MOV', ops:'Ev Gv', opcode:0x89}, {name:'MOV', ops:'Gb Eb', opcode:0x8A}, {name:'MOV', ops:'Gv Ev', opcode:0x8B},
              {name:'MOV', ops:'Ew Sw', opcode:0x8C}, {name:'LEA', ops:'Gv M', opcode:0x8D}, {name:'MOV', ops:'Sw Ew', opcode:0x8E}, {name:'POP', ops:'Ev', opcode:0x8F}],
@@ -1999,6 +1999,7 @@
             'CORX': 'Core multiply routine: performs shifts/adds to produce 32-bit product in tmpA:tmpC.',
             'CORD': 'Core divide routine: long division for DIV/IDIV using tmpA/tmpC dividend and tmpB divisor.',
             'EAOFFSET': 'Effective Address Offset: adds displacement to computed EA. Control then branches to one of: [i] (immediate displacement), EALOAD (if reading from memory), or EADONE (no memory read).',
+            'EADONE': 'Effective Address Done: no memory read, just update EA.',
             'EALOAD': 'Effective Address Load: reads memory using EA in tmpA; result into IND/tmpB.',
             'FARCALL': 'Far Call setup: prepares for pushing CS:IP in far call.',
             'FARCALL2': 'Far Call routine 2: pushes old CS, updates CS, corrects PC (CORR), then jumps to NEARCALL.',
