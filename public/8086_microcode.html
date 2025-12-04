@@ -2066,7 +2066,7 @@
             const tokens = [];
             parts.forEach(p => p.split(',').forEach(t => tokens.push(t)));
 
-            const routineNames = new Set(['AAEND','AAD','AAM','CORX','CORD','EAOFFSET','EALOAD','FARCALL','FARCALL2','FARRET','IMULCOF','INTR','MULCOF','NEARCALL','NEGATE','PREIDIV','PREIMUL','RELJMP','RPTI','RPTS']);
+            const routineNames = new Set(['AAEND','AAD','AAM','CORX','CORD','EAOFFSET','EALOAD','EADONE','FARCALL','FARCALL2','FARRET','IMULCOF','INTR','MULCOF','NEARCALL','NEGATE','PREIDIV','PREIMUL','RELJMP','RPTI','RPTS']);
 
             tokens.slice(1).forEach((tok, idx) => {
                 if (!tok) return;
