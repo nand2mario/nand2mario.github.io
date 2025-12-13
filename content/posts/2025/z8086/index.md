@@ -7,7 +7,7 @@ comment: true
 author: nand2mario
 ---
 
-After [486Tang](https://nand2mario.github.io/posts/2025/486tang_486_on_a_credit_card_size_fpga_board/), I wanted to go back to where x86 started. The result is [**z8086**](https://github.com/nand2mario/z8086): a clean‑room 8086/8088 core that runs the **original Intel microcode**. Instead of hand‑coding hundreds of instructions, the core loads the recovered 512x21 ROM and recreates the micro‑architecture the ROM expects.
+After [486Tang](https://nand2mario.github.io/posts/2025/486tang_486_on_a_credit_card_size_fpga_board/), I wanted to go back to where x86 started. The result is [**z8086**](https://github.com/nand2mario/z8086): a 8086/8088 core that runs the **original Intel microcode**. Instead of hand‑coding hundreds of instructions, the core loads the recovered 512x21 ROM and recreates the micro‑architecture the ROM expects.
 
 z8086 is compact and FPGA‑friendly: it runs on a single clock domain, avoids vendor-specific primitives, and offers a simple external bus interface. Version 0.1 is about 2000 lines of SystemVerilog, and on a Gowin GW5A device, it uses around 2500 LUTs with a maximum clock speed of 60 MHz. The core passes all ISA test vectors, boots small programs, and can directly control peripherals like an SPI display. While it doesn’t boot DOS yet, it’s getting close.  
 
@@ -34,6 +34,8 @@ My goals were simple:
 Here’s the high‑level view:
 
 ![z8086 block diagram](z8086.svg)
+
+(You can cross-reference function blocks against the [die shot](/2025/8086_dieshot).)
 
 At a bird’s‑eye level the pipeline is:
 
