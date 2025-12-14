@@ -65,7 +65,9 @@ One concrete example: for a ModR/M instruction like `ADD AX, [BX+SI+4]`, the loa
 
 The 8086 shipped with ~29K transistors and still delivered a very rich CISC ISA: segmented addressing, ModR/M base+index+disp modes, and weirdly specialized instructions like `DAA` and `XLAT`. The trick was microcode. A small internal datapath plus ROM sequencing let Intel implement a huge instruction surface area without exploding logic.
 
-The contrast with other CPUs is striking. The 6502 (~4.5K transistors) and Z80 (~8.5K) are elegant, mostly hardwired, and highly minimalist designs. In comparison, the 8086 features a much wider datapath, significantly more instructions and features, yet manages to do so with less than four times the transistor count of the Z80. The 68000 (~68K transistors) takes a different approach, using far more silicon for its fully hardwired CISC design. Remarkably, the 8086 achieves a similar feature set with less than half the transistor count of the 68000. This efficiency carries over to z8086: the core fits into just 2,500 LUT4s — dramatically smaller than ao486, which is about ten times larger.
+The contrast with other CPUs is striking. The 6502 (~4.5K transistors) and Z80 (~8.5K) are elegant, mostly hardwired, and highly minimalist designs. In comparison, the 8086 features a much wider datapath, significantly more instructions and features, yet manages to do so with less than four times the transistor count of the Z80. The 68000 (~68K transistors) takes a different approach, using far more silicon for its mostly⁺ hardwired CISC design. Remarkably, the 8086 achieves a similar feature set with less than half the transistor count of the 68000. This efficiency carries over to z8086: the core fits into just 2,500 LUT4s — dramatically smaller than ao486, which is about ten times larger.
+
+*⁺ Correction: this previously said "fully," but the 68000 actually uses microcode for complex instructions like multiplication and depends primarily on hardwired control for most others.*
 
 ### The patent’s FC/SC formulas are wrong (or at least incomplete)
 
