@@ -1,6 +1,6 @@
 ---
 title: "Adding a Softcore to SNESTang - part 2"
-date: 2024-02-07
+date: 2024-02-07T17:50:40+00:00
 draft: false
 sidebar: false
 author: nand2mario

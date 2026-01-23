@@ -7,31 +7,57 @@ comment: true
 author: nand2mario
 ---
 
-This is the first post of a series recording the building of a FPGA core similar to the 80386.
+<style>
+  pre code { font-size: 0.85em; }
+  code { font-size: 0.85em; }
+</style>
 
-The Intel 80386 is a legendary microprocessor in computer history. Arguably it is the most important Intel x86 processor, as it established the 32-bit x86 standard architecture, running operating systems like Windows 95 and Linux. 
+# 80386 Multiplication and Division
 
-The 386 has many advanced features, compared with the original 8086. One advantage is it can do complex math operations faster. Its can do multiplication and division at the speed of **one bit per cycle**. In comparison, on the 8086, 16-bit multiplication takes ~120 cycles and division takes ~150 cycles.
+<!-- *This is the first post of a series on building an FPGA core similar to the Intel 80386. The goal is to understand how this important processor works at the microarchitecture level, one subsystem at a time.* -->
 
-Both multiplication and division use iterative algorithms implemented as inline datapath logic that advances once per microcode cycle - that's where the timing of one bit per cycle comes from. To save space, the main ALU is reused for per-iteration add/subtract work. Several types of microcode operations are dedicated to doing multiplication and division.
+When Intel released the 80386 in October 1985, it marked a watershed moment for personal computing. The 386 was the first 32-bit x86 processor, increasing the register width from 16 to 32 bits and vastly expanding the address space compared to its predecessors. This wasn't just an incremental upgrade—it was the foundation that would carry the PC architecture for decades to come.
+
+The timing was significant. By the mid-1980s, the IBM PC had established x86 as the dominant PC architecture, but the 16-bit 8086/286 processors were hitting their limits. Memory was constrained to 1MB (or 16MB with the 286's limited protected mode). Competing 32-bit architectures like the Motorola 68020 threatened Intel's dominance. The 386 was Intel's answer: full 32-bit computing with backward compatibility for the massive library of existing DOS software.
+
+The 386 introduced important and long-lasting x86 features: a flat 4GB address space, virtual memory with paging, and a protected mode that actually worked. It would go on to run Windows 3.0, Windows 95, early Linux, and countless other operating systems that shaped modern computing.
+
+## Faster arithmetic
+
+In addition to its architectural advances, the 386 delivered a major jump in arithmetic performance. On the earlier 8086, multiplication and division were slow — 16-bit multiplication typically required 120–130 cycles, with division taking even longer at over 150 cycles. The 286 significantly improved on this by introducing faster microcode routines and modest hardware enhancements.
+
+The 386 pushed performance further with dedicated hardware that processes multiplication and division at the rate of **one bit per cycle**, combined with a native 32-bit datapath width. The microcode still orchestrates the operation, but the heavy lifting happens in specialized datapath logic that advances every cycle.
+
+Here are the actual cycle counts from the Intel 386 Programmer's Reference Manual:
+
+| Instruction | 8-bit | 16-bit | 32-bit |
+|-------------|-------|--------|--------|
+| MUL | 9-14 | 9-22 | 9-38 |
+| IMUL | 9-14 | 9-22 | 9-38 |
+| DIV | 14 | 22 | 38 |
+| IDIV | 19 | 27 | 43 |
+
+The ranges for MUL/IMUL reflect an "early-out" optimization—the loop exits early when the remaining multiplier bits are all zeros (or all ones for signed). Division has no early-out, so cycle counts are fixed at roughly `width + overhead`.
+
+To save silicon, the 386 reuses the main ALU for the per-iteration add/subtract work rather than having a separate multiplier unit. The microcode controls the iteration, while dedicated datapath logic handles the shifting and loop termination. Let's look at how these algorithms work.
 
 ## Add-and-shift multiplication
 
-The classic multiplication algorithm in processors is the Booth algorithm. However, the 80386 does not use that, instead an "add-and-shift" multiplication algorithm is used. This is similar to grade-school long multiplication. The difference is that instead of moving from lower digits to higher, we shift to the right. Here's the data layout:
+The classic multiplication algorithm in processors is the Booth algorithm. However, the 80386 does not use that. Instead, an "add-and-shift" multiplication algorithm is used. This is similar to grade-school long multiplication. The difference is that instead of moving from lower digits to higher, we shift to the right. Here's the data layout:
 
 ```
    MULTMP    ,    TMPB           ->
 multiplicand    multiplier  
 
-   +---------------------------------------------+ 
-   |         |        product         |          |
-   +---------------------------------------------+
-   |       SIGMA         ||         TMPB         |
-   +---------------------------------------------+
+   +--------------------------------------------+ 
+   |           |      product       |           |
+   +--------------------------------------------+
+   |         SIGMA       ||        TMPB         |
+   +--------------------------------------------+
                 64-bit accumulator
 ```
 
-Three internal registers are involved in multiplication: MULTMP, TMLB and SIGMA. One small challenge is x86 supports 8-bit, 16-bit and 32-bit operations. As in the 8086, reuse and parameterization is the theme here. In most cases, the same registers and microcode routine handles instructions with different operand widths. The above diagram actually illustrates the layout for the 32-bit product after multiplying two 16-bit numbers - it occupies the lower half of the 32-bit SIGMA and upper half of TMB.
+Three key internal registers participate in multiplication: MULTMP, TMPB, and SIGMA. A notable challenge is that x86 instructions support 8-bit, 16-bit, and 32-bit operands. Consistent with the design philosophy of the 8086, the 386 achieves this flexibility by reusing the same registers and microcode routines for all operand sizes. In most cases, the identical hardware and microcode sequence accommodate different widths seamlessly. The diagram above shows how, for example, the result of multiplying two 16-bit numbers is arranged within a 32-bit product: it occupies the lower half of the SIGMA register and the upper half of TMPB.
 
 So here's the multiplication algorithm in pseudocode:
 
@@ -39,41 +65,67 @@ So here's the multiplication algorithm in pseudocode:
 1: COUNTR = width-1
 2: while (true):
 3:   if (TMPB[0]) SIGMA <= SIGMA + MULTMP
-4:   {SIGMA, TMPB} >>= 1
+4:   {SIGMA, TMPB} >>= 1      // arithmetic shift for signed
 5:   if (--COUNTR==0) break
-6:   if ((TMPB & (1<<COUNTR-1)) == 0) break
-7: {SIGMA, TMPB} >>= COUNTR
+6:   if (remaining TMPB bits are all 0 or all 1) break
+7: {SIGMA, TMPB} >>= COUNTR   // compensate for early exit
 8: correction for signed multiplication
 ```
 
-Shifting to the right instead of left makes the circuits simpler. Line 6 is the so-called "early-out" optimization - exiting the loop early when the remaining multiplier bits are all zero. Then line 7 compensates for that early exit by shifting the result to the right by the remaining COUNTR bits.
+Shifting to the right instead of left makes the circuits simpler. Line 6 is the so-called "early-out" optimization - exiting the loop early when the remaining multiplier bits are all zeros (for unsigned) or all ones (also for signed). Then line 7 compensates for that early exit by shifting the result to the right by the remaining COUNTR bits.
 
-Line 1-7 covers the unsigned multiplication fully. It turns out supporting signed multiplication only requires arithmetic shifts on line 4 and 7, and a finally correction: subtracting the multiplicand from the higher part of product (SIGMA) if the multiplier is negative, on line 8. Refer to college computer organization materials, e.g. [this](https://web.ece.ucsb.edu/~parhami/pres_folder/f31-book-arith-pres-pt3.pdf), for the underlying math.
+Lines 1-7 cover unsigned multiplication fully. It turns out supporting signed multiplication only requires arithmetic shifts on lines 4 and 7, plus a final correction: subtracting the multiplicand from the upper part of the product (SIGMA) if the multiplier is negative (line 8). Refer to college computer organization materials, e.g. [this](https://web.ece.ucsb.edu/~parhami/pres_folder/f31-book-arith-pres-pt3.pdf), for the underlying math.
 
 The 80386 multiplication microcode is a direct realization of the algorithm above, giving a clearer view of the timing and hardware structure of the implementation. The following routine covers both unsigned and signed register multiplication of all 3 different operand sizes (8, 16 and 32 bits). Other variants (like memory operand) are similar. 
 
-The 80386 microcode has more fields than the 8086 format. Each micro-instruction is 37 bits wide, compared with 21 bits of the 8086. In the listing below, `src->dest` is a register MOVE (copy) operation. At the same time, `alujmp` could control the ALU or sequencer to do arithmetic (`src` and `alu_src` are two inputs to the ALU), jump to another microcode location (`alu_src` is the destination in this case), and do other operations. One relevant keyword here is `RPT` on line 1A7. It controls the microcode sequencer to repeat the same micro instruction and decrement COUNTR (an internal register) until it is 0, for a total of COUNTR+1 times.
+Before diving in, here's a brief overview of the 80386 microcode syntax. Compared to the 8086, the 80386 microcode uses instructions that are 37 bits wide (versus 21 bits on the 8086) and contains additional fields for more complex operations. In the listing below, `src->dest` represents a register move (copy) operation. The `alujmp` field controls the ALU or the microcode sequencer: it can perform arithmetic (with `src` and `alu_src` as ALU inputs), initiate jumps to other microcode addresses (`alu_src` as the target), or trigger various other actions. Of particular note is the keyword `RPT` on the third line. It instructs the microcode sequencer to repeat the current micro-instruction, decrementing the internal COUNTR register each time, until COUNTR reaches zero (executing a total of COUNTR+1 iterations).
 
-```asm
+```armasm
 ; MUL/IMUL r
 ; src     dest    alu_src        alujmp  uop sub busop
-DSTREG -> MULTMP  BITS_V         LDCNTR                ; MULTMP=r (multiplicand), COUNTR=BITS_V (7,15 or 31 depending on operand size)
-eAX_AL -> TMPB    0              PASS2                 ; TMPB=multiplier (AL/AX/EAX)
-SIGMA             TMPB           IMUL3   RPT DLY       ; hardware multiplication loop, early-out if remaining all 0 or all 1
-SIGMA                            PASS                  ; pass through SIGMA
-COUNTR -> TMPD                                         ; save remaining COUNTR for shift calculation
-RESULT -> TMPC    TMPD           LDBSR8                ; load barrel shift count: right shift COUNTR (TMPD) bits
-SIGMA  -> TMPD    TMPC           SHIFT                 ; shift {SIGMA, RESULT} (total width 2*width) by COUNTR to extract low result
-SIGMA  -> eAX_AL  TMPD           MULFIX                ; write low result, set flags, signed multiplication correction
-SIGMA             TMPD           SHIFT   RNI           ; shift {0, ProdU} by COUNTR to extract high result
-SIGMA  -> eDX_AH                                       ; write high result
+DSTREG -> MULTMP  BITS_V         LDCNTR          ; MULTMP=r (multiplicand), COUNTR=width-1
+eAX_AL -> TMPB    0              PASS2           ; TMPB=multiplier (AL/AX/EAX)
+SIGMA             TMPB           IMUL3   RPT DLY ; hardware mult loop with early-out 
+SIGMA                            PASS            ; pass through SIGMA
+COUNTR -> TMPD                                   ; save remaining COUNTR
+RESULT -> TMPC    TMPD           LDBSR8          ; load shift count: right shift, COUNTR
+SIGMA  -> TMPD    TMPC           SHIFT           ; shift {SIGMA,RESULT} to get low result
+SIGMA  -> eAX_AL  TMPD           MULFIX          ; write low result, set flags, signed mult correction
+SIGMA             TMPD           SHIFT   RNI     ; shift {0,ProdU} to get high result
+SIGMA  -> eDX_AH                                 ; write high result
 ```
 
-The `RESULT` register is used by both multiplication and division. For multiplication, it gets the higher `width` bits of TMPB, i.e. the lower half of product. `MULFIX` is the correction for signed multiplication on pseudocode line 8.
+The `RESULT` register is used by both multiplication and division. For multiplication, it accumulates the lower half of the product as bits shift right out of TMPB during the loop. `MULFIX` is the correction for signed multiplication on pseudocode line 8.
+
+### IMUL variants
+
+The 386 introduced two new forms of IMUL beyond the original single-operand form:
+
+- **Two-operand**: `IMUL reg, r/m` - multiplies reg by r/m, stores in reg (single-width result)
+- **Three-operand**: `IMUL reg, r/m, imm` - multiplies r/m by immediate, stores in reg (single-width result)
+
+These variants are interesting because they only produce a single-width result (discarding the upper half), making them faster for common cases where overflow isn't expected. The microcode for these uses a slightly different entry point that skips writing the upper result to EDX/DX/AH.
 
 ## Division
 
-80386 uses the standard [non-restoring division algorithm](https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division) for division. The dividend is {SIGMA,DIVTMP}, max 64 bits, while the divisor is TMPB, max 32 bits.
+80386 uses the standard [non-restoring division algorithm](https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division) for division. Here's the data layout:
+
+```
+             TMPB
+           divisor
+
+   +---------------------------------------------+
+   |       SIGMA         ||       DIVTMP         |
+   +---------------------------------------------+
+          remainder              dividend
+                      <- shift left
+
+   +----------------------+
+   |       RESULT         |   quotient (built bit by bit)
+   +----------------------+
+```
+
+The dividend is {SIGMA, DIVTMP} (max 64 bits), while the divisor is TMPB (max 32 bits). Each iteration shifts the dividend left by one bit and either adds or subtracts the divisor, building up the quotient in RESULT one bit at a time.
 
 ```c
 1: do:                               // loop body is DIV7
@@ -86,26 +138,60 @@ The `RESULT` register is used by both multiplication and division. For multiplic
 8: if (SIGMA < 0) SIGMA += TMPB;     // DIV5
 ```
 
-Let's look at one division routines (`DIV (F6.6)`) directly.
+Let's look at the division routine (`DIV r` at F6.6/F7.6) directly.
 
-```asm
+```armasm
 ; DIV r
 ; Note: COUNTR = BITS_V (7/15/31), RPT executes COUNTR+1 iterations
 eAX_AL -> DIVTMP  BITS_V         LDCNTR          ; DIVTMP = lower half of dividend, COUNTR=width-1
 eDX_AH                           PASS            ; SIGMA = upper half of dividend
 DSTREG -> TMPB                                   ; TMPB = divisor
-SIGMA             TMPB            DIV7   RPT DLY ; All iterations here: dividend={SIGMA,DIVTMP}, divisor=TMPB
+SIGMA             TMPB            DIV7   RPT DLY ; Loop: dividend={SIGMA,DIVTMP}, divisor=TMPB
 SIGMA             TMPB            DIV5           ; Final correction
 SIGMA                            PASS            ; Preserve remainder through ALU
 RESULT -> eAX_AL                         RNI     ; accumulator = quotient 
 SIGMA  -> eDX_AH                                 ; upper-half reg = remainder
 ```
 
-Here, DIV7 and DIV5 are single-cycle micro-ops. DIV7 encodes the whole loop body in the pseudo code (line 2-5, not including COUNTR decrement).  It updates SIGMA (remainder) and RESULT (quotient accumulator) and each iteration. Again RPT maintains the loop count and keeps the sequencer on the DIV7 micro-op. For division, there's no early-out so the loop executes for COUNTR+1 times. Finally DIV5 is the required finally correct for non-restoring division in pseudo-code line 8.
+Here, DIV7 and DIV5 are single-cycle micro-ops. DIV7 encodes the whole loop body in the pseudocode (lines 2-5, not including COUNTR decrement). It updates SIGMA (remainder) and RESULT (quotient accumulator) each iteration. Again RPT maintains the loop count and keeps the sequencer on the DIV7 micro-op. For division, there's no early-out so the loop executes for COUNTR+1 times. Finally, DIV5 is the required final correction for non-restoring division (pseudocode line 8).
+
+### Signed division (IDIV)
+
+IDIV is more complex than DIV because it must handle signs. The approach is:
+1. Convert dividend and divisor to absolute values
+2. Perform unsigned division
+3. Adjust signs of quotient and remainder
+
+Here's the IDIV microcode:
+
+```armasm
+; IDIV r
+-1                BITS_V         ADD             ; COUNTR=width-2
+SIGMA  -> COUNTR
+eDX_AH                           PASS            ; SIGMA=upper dividend
+eAX_AL -> DIVTMP                                 ; DIVTMP=lower dividend
+DSTREG -> TMPB                                   ; TMPB=divisor
+SIGMA             TMPB           PREDIV          ; |dividend|divisor|, save signs, first iteration
+SIGMA             TMPB            DIV7   RPT DLY ; main division loop
+SIGMA             TMPB            DIV5           ; non-restoring correction
+SIGMA             TMPB           IDIV1           ; correct remainder sign
+SIGMA                            PASS
+SIGMA  -> TMPB                                   ; save remainder
+RESULT                           IDIV2           ; correct quotient sign -> SIGMA
+TMPB   -> eDX_AH                         RNI     ; write remainder
+SIGMA  -> eAX_AL                                 ; write quotient
+```
+
+The key micro-ops are:
+- **PREDIV**: Computes absolute values of dividend and divisor, saves their signs in internal flip-flops, and performs the first division iteration
+- **IDIV1**: Corrects the remainder's sign (remainder has same sign as dividend)
+- **IDIV2**: Corrects the quotient's sign (negative if operand signs differ)
+
+This explains why IDIV takes 5 more cycles than DIV - the extra cycles handle sign computation and correction.
 
 ## Additional notes
 
-One of the difficulties in figuring out the multiplication and division for the 80386 is the BITS_V constant. Its use in LDCNTR and the loop obviously points out its relation to the data width of the instruction, making 8/16/32 natural values for it, and RPT repeating COUNTR times. MUL and DIV work with that set up. However, the IDIV and AAM microcode repeatedly refuses to work. After many hours of debugging, I stumbled upon an unrelated routine in the microcode:
+One of the challenges in understanding multiplication and division on the 80386 lies in the meaning of the BITS_V constant. Its use in LDCNTR and within loops clearly suggests it relates to the instruction’s data width—so values like 8, 16, or 32 seem appropriate—and RPT would simply repeat for COUNTR cycles. This configuration works for MUL and DIV. However, the IDIV and AAM microcode persistently failed to behave correctly with this approach. After many hours of debugging, I finally found a clue in an unrelated section of the microcode:
 
 ```asm
 ; PUSHAd
@@ -115,6 +201,24 @@ SIGMA     INDSTK  -1             ADD             IN=+
 SIGMA  -> eSP                                DLY           
 ```
 
-This finally gives the important hint that BITS_V could be `width-1` instead of `width`.  Here PUSHA pushes 8 registers to the stack. So SP should be subtracted by `8*2(16)` or `8*4(32)` bytes. The existance of `SIGMA-1` (SIGMA, -1, SUB) after `SIGMA=ESP-BITS_V` (ESP,BITS_V, SUB), clearly indicates that BITS_V is one less than 16 or 32.
+This finally gave me the important hint that BITS_V is `width-1` instead of `width`. Here PUSHA pushes 8 registers to the stack, so SP should be subtracted by `8*2=16` or `8*4=32` bytes. The existence of `SIGMA-1` (SIGMA, -1, ADD) after `SIGMA=ESP-BITS_V` (ESP, BITS_V, SUB) clearly indicates that BITS_V is one less than 16 or 32.
 
-Credit goes to reengine and dbalsom for providing the microcode, and Ken Shirriff for circuit level [reverse engineering of the 80386](https://www.righto.com/search/label/386). 
+## Comparison with modern CPUs
+
+The 386's iterative approach to multiplication and division was state-of-the-art for its time, but modern x86 processors have moved far beyond it:
+
+| Era | Processor | 32-bit MUL | 32-bit DIV |
+|-----|-----------|------------|------------|
+| 1985 | 80386 | 9-38 cycles | 38 cycles |
+| 1993 | Pentium | 10 cycles | 41 cycles |
+| 2000s | Core 2 | 3-4 cycles | 17-41 cycles |
+| 2020s | Zen 3/Alder Lake | 3-4 cycles | 13-19 cycles |
+
+Modern CPUs use dedicated multiplier arrays (often Booth-encoded Wallace trees) that can multiply 64-bit numbers in just a few cycles. Division remains slower because it's inherently sequential - each quotient bit depends on the previous remainder. However, modern CPUs use radix-4 or radix-16 division (computing 2-4 bits per cycle) and sophisticated prediction to speed things up.
+
+The 386's "one bit per cycle" approach is elegant in its simplicity and its reuse of the main ALU. For an FPGA implementation, this microcode-driven design is actually quite practical - it minimizes hardware while still achieving reasonable performance.
+
+## Credits
+
+Thanks [reenigne](https://www.reenigne.org/blog/), [dbalsom](https://github.com/dbalsom) and Ken Shirriff for disassembly and [silicon reverse engineering of the 80386](https://www.righto.com/search/label/386).
+
