@@ -1,0 +1,2793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8086 Microcode Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Theme variables */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark theme (default) */
+        body.dark-theme {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #262626;
+            --bg-hover: #1f1f1f;
+            --bg-tooltip: #2d2d30;
+            --bg-modal: #252526;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #d0d0d0;
+            --text-muted: #858585;
+            --accent-primary: #5fd7c0;
+            --accent-blue: #0098ff;
+            --accent-yellow: #f0d77e;
+            --accent-purple: #d98bd9;
+            --accent-cyan: #00d9ff;
+            --accent-orange: #ffb870;
+            --type-0: #4ec9b0;
+            --type-1: #ce9178;
+            --type-4: #c586c0;
+            --type-5: #569cd6;
+            --type-6: #dcdcaa;
+            --type-7: #9cdcfe;
+            --border-color: #444;
+            --border-light: #333;
+            --border-medium: #2a2a2a;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* Light theme */
+        body.light-theme {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e8e8e8;
+            --bg-hover: #eeeeee;
+            --bg-tooltip: #f8f8f8;
+            --bg-modal: #fafafa;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-tertiary: #404040;
+            --text-muted: #999999;
+            --accent-primary: #00a896;
+            --accent-blue: #0066cc;
+            --accent-yellow: #c9930e;
+            --accent-purple: #9932cc;
+            --accent-cyan: #0080cc;
+            --accent-orange: #e67300;
+            --type-0: #008272;
+            --type-1: #b54d2a;
+            --type-4: #7d2c9f;
+            --type-5: #0052a3;
+            --type-6: #a88300;
+            --type-7: #006699;
+            --border-color: #cccccc;
+            --border-light: #dddddd;
+            --border-medium: #d8d8d8;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blue);
+            position: relative;
+        }
+
+        h1 {
+            color: var(--accent-primary);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        /* Header link styling */
+        header .subtitle a {
+            color: var(--accent-primary);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px dashed var(--accent-primary);
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+
+        header .subtitle a:hover,
+        header .subtitle a:focus {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+            outline: none;
+        }
+
+        header .subtitle a.ext::after {
+            content: ' ↗';
+            color: var(--text-secondary);
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-secondary);
+        }
+
+        .controls {
+            background: var(--bg-secondary);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .stats {
+            background: var(--bg-secondary);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 30px;
+            font-size: 0.9em;
+            align-items: center;
+        }
+
+        .stat {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            color: var(--accent-primary);
+            font-weight: bold;
+        }
+
+        .legend-inline {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+        }
+
+        .legend-inline-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-marker {
+            display: inline-block;
+            width: 20px;
+            height: 3px;
+            border-radius: 1px;
+        }
+
+        .field-marker.dest { background: var(--accent-primary); }
+        .field-marker.src { background: var(--accent-yellow); }
+        .field-marker.flag { background: var(--accent-purple); }
+        .field-marker.action { background: var(--accent-blue); }
+
+        .microcode-table {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            /* Was hidden; allow tooltips to extend beyond container */
+            overflow: visible;
+        }
+
+        /* One-time hover hint styles */
+        .first-time-hint {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            max-width: 360px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--accent-blue);
+            border-left: 4px solid var(--accent-primary);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            padding: 12px 14px 12px 12px;
+            font-size: 0.95em;
+            z-index: 11000;
+            display: none;
+        }
+
+        .first-time-hint .hint-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .first-time-hint .hint-text {
+            color: var(--text-tertiary);
+        }
+
+        .first-time-hint .hint-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .first-time-hint button {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        .first-time-hint button:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-secondary);
+        }
+
+        /* Subtle pulse highlight for target headers while hint visible */
+        @keyframes headerPulse {
+            0% { box-shadow: inset 0 -2px 0 0 rgba(78,201,176,0.0); }
+            50% { box-shadow: inset 0 -2px 0 0 rgba(78,201,176,0.9); }
+            100% { box-shadow: inset 0 -2px 0 0 rgba(78,201,176,0.0); }
+        }
+
+        .hint-active th.hint-target {
+            animation: headerPulse 1.4s ease-in-out infinite;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--bg-hover);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        /* Ensure first two rows (with right-side tooltip) paint above neighbors */
+        tbody tr:first-child,
+        tbody tr:nth-child(2) {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Ensure the "Binary" column cell in first two rows stacks above neighbors */
+        tbody tr:first-child td:nth-child(2),
+        tbody tr:nth-child(2) td:nth-child(2) {
+            position: relative;
+            z-index: 5;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-primary);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-medium);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        tbody tr.row-highlight {
+            box-shadow: inset 0 0 0 2px #569cd6;
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        td {
+            padding: 10px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .binary-segment {
+            display: inline-block;
+            padding: 2px 4px;
+            margin: 0 2px;
+            border-radius: 3px;
+            cursor: help;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .binary-segment:hover {
+            background: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+
+        /* Remove colored underlines beneath microcode fields in table */
+        .binary-segment.dest,
+        .binary-segment.src,
+        .binary-segment.flag,
+        .binary-segment.action {
+            border-bottom: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #0098ff;
+            font-size: 0.9em;
+            white-space: normal; /* allow wrapping when portaled */
+            overflow-wrap: anywhere; /* break long tokens if needed */
+            word-break: break-word;
+            line-height: 1.45;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+            max-width: min(80vw, 720px); /* responsive width */
+            backdrop-filter: blur(10px);
+        }
+
+        /* Hide built-in tooltips; we use a single global tooltip instead */
+        .binary-segment .tooltip { display: none !important; }
+
+        /* Global tooltip portal */
+        #globalTooltip {
+            position: fixed;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #0098ff;
+            font-size: 0.9em;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.45;
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+            max-width: min(80vw, 720px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.12s ease-out, visibility 0.12s ease-out;
+        }
+
+        /* For the first two rows, show tooltip to the right of the text */
+        tbody tr:first-child .tooltip,
+        tbody tr:nth-child(2) .tooltip { }
+
+        /* Avoid hover transform on first two rows so tooltip anchoring is stable */
+        tbody tr:first-child .binary-segment:hover,
+        tbody tr:nth-child(2) .binary-segment:hover { transform: none; }
+
+        .binary-segment:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .binary-segment {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ensure first rows' tooltips appear above header */
+        /* tbody tr:first-child,
+        tbody tr:nth-child(3) {
+            position: relative;
+            z-index: 100;
+        } */
+
+        .tooltip-title {
+            color: var(--accent-primary);
+            font-weight: bold;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .tooltip-row {
+            margin: 6px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 10px;
+            align-items: baseline;
+        }
+
+        .tooltip-label {
+            color: var(--text-secondary);
+            min-width: 110px;
+            flex: 0 0 auto;
+        }
+
+        .tooltip-value {
+            color: var(--accent-yellow);
+            font-weight: bold;
+            white-space: pre-wrap;
+            flex: 1 1 auto;
+        }
+
+        /* Colored bit chunks for action/type field details */
+        .bits { font-family: 'Courier New', monospace; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,0.06); }
+        .bits-type { color: var(--accent-cyan); }
+        .bits-op { color: var(--accent-orange); }
+        .bits-src { color: var(--accent-yellow); }
+        .bits-nx { color: var(--accent-blue); }
+        .bits-cond { color: var(--accent-purple); }
+        .bits-dest { color: var(--accent-primary); }
+        .bits-dir { color: var(--accent-orange); }
+        .bits-irq { color: var(--accent-purple); }
+        .bits-rni { color: var(--accent-primary); }
+        .bits-seg { color: var(--accent-blue); }
+        .bits-upd { color: var(--accent-yellow); }
+
+        .hoverable {
+            cursor: help;
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #555;
+        }
+
+        .hoverable:hover {
+            border-bottom-color: #007acc;
+        }
+
+        .hoverable .tooltip {
+            min-width: 200px;
+            white-space: normal;
+        }
+
+        .addr {
+            color: var(--type-5);
+            font-weight: bold;
+        }
+
+        .binary {
+            color: var(--type-1);
+            letter-spacing: 1px;
+            font-size: 0.8em;
+        }
+
+        .move {
+            color: var(--type-6);
+        }
+
+        .action {
+            color: var(--type-4);
+        }
+
+        .opcode {
+            color: var(--type-0);
+            font-size: 0.8em;
+        }
+
+        .asm {
+            color: var(--type-7);
+        }
+
+        /* Generic inline tooltip trigger */
+        .with-tip {
+            cursor: help;
+            position: relative;
+            display: inline-block;
+        }
+        .jump-target {
+            border-bottom: 1px dotted #9cdcfe; /* dotted underline for jump/call targets */
+            cursor: pointer;
+            color: inherit;
+        }
+        .sep { color: var(--text-muted); padding: 0 4px; }
+
+
+        .type-badge {
+            display: inline-block;
+            padding: 0; /* remove pill padding */
+            border-radius: 0;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 5px;
+            background: transparent; /* no solid background */
+        }
+
+        /* Use colored text only (no background) */
+        .type-0 { color: var(--type-0); background: transparent; }
+        .type-1 { color: var(--type-1); background: transparent; }
+        .type-4 { color: var(--type-4); background: transparent; }
+        .type-5 { color: var(--type-5); background: transparent; }
+        .type-6 { color: var(--type-6); background: transparent; }
+        .type-7 { color: var(--type-7); background: transparent; }
+
+        .description {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg-tooltip);
+            border-radius: 4px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .legend {
+            background: var(--bg-modal);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .legend-title {
+            color: var(--type-0);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 1200px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            .detail-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Instruction Picker Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid #0098ff;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #0098ff;
+        }
+
+        .modal-title {
+            color: var(--accent-primary);
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .modal-close:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-tooltip);
+        }
+
+        .instruction-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(16, 90px);
+            gap: 1px;
+            background: var(--bg-primary);
+            border: 2px solid #444;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .grid-cell {
+            background: var(--bg-tertiary);
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-height: 65px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid-header {
+            background: #2a2a2a;
+            font-weight: bold;
+            color: var(--accent-primary);
+            cursor: default;
+        }
+
+        .grid-cell:not(.grid-header):not(.empty):not(.non-clickable):hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .grid-cell.empty {
+            background: var(--bg-primary);
+            cursor: default;
+        }
+
+        .grid-cell.non-clickable {
+            cursor: default;
+            opacity: 0.5;
+        }
+
+        .grid-cell.non-clickable .instruction-name {
+            color: #666;
+        }
+
+        .instruction-name {
+            font-weight: bold;
+            color: var(--accent-yellow);
+            font-size: 1em;
+            line-height: 1.2;
+        }
+
+        .instruction-operands {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+
+        .instruction-opcode {
+            font-size: 0.7em;
+            color: #00b4ff;
+            margin-top: 3px;
+        }
+
+        .picker-button {
+            background: var(--accent-blue);
+            border: 1px solid #0078cc;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-left: auto;
+        }
+
+        .picker-button:hover {
+            background: #0078cc;
+        }
+
+        .group-section {
+            margin-top: 30px;
+        }
+
+        .group-title {
+            color: var(--accent-primary);
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="themeToggle">☀️ Light</button>
+            <h1>Intel 8086 Microcode Explorer</h1>
+            <p class="subtitle">Browse all 512 micro-instructions. Hover the Binary, Move, and Action columns for decoded details and color-coded bit fields.</p>
+            <p class="subtitle">Source: Andrew Jenner’s 8086 microcode disassembly, based on Ken Shirriff's die photo.</p>
+            <p class="subtitle">Author: <a class="ext" href="https://x.com/nand2mario" target="_blank" rel="noopener noreferrer">@nand2mario</a> — December 2025</p>
+            
+            <p style="margin:12px 0" class="subtitle">
+              The Intel 8086 executes its machine instructions through microcode. This viewer presents an interactive listing of all 512 micro-instructions in the control ROM. Each micro-instruction is 21 bits wide, addressed by a 13-bit micro-address, and split into two parts: a <b>Move</b> field, which moves data between internal registers, and an <b>Action</b> field, which controls ALU operations, memory cycles, branching, and other control signals.
+            </p>
+            <p class="subtitle">
+              The microcode address is composed of two fields: the upper 9 bits <b>AR</b> and the lower 4 bits <b>CR</b>. In the viewer, the opcode/address field is shown as <code>AR.CR[3:2]</code> (binary). When the opcode is empty, the next micro-instruction follows sequentially. For short jumps (type 0 actions), <b>AR</b> remains unchanged and a 4-bit target is loaded into <b>CR</b>; hovering the short-jump value highlights the target row. For long jumps (types 5 and 7), a separate <b>Translation ROM</b> maps a 4-bit destination code to a full 13-bit address, and both <b>AR</b> and <b>CR</b> are replaced with this translated value.
+            </p>
+            
+        </header>
+
+        
+
+        <div class="stats">
+            <div class="stat">Total Micro-Instructions: <span class="stat-value" id="totalCount">0</span></div>
+
+            <button class="picker-button" id="openPickerBtn">Browse by Instruction</button>
+
+            <div class="legend-inline">
+                <div class="legend-inline-item">
+                    <span class="field-marker dest"></span>
+                    <span>Dest (EDCBA)</span>
+                </div>
+                <div class="legend-inline-item">
+                    <span class="field-marker src"></span>
+                    <span>Source (FGHIJ)</span>
+                </div>
+                <div class="legend-inline-item">
+                    <span class="field-marker flag"></span>
+                    <span>Flag (K)</span>
+                </div>
+                <div class="legend-inline-item">
+                    <span class="field-marker action"></span>
+                    <span>Action (LMNOPQRSTU)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="microcode-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Addr</th>
+                        <th class="hint-target">Binary (A-U) - Hover for details</th>
+                        <th class="hint-target">Move</th>
+                        <th class="hint-target">Action</th>
+                        <th>Opcode</th>
+                        <th>Assembly/Label</th>
+                    </tr>
+                </thead>
+                <tbody id="microcodeTable">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- One-time hover hint (shown only for first-time users) -->
+    <div id="hoverHint" class="first-time-hint" role="dialog" aria-live="polite" aria-label="Usage tip">
+        <div class="hint-title">Tip: hover for decoded details</div>
+        <div class="hint-text">Hover the Binary, Move, and Action fields to see decoded bit fields, destinations/sources, and control actions. Tooltips include color-coded subfields and explanations.</div>
+        <div class="hint-actions">
+            <button id="hintDismiss">Got it</button>
+            <button id="hintNoShow">Don't show again</button>
+        </div>
+    </div>
+
+    <!-- Instruction Picker Modal -->
+    <div id="instructionPicker" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">8086 Instruction Set</div>
+                <button class="modal-close" id="closePickerBtn">✕</button>
+            </div>
+            <div id="pickerContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Embedded fallback microcode (trimmed). We will try to load the full source file at runtime.
+        const embeddedMicrocode = 
+`000 A CD F H J L  OPQR  U       N     -> tmpb      4   none  WB,NX       0100010??.00  MOV rm<->r
+001  B  E GHI  L  OPQR          tmpb  -> M         4   none  RNI
+002 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+003   CD FG IJ L N     TU       IJ    -> tmpa      5   UNC   EAOFFSET                  [SI]
+004 AB  E  HI  L  OPQR          IND   -> N         4   none  RNI         010001101.00  LEA
+005
+006
+007
+008   CD F   J  MN   R          M     -> tmpa      1   XI    tmpa        000???0??.00  alu rm<->r
+009 A CD F H J L  OPQR  U       N     -> tmpb      4   none  WB,NX
+00a  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+00b ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+00c A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        0100000??.00  alu rm,i (GRP1)
+00d ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+00e   CD F   J  MN   R  U       M     -> tmpa      1   XI    tmpa, NX
+00f  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+010 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0       0?00000??.01
+011
+012
+013
+014 A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        01100011?.00  MOV rm,i
+015 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+016  B  E GHI  L  OPQR          tmpb  -> M         4   none  RNI
+017 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+018 A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        000???10?.00  alu A,i
+019 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+01a   CD F   J  MN   R  U       M     -> tmpa      1   XI    tmpa, NX
+01b  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+01c A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        01011????.00  MOV r,i
+01d ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+01e  B  E GHI  L  OPQR          tmpb  -> M         4   none  RNI
+01f   CD FGHIJ L N     TU       IK    -> tmpa      5   UNC   EAOFFSET                  [DI]
+020 A CD F   J  MN   R TU       M     -> tmpb      1   XI    tmpb, NX    ?1111100?.00   INC/DEC rm
+021  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+022 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+023   CD FGHI  L N     TU       MP    -> tmpa      5   UNC   EAOFFSET                  [BP]
+024   CD FG I   MNOP R          SP    -> tmpa      1   DEC2  tmpa        ?1111111?.00   PUSH rm
+025 A C  F  I  L  OPQRSTU       SIGMA -> IND
+026   CDEF  I  L  OPQRSTU       SIGMA -> SP
+027  BC  F   J LM O QR TU       M     -> OPR       6   W,RNI DS,P0
+028   CD FG I   MNOP R          SP    -> tmpa      1   DEC2  tmpa        001010???.00  PUSH rw
+029 A C  F  I  L  OPQRSTU       SIGMA -> IND
+02a   CDEF  I  L  OPQRSTU       SIGMA -> SP
+02b  BC  F   J LM O QR TU       M     -> OPR       6   W,RNI DS,P0
+02c   CD FG I   MNOP R          SP    -> tmpa      1   DEC2  tmpa        0000??110.00  PUSH sr
+02d A C  F  I  L  OPQRSTU       SIGMA -> IND
+02e   CDEF  I  L  OPQRSTU       SIGMA -> SP
+02f  BC  F H J LM O QR TU       N     -> OPR       6   W,RNI DS,P0
+030   CD FG I   MNOP R          SP    -> tmpa      1   DEC2  tmpa        010011100.00  PUSHF
+031 A C  F  I  L  OPQRSTU       SIGMA -> IND
+032   CDEF  I  L  OPQRSTU       SIGMA -> SP
+033  BC   GHIJ LM O QR TU       F     -> OPR       6   W,RNI DS,P0
+034 A C  FG I  LM    R          SP    -> IND       6   R     DS,P2       001011???.00  POP rw
+035   CDE  HI  L  OPQRS U       IND   -> SP        4   none  NX    
+036  B  E   IJ L  OPQR          OPR   -> M         4   none  RNI
+037   CD FGH J L N     TU       HL    -> tmpa      5   UNC   EAOFFSET                  [BX]
+038 A C  FG I  LM    R          SP    -> IND       6   R     DS,P2       0000??111.00  POP sr
+039   CDE  HI  L  OPQRS U       IND   -> SP        4   none  NX    
+03a AB  E   IJ L  OPQR          OPR   -> N         4   none  RNI
+03b
+03c A C  FG I  LM    R          SP    -> IND       6   R     DS,P2       010011101.00  POPF
+03d   CDE  HI  L  OPQRS U       IND   -> SP        4   none  NX    
+03e ABCD    IJ L  OPQR          OPR   -> F         4   none  RNI
+03f
+040   CD   HI  L  OPQRSTU       IND   -> tmpa                            010001111.00  POP rmw
+041 A C  FG I  LM    R          SP    -> IND       6   R     DS,P2
+042   CDE  HI  L  OPQRSTU       IND   -> SP
+043 A C   G I  L  OPQR  U       tmpa  -> IND       4   none  WB,NX
+044  B  E   IJ L  OPQR          OPR   -> M         4   none  RNI         010001111.01
+045 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+046
+047
+048
+049
+04a
+04b
+04c A CD F   J  MN   R TU       M     -> tmpb      1   XI    tmpb, NX    ?11110010.00   NOT rm
+04d  B  EF  I  L  OPQR          SIGMA -> M         4   none  RNI
+04e ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+04f
+050 A CD F   J  MN   R TU       M     -> tmpb      1   XI    tmpb, NX    ?11110011.00   NEG rm
+051  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+052 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+053
+054 A C EFG    L  OPQRS U       XA    -> tmpbL     4   none  NX          010011000.00  CBW
+055    DE GHI  L  OPQR          tmpb  -> XA        4   none  RNI
+056
+057
+058 A CD FG     M O Q  T        XA    -> tmpb      1   LRCY  tmpb        010011001.00  CWD
+059 A CD F  I   M O QR T        SIGMA -> tmpb      1   RRCY  tmpb
+05a ABC  F HI     OPQ S U                          0   CY       5
+05b  B DEF HIJ L  OPQRS U       ZERO  -> DE        4   none  NX    
+05c A CD F  I  L  OPQR          SIGMA -> tmpb      4   none  RNI         010011001.01
+05d  B DEF HI  L  OPQRS U       ONES  -> DE        4   none  NX    
+05e A CD F  I  L  OPQR          SIGMA -> tmpb      4   none  RNI
+05f
+060 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           01010000?.00  MOV A,[i]
+061 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+062 A C   GHI  LM    RSTU       tmpb  -> IND       6   R     DD,P0
+063  B  E   IJ L  OPQR          OPR   -> M         4   none  RNI
+064 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           01010001?.00  MOV [i],A
+065 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+066 A C   GHI  L  OPQRSTU       tmpb  -> IND
+067  BC  F   J LM O QRSTU       M     -> OPR       6   W,RNI DD,P0
+068  BCD   HI   MNOP  S         IND   -> tmpc      1   INC2  tmpc        ?11111011.00   CALL FAR rm
+069 A C  F  I  LM    RSTU       SIGMA -> IND       6   R     DD,P0
+06a   CD    IJ  MNOP RS         OPR   -> tmpa      1   DEC2  tmpc
+06b  BCD FG I  L  OPQR TU       SP    -> tmpc      4   none  SUSP                      FARCALL
+06c A C  F  I  L  OPQR T        SIGMA -> IND       4   none  CORR        ?11111011.01  FARCALL2
+06d  BC    H   LM O  R T        RC    -> OPR       6   w     DS,M2
+06e A     G I   MN    S         tmpa  -> RC        1   PASS  tmpc
+06f  BC     I  L N      U       PC    -> OPR       5   UNC   NEARCALL
+070 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           010011010.00  CALL cd
+071 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+072   C E  HIJ  MNOP RS         Q     -> tmpaL     1   DEC2  tmpc
+073  BC E  HIJ L N              Q     -> tmpaH     5   UNC   FARCALL
+074 A CD F   J L  OPQR TU       M     -> tmpb      4   none  SUSP        ?11111010.00   CALL rm
+075 A C  FG I  L  OPQR T        SP    -> IND       4   none  CORR
+076  BC     I   MNOP RS         PC    -> OPR       1   DEC2  tmpc
+077   C   GHI  L     RSTU       tmpb  -> PC        4   FLUSH none                      NEARCALL
+078  BCD   HI  L  OPQRSTU       IND   -> tmpc                            ?11111010.01
+079 A C  F  I  L  OPQRSTU       SIGMA -> IND
+07a   CDEF  I  LM O QR TU       SIGMA -> SP        6   W,RNI DS,P0
+07b
+07c A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           011101000.00  CALL cw
+07d ABC E  HIJ  MNOP RS         Q     -> tmpbH     1   DEC2  tmpc
+07e  BCD FG I  L  OPQR TU       SP    -> tmpc      4   none  SUSP
+07f A C  F  I  L  OPQR T        SIGMA -> IND       4   none  CORR
+080   CD    I   M               PC    -> tmpa      1   ADD   tmpa        011101000.01
+081   C  F  I  L     RSTU       SIGMA -> PC        4   FLUSH none
+082   CDE  HI    N    STU       IND   -> SP        0   UNC      7
+083  BC   G I  LM O QR TU       tmpa  -> OPR       6   W,RNI DS,P0
+084 A CD F   J L  OPQRSTU       M     -> tmpb                            010010???.00  XCHG AX,rw
+085  B  EFG    L  OPQRS U       XA    -> M         4   none  NX    
+086    DE GHI  L  OPQR          tmpb  -> XA        4   none  RNI
+087
+088 A CD F   J  MN   R TU       M     -> tmpb      1   XI    tmpb, NX    01101000?.00  rot rm,1
+089  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+08a ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+08b
+08c   CD F HIJ L  OPQRSTU       ZERO  -> tmpa                            01101001?.00  rot rm,CL
+08d   C EFGH    MN              BC    -> tmpaL     1   PASS  tmpa
+08e A CD F   J   N    S         M     -> tmpb      0   UNC      4
+08f A CD F  I K MNO  R          SIGMA -> tmpb      1   DEC   tmpa     F
+090   CD F  I   MN   R T        SIGMA -> tmpa      1   XI    tmpb        01101001?.01
+091 ABC  F HI    N P   TU                          0   NZ       3
+092  B  E GHI  L  OPQR          tmpb  -> M         4   none  RNI
+093 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+094   CD F   J  M  P            M     -> tmpa      1   AND   tmpa        01000010?.00  TEST rm,r
+095 A CD F H J L  OPQRS U       N     -> tmpb      4   none  NX    
+096 ABC  F  I KL  OPQR          SIGMA -> no dest   4   none  RNI      F
+097
+098 A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        ?1111000?.00   TEST rm,i
+099 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+09a   CD F   J  M  P    U       M     -> tmpa      1   AND   tmpa, NX
+09b ABC  F  I KL  OPQR          SIGMA -> no dest   4   none  RNI      F
+09c A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        01010100?.00  TEST A,i
+09d ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+09e   CD FG     M  P    U       XA    -> tmpa      1   AND   tmpa, NX
+09f ABC  F  I KL  OPQR          SIGMA -> no dest   4   none  RNI      F
+0a0 ABC  F HI     OPQ  T                           0   CY       2        011010110.00  SALC
+0a1    D F HIJ L  OPQR          ZERO  -> A         4   none  RNI
+0a2    D F HI  L  OPQR          ONES  -> A         4   none  RNI
+0a3
+0a4   CD F H J L  OPQRSTU       N     -> tmpa                            01000011?.00  XCHG rm,r
+0a5 A CD F   J L  OPQRSTU       M     -> tmpb
+0a6 AB  E GHI  L  OPQR  U       tmpb  -> N         4   none  WB,NX
+0a7  B  E G I  L  OPQR          tmpa  -> M         4   none  RNI
+0a8 ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0       01000011?.01
+0a9
+0aa
+0ab
+0ac A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           01110010?.00  IN A,ib
+0ad ABC EF HIJ  MN     T        ZERO  -> tmpbH     1   PASS  tmpb
+0ae A C  F  I  LM     STU       SIGMA -> IND       6   R     D0,P0
+0af  B  E   IJ L  OPQR          OPR   -> M         4   none  RNI
+0b0 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           01110011?.00  OUT ib,A
+0b1 ABC EF HIJ  MN     T        ZERO  -> tmpbH     1   PASS  tmpb
+0b2 A C  F  I  L  OPQRSTU       SIGMA -> IND
+0b3  BC  FG    LM O Q STU       XA    -> OPR       6   W,RNI D0,P0
+0b4 A C  FG  J LM     STU       DE    -> IND       6   R     D0,P0       01110110?.00  IN A,DX
+0b5  B  E   IJ L  OPQR          OPR   -> M         4   none  RNI
+0b6
+0b7
+0b8 A C  FG  J L  OPQRSTU       DE    -> IND                             01110111?.00  OUT DX,A
+0b9  BC  FG    LM O Q STU       XA    -> OPR       6   W,RNI D0,P0
+0ba
+0bb
+0bc A C  FG I  LM    R          SP    -> IND       6   R     DS,P2       0110000?1.00  RET
+0bd ABC  F HI  L  OPQR TU                          4   none  SUSP
+0be   C     IJ L     RSTU       OPR   -> PC        4   FLUSH none
+0bf   CDE  HI  L  OPQR          IND   -> SP        4   none  RNI
+0c0 ABC  F HI  LMN                                 7   UNC   FARRET      0110010?1.00  RETF
+0c1   CDE  HI  L  OPQR          IND   -> SP        4   none  RNI
+0c2 A C  FG I  LM    R          SP    -> IND       6   R     DS,P2                     FARRET
+0c3 ABC  F HI  L  OPQR TU                          4   none  SUSP
+0c4   C     IJ   N PQ ST        OPR   -> PC        0   X0       6        0110010?1.01
+0c5 ABC  F HI  L     RS                            4   FLUSH RTN
+0c6 ABC  F HI  LM    R                             6   R     DS,P2
+0c7 A       IJ L     RS         OPR   -> RC        4   FLUSH RTN
+0c8 ABC  F HI  LMN                                 7   UNC   FARRET      011001111.00  IRET
+0c9 ABC  F HI  LM    R                             6   R     DS,P2
+0ca ABCD    IJ L  OPQRSTU       OPR   -> F
+0cb   CDE  HI  L  OPQR          IND   -> SP        4   none  RNI
+0cc   C E  HIJ  M               Q     -> tmpaL     1   ADD   tmpa        01100?0?0.00  RET/RETF iw
+0cd  BC E  HIJ LMN              Q     -> tmpaH     7   UNC   FARRET
+0ce A CD   HI  L  OPQRSTU       IND   -> tmpb
+0cf   CDEF  I  L  OPQR          SIGMA -> SP        4   none  RNI
+0d0 A C E  HIJ     P   T        Q     -> tmpbL     0   L8       2        0111010?1.00  JMP cw/JMP cb
+0d1 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+0d2 ABC  F HI  L  OPQR TU                          4   none  SUSP                      RELJMP
+0d3 ABC  F HI  L  OPQR T                           4   none  CORR
+0d4   CD    I   M               PC    -> tmpa      1   ADD   tmpa        0111010?1.01
+0d5   C  F  I  L     R          SIGMA -> PC        4   FLUSH RNI
+0d6
+0d7
+0d8 ABC  F HI  L  OPQR TU                          4   none  SUSP        ?11111100.00   JMP rm
+0d9   C  F   J L     R          M     -> PC        4   FLUSH RNI
+0da
+0db
+0dc  BCD   HI   MNOP  S         IND   -> tmpc      1   INC2  tmpc        ?11111101.00   JMP FAR rm
+0dd A C  F  I  L  OPQR TU       SIGMA -> IND       4   none  SUSP
+0de   C   GHI  LM    RSTU       tmpb  -> PC        6   R     DD,P0
+0df A       IJ L     R          OPR   -> RC        4   FLUSH RNI
+0e0 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           011101010.00  JMP cd
+0e1 ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+0e2   C E  HIJ L  OPQRSTU       Q     -> tmpaL
+0e3  BC E  HIJ L  OPQRSTU       Q     -> tmpaH
+0e4 ABC  F HI  L  OPQR TU                          4   none  SUSP        011101010.01
+0e5   C   GHI  L  OPQRSTU       tmpb  -> PC
+0e6 A     G I  L     R          tmpa  -> RC        4   FLUSH RNI
+0e7
+0e8 A C E  HIJ L  OPQRSTU       Q     -> tmpbL                           0011?????.00  Jcond cb
+0e9 ABC  F HI  L NOPQ  T                           5   XC    RELJMP
+0ea ABC  F HI  L  OPQR                             4   none  RNI
+0eb
+0ec  B  EF H J L  OPQR          N     -> M         4   none  RNI         0100011?0.00  MOV rmw<->sr
+0ed ABC  F HI  LM O QRSTU                          6   W,RNI DD,P0
+0ee
+0ef
+0f0 AB  E   IJ L  OPQRSTU       OPR   -> N                               011000100.00  LES
+0f1  BCD   HI   MNOP  S         IND   -> tmpc      1   INC2  tmpc
+0f2 A C  F  I  LM    RSTU       SIGMA -> IND       6   R     DD,P0
+0f3         IJ L  OPQR          OPR   -> RA        4   none  RNI
+0f4 AB  E   IJ L  OPQRSTU       OPR   -> N                               011000101.00  LDS
+0f5  BCD   HI   MNOP  S         IND   -> tmpc      1   INC2  tmpc
+0f6 A C  F  I  LM    RSTU       SIGMA -> IND       6   R     DD,P0
+0f7 AB      IJ L  OPQR          OPR   -> RD        4   none  RNI
+0f8 ABC  F HI     O Q  TU                          0   TEST     3        010011011.00  WAIT
+0f9 ABC  F HI  L  O   STU                          4   WAIT  none
+0fa ABC  F HI  L  OPQR                             4   none  RNI
+0fb ABC  F HI    NOP  S U                          0   INT      5
+0fc ABC  F HI    N                                 0   UNC      0        010011011.01
+0fd ABC  F HI  L  OPQR TU                          4   none  SUSP
+0fe ABC  F HI  L  OPQR T                           4   none  CORR
+0ff  BCD    I   MNO  RS         PC    -> tmpc      1   DEC   tmpc
+100 ABC  F HI  L  OPQRSTU                                                010011110.00  SAHF
+101   CD  GHIJ L  OPQRSTU       F     -> tmpa
+102   C EF     L  OPQRS U       X     -> tmpaL     4   none  NX    
+103 ABCD  G I  L  OPQR          tmpa  -> F         4   none  RNI
+104 ABC  F HI  L  OPQRS U                          4   none  NX          010011111.00  LAHF
+105     E GHIJ L  OPQR          F     -> X         4   none  RNI
+106
+107
+108 ABC  F HI  L  OPQR                             4   none  RNI         011011???.00  ESC
+109
+10a
+10b
+10c   CD F HIJ L  OPQRSTU       ZERO  -> tmpa                            011010111.00  XLAT
+10d   C EFG    L  OPQRSTU       XA    -> tmpaL
+10e A CD FGH J  M               HL    -> tmpb      1   ADD   tmpa
+10f A C  F  I  LM    RSTU       SIGMA -> IND       6   R     DD,P0
+110    D    IJ L  OPQR          OPR   -> A         4   none  RNI         011010111.01
+111 ABC  F HI  L  OPQRSTU
+112  BCD FGH    MN    S         BC    -> tmpc      1   PASS  tmpc                      RPTS
+113 ABC  F  I   MNO  RS         SIGMA -> no dest   1   DEC   tmpc
+114 ABC  F HI    N P R T                           0   NZ      10        011010111.10
+115 ABC  F HI  L  OPQR                             4   none  RNI
+116 ABC  F HI  L  OPQRS                            4   none  RTN
+117 ABC  F HI  L  OPQRSTU
+118 A  DE G IJ L  OPQR TU       tmpc  -> BC        4   none  SUSP        011010111.11  RPTI
+119 ABC  F HI  L  OPQR T                           4   none  CORR
+11a A CD    I   MNOP R T        PC    -> tmpb      1   DEC2  tmpb
+11b   C  F  I  L     R          SIGMA -> PC        4   FLUSH RNI
+11c A C  FGHIJ LMNO Q   U       IK    -> IND       7   F1    RPTS        01010101?.00  STOS
+11d  BC  F   J LM O     U       M     -> OPR       6   w     DA,BL
+11e ABCDE  HI    N  Q S U       IND   -> IK        0   NF1      5
+11f  BCD F  I  L NOP R          SIGMA -> tmpc      5   INT   RPTI
+120 ABC  F HI  LMNO Q   U                          7   F1    RPTS        01010?11?.00  CMPS/SCAS
+121   CD F   J   N PQ S U       M     -> tmpa      0   X0       5
+122 A C  FG IJ LM    RS U       IJ    -> IND       6   R     DD,BL
+123  BCDE  HI  L  OPQRSTU       IND   -> IJ
+124   CD    IJ L  OPQRSTU       OPR   -> tmpa                            01010?11?.01
+125 A C  FGHIJ LM       U       IK    -> IND       6   R     DA,BL
+126 A CD    IJ  M  P R          OPR   -> tmpb      1   SUBT  tmpa
+127 ABC  F  I K MNO  RS         SIGMA -> no dest   1   DEC   tmpc     F
+128 ABCDE  HI    N  QRS         IND   -> IK        0   NF1     12        01010?11?.10
+129 A  DEF  I        RS         SIGMA -> BC        0   F1ZZ    12
+12a  BCD F  I  L NOP R          SIGMA -> tmpc      5   INT   RPTI
+12b ABC  F HI    N P    U                          0   NZ       1
+12c ABC  F HI  LMNO Q   U                          7   F1    RPTS        01010?10?.00  MOVS/LODS
+12d A C  FG IJ LM    RS U       IJ    -> IND       6   R     DD,BL
+12e  BCDE  HI    N PQR          IND   -> IJ        0   X0       8
+12f A C  FGHIJ LM O     U       IK    -> IND       6   w     DA,BL
+130 ABCDE  HI    N  Q STU       IND   -> IK        0   NF1      7        01010?10?.01
+131  BCD F  I  L NOP R          SIGMA -> tmpc      5   INT   RPTI
+132 A  DE G IJ   N P    U       tmpc  -> BC        0   NZ       1
+133 ABC  F HI  L  OPQR                             4   none  RNI
+134  BCD FGH    MN    S         BC    -> tmpc      1   PASS  tmpc        011100011.00  JCXZ
+135 ABC  F  I  L  OPQRSTU       SIGMA -> no dest
+136 A C E  HIJ   N P  S         Q     -> tmpbL     0   NZ       4
+137 ABC  F HI  L N     T                           5   UNC   RELJMP
+138  BCD FGH    MNO  RS         BC    -> tmpc      1   DEC   tmpc        01110000?.00  LOOPNE/LOOPE
+139 A  DEF  I  L  OPQRSTU       SIGMA -> BC
+13a A C E  HIJ        S         Q     -> tmpbL     0   F1ZZ     4
+13b ABC  F HI  L N P   T                           5   NZ    RELJMP
+13c ABC  F HI  L  OPQR                             4   none  RNI         01110000?.01
+13d
+13e
+13f
+140  BCD FGH    MNO  RS         BC    -> tmpc      1   DEC   tmpc        011100010.00  LOOP
+141 A  DEF  I  L  OPQRSTU       SIGMA -> BC
+142 A C E  HIJ L N P   T        Q     -> tmpbL     5   NZ    RELJMP
+143 ABC  F HI  L  OPQR                             4   none  RNI
+144   C E G     MN   R          A     -> tmpaL     1   XI    tmpa        00010?111.00  DAA/DAS
+145 A CD F HI  L  OPQRSTU       ONES  -> tmpb
+146    D F  I K M       U       SIGMA -> A         1   ADD   tmpa, NX F
+147 ABC  F HI  L  OPQR                             4   none  RNI
+148   C E G     MN   R          A     -> tmpaL     1   XI    tmpa        00011?111.00  AAA/AAS
+149 A CD F HI  L  OPQRSTU       ONES  -> tmpb
+14a    D F  I K MNO  R T        SIGMA -> A         1   DEC   tmpb     F
+14b ABC  F HI    N PQ S U                          0   X0       5
+14c ABC  F HI   MNO    T                           1   INC   tmpb        00011?111.01
+14d A CD F       NO   STU       X     -> tmpb      0   NCY      7
+14e     EF  I  L  OPQR          SIGMA -> X         4   none  RNI
+14f ABC  F HI  L  OPQR                             4   none  RNI
+150  BCD  G     M O Q S         A     -> tmpc      1   LRCY  tmpc        01111010?.00   iMUL rmb
+151 A CD F   J LMN PQ S         M     -> tmpb      7   X0    PREIMUL
+152 ABC  F HI  LMN     T                           7   UNC   CORX
+153 ABC  F HI  LMNO Q S U                          7   F1    NEGATE
+154 ABC  F HI  LMN PQ ST                           7   X0    IMULCOF     01111010?.01
+155    D  G IJ   N PQ STU       tmpc  -> A         0   X0       7
+156 ABC  F HI  LMN    STU                          7   UNC   MULCOF
+157     E G I  L  OPQR          tmpa  -> X         4   none  RNI
+158  BCD FG     M O Q S         XA    -> tmpc      1   LRCY  tmpc        11111010?.00   iMUL rmw
+159 A CD F   J LMN PQ S         M     -> tmpb      7   X0    PREIMUL
+15a ABC  F HI  LMN     T                           7   UNC   CORX
+15b ABC  F HI  LMNO Q S U                          7   F1    NEGATE
+15c ABC  F HI  LMN PQ ST                           7   X0    IMULCOF     11111010?.01
+15d    DE G IJ   N PQ STU       tmpc  -> XA        0   X0       7
+15e ABC  F HI  LMN    STU                          7   UNC   MULCOF
+15f  B DE G I  L  OPQR          tmpa  -> DE        4   none  RNI
+160   CD F     L  OPQRSTU       X     -> tmpa                            01111011?.00   iDIV rmb
+161  BCD  G     M O Q           A     -> tmpc      1   LRCY  tmpa
+162 A CD F   J LMN PQR          M     -> tmpb      7   X0    PREIDIV
+163 ABC  F HI  LMN     TU                          7   UNC   CORD
+164 ABC  F HI   MNO Q S                            1   COM1  tmpc        01111011?.01
+165 A CD F     LMN PQR  U       X     -> tmpb      7   X0    POSTIDIV
+166    D F  I  L  OPQRS U       SIGMA -> A         4   none  NX    
+167     E G I  L  OPQR          tmpa  -> X         4   none  RNI
+168   CD FG  J L  OPQRSTU       DE    -> tmpa                            11111011?.00   iDIV rmw
+169  BCD FG     M O Q           XA    -> tmpc      1   LRCY  tmpa
+16a A CD F   J LMN PQR          M     -> tmpb      7   X0    PREIDIV
+16b ABC  F HI  LMN     TU                          7   UNC   CORD
+16c ABC  F HI   MNO Q S                            1   COM1  tmpc        11111011?.01
+16d A CD FG  J LMN PQR  U       DE    -> tmpb      7   X0    POSTIDIV
+16e    DEF  I  L  OPQRS U       SIGMA -> XA        4   none  NX    
+16f  B DE G I  L  OPQR          tmpa  -> DE        4   none  RNI
+170  BCD   HIJ L  OPQRSTU       Q     -> tmpc                            011010101.00  AAD
+171 A CD F     LMN     T        X     -> tmpb      7   UNC   CORX
+172 A CD  G     M     S         A     -> tmpb      1   ADD   tmpc
+173     EF HIJ L N   R  U       ZERO  -> X         5   UNC   AAEND
+174 A CD   HIJ L  OPQRSTU       Q     -> tmpb                            011010100.00  AAM
+175   CD F HIJ L  OPQRSTU       ZERO  -> tmpa
+176  BCD  G    LMN     TU       A     -> tmpc      7   UNC   CORD
+177 ABC  F HI   MNO Q S                            1   COM1  tmpc
+178     EF  I   MN      U       SIGMA -> X         1   PASS  tmpa, NX    011010100.01
+179    D F  I KL  OPQR          SIGMA -> A         4   none  RNI      F                AAEND
+17a
+17b
+17c A CD F   J  MN   R TU       M     -> tmpb      1   XI    tmpb, NX    00100????.00  INC/DEC
+17d  B  EF  I KL  OPQR          SIGMA -> M         4   none  RNI      F
+17e ABC  F HI  L  OPQRSTU
+17f   CD F HIJ  M O QRS         ZERO  -> tmpa      1   RRCY  tmpc                      CORX
+180  BCD F  I  L      STU       SIGMA -> tmpc      4   MAXC  none        00100????.01
+181 ABC  F HI    NO  R                             0   NCY      8
+182 ABC  F HI   M                                  1   ADD   tmpa
+183   CD F  I KL  OPQRSTU       SIGMA -> tmpa                         F
+184 ABC  F HI   M O QR                             1   RRCY  tmpa        00100????.10
+185   CD F  I   M O QRS         SIGMA -> tmpa      1   RRCY  tmpc
+186  BCD F  I     O   S U       SIGMA -> tmpc      0   NCZ      5
+187 ABC  F HI  L  OPQRS                            4   none  RTN
+188 ABC  F HI   M  P R                             1   SUBT  tmpa        100100010.00  CORD
+189 ABC  F  I KL      STU       SIGMA -> no dest   4   MAXC  none     F
+18a ABC  F HI  L NO   STU                          5   NCY   INT0
+18b ABC  F HI   M O Q S                            1   LRCY  tmpc
+18c  BCD F  I   M O Q           SIGMA -> tmpc      1   LRCY  tmpa        100100010.01
+18d   CD F  I   M  P R          SIGMA -> tmpa      1   SUBT  tmpa
+18e ABC  F HI     OPQRS U                          0   CY      13
+18f ABC  F  I KL  OPQRSTU       SIGMA -> no dest                      F
+190 ABC  F HI    NO  RST                           0   NCY     14        100100010.10
+191 ABC  F HI     O    TU                          0   NCZ      3
+192 ABC  F HI   M O Q S                            1   LRCY  tmpc
+193  BCD F  I  L  OPQRSTU       SIGMA -> tmpc
+194 ABC  F  I  L  OPQRS         SIGMA -> no dest   4   none  RTN         100100010.11
+195 ABC  F HI  L   P  STU                          4   RCY   none
+196   CD F  I     O    TU       SIGMA -> tmpa      0   NCZ      3
+197 ABC  F HI    N   R T                           0   UNC     10
+198  BC  F  IJ   N    S U       CR    -> OPR       0   UNC      5        100000000.00  INT1
+199  BC  F  IJ   N    S U       CR    -> OPR       0   UNC      5                      INT2
+19a A C  F HIJ LM  P  STU       ZERO  -> IND       6   IRQ   D0,P0                     IRQ
+19b ABC  F HI  L  OPQR TU                          4   none  SUSP
+19c ABC  F HI  LM  P  STU                          6   IRQ   D0,P0       100000000.01
+19d A C E   IJ L  OPQR TU       OPR   -> tmpbL     4   none  SUSP                      INTR
+19e ABC EF HIJ  M      T        ZERO  -> tmpbH     1   ADD   tmpb
+19f A CD F  I  L  OPQRSTU       SIGMA -> tmpb
+1a0 A C  F  I  LM     S         SIGMA -> IND       6   R     D0,P2       100000000.10
+1a1 A CD    IJ  MNOP RS         OPR   -> tmpb      1   DEC2  tmpc
+1a2  BCD FG I  LM     STU       SP    -> tmpc      6   R     D0,P0
+1a3   CD    IJ L  OPQRSTU       OPR   -> tmpa
+1a4  BC   GHIJ L    QRSTU       F     -> OPR       4   CITF  none        100000000.11
+1a5 A C  F  I  LM O  R TU       SIGMA -> IND       6   w     DS,P0
+1a6  BCD   HI  L N    S U       IND   -> tmpc      5   UNC   FARCALL2
+1a7  BC  F  IJ   N    S U       CR    -> OPR       0   UNC      5                      INT0
+1a8 A CD   HIJ L  OPQRSTU       Q     -> tmpb                            011001101.00  INT ib
+1a9  BC   GHI  L N    ST        tmpb  -> OPR       5   UNC   INTR
+1aa
+1ab
+1ac ABC  F HI  L  OPQRSTU                                                011001110.00  INTO
+1ad ABC  F HI     OP   TU                          0   OF       3
+1ae ABC  F HI  L  OPQR                             4   none  RNI
+1af  BC  F  IJ L N    ST        CR    -> OPR       5   UNC   INTR
+1b0 ABC  F HI    N     T                           0   UNC      2        011001100.00  INT 3
+1b1 ABC  F HI  L  OPQRSTU
+1b2  BC  F  IJ L N    ST        CR    -> OPR       5   UNC   INTR
+1b3
+1b4 ABC  F  I  L  OPQRSTU       SIGMA -> no dest                         100100011.00  PREIDIV
+1b5 ABC  F HI    NO   STU                          0   NCY      7
+1b6 ABC  F HI   MNO QRS                            1   NEG   tmpc                      NEGATE
+1b7  BCD F  I K MNO Q           SIGMA -> tmpc      1   COM1  tmpa     F
+1b8 ABC  F HI     OPQ ST                           0   CY       6        100100011.01
+1b9 ABC  F HI   MNO QR                             1   NEG   tmpa
+1ba   CD F  I  L    Q STU       SIGMA -> tmpa      4   CF1   none
+1bb ABC  F HI   M O Q  T                           1   LRCY  tmpb
+1bc ABC  F  I   MNO QR T        SIGMA -> no dest   1   NEG   tmpb        100100011.10
+1bd ABC  F HI    NO  R TU                          0   NCY     11
+1be A CD F  I  L    Q S         SIGMA -> tmpb      4   CF1   RTN
+1bf ABC  F HI  L  OPQRS                            4   none  RTN
+1c0 ABC  F  I   MNO QRS         SIGMA -> no dest   1   NEG   tmpc        100100011.11  PREIMUL
+1c1 ABC  F HI    NO   STU                          0   NCY      7
+1c2  BCD F  I  L    Q STU       SIGMA -> tmpc      4   CF1   none
+1c3 ABC  F HI    N    STU                          0   UNC      7
+1c4 ABC  F HI  L NO   STU                          5   NCY   INT0        100100100.00  POSTIDIV
+1c5 ABC  F HI   M O Q  T                           1   LRCY  tmpb
+1c6 ABC  F  I   MNO QR          SIGMA -> no dest   1   NEG   tmpa
+1c7 ABC  F HI    NO   S U                          0   NCY      5
+1c8   CD F  I  L  OPQRSTU       SIGMA -> tmpa                            100100100.01
+1c9 ABC  F HI   MNO   S                            1   INC   tmpc
+1ca ABC  F HI    NO QR                             0   F1       8
+1cb ABC  F HI   MNO Q S                            1   COM1  tmpc
+1cc ABC  F HI  L   PQ S                            4   CCOF  RTN         100100100.10
+1cd A CD F HIJ  M O Q S         ZERO  -> tmpb      1   LRCY  tmpc                      IMULCOF
+1ce ABC  F  I   M   Q           SIGMA -> no dest   1   ADC   tmpa
+1cf ABC  F  I KL  OPQRSTU       SIGMA -> no dest                      F
+1d0 ABC  F HI      PQR                             0   Z        8        100100100.11
+1d1 ABC  F HI  L   PQRS                            4   SCOF  RTN
+1d2 ABC  F HI   MN                                 1   PASS  tmpa                      MULCOF
+1d3 ABC  F  I K  N   RS         SIGMA -> no dest   0   UNC     12     F
+1d4   CD FGH J L  OPQRSTU       HL    -> tmpa                            101000000.00  [BX+SI]
+1d5 A CD FG IJ L  OPQRSTU       IJ    -> tmpb
+1d6   CD F  I  L N     TU       SIGMA -> tmpa      5   UNC   EAOFFSET
+1d7   CD FGHI  L  OPQRSTU       MP    -> tmpa                                          [BP+DI]
+1d8 A CD FGHIJ L  OPQRSTU       IK    -> tmpb                            101000000.01
+1d9   CD F  I  L N     TU       SIGMA -> tmpa      5   UNC   EAOFFSET
+1da   CD FGH J   N    S         HL    -> tmpa      0   UNC      4                      [BX+DI]
+1db   CD FGHI    N      U       MP    -> tmpa      0   UNC      1                      [BP+SI]
+1dc   C E  HIJ L  OPQRSTU       Q     -> tmpaL                           101000000.10  [iw]
+1dd  BC E  HIJ L N    S         Q     -> tmpaH     5   UNC   EADONE
+1de A C E  HIJ      QRS         Q     -> tmpbL     0   MOD1    12                      [i]
+1df ABC E  HIJ L  OPQRSTU       Q     -> tmpbH
+1e0   CD F  I  L N    S         SIGMA -> tmpa      5   UNC   EADONE      101000000.11
+1e1 A C   G I  LM    RSTU       tmpa  -> IND       6   R     DD,P0                     EALOAD
+1e2 A CD    IJ L  OPQRS         OPR   -> tmpb      4   none  RTN
+1e3 A C   G I  L  OPQRS         tmpa  -> IND       4   none  RTN                       EADONE
+1e4 AB   F HIJ L  OPQR TU       ZERO  -> RD        4   none  SUSP        110000000.00  RESET
+1e5 A    F HI  L  OPQRSTU       ONES  -> RC
+1e6   C  F HIJ L     RSTU       ZERO  -> PC        4   FLUSH none
+1e7 ABCD F HIJ L  OPQRSTU       ZERO  -> F
+1e8      F HIJ L  OPQRSTU       ZERO  -> RA                              110000000.01
+1e9  B   F HIJ L  OPQR          ZERO  -> RS        4   none  RNI
+1ea
+1eb
+1ec   C  F  I  L     R          SIGMA -> PC        4   FLUSH RNI         010011011.10  WAIT continued
+1ed
+1ee
+1ef
+1f0 A  DE G IJ   N P    U       tmpc  -> BC        0   NZ       1        01010101?.01  STOS continued
+1f1 ABC  F HI  L  OPQR                             4   none  RNI
+1f2
+1f3
+1f4 ABC  F HI  L  OPQR                             4   none  RNI         01010?11?.11  CMPS/SCAS continued
+1f5
+1f6
+1f7
+1f8  B  E   IJ   NO Q S U       OPR   -> M         0   F1       5        01010?10?.10  MOVS/LODS continued
+1f9 ABC  F HI  L  OPQR                             4   none  RNI
+1fa   C E  HI K M O Q S         IND   -> tmpaL     1   LRCY  tmpc     F
+1fb
+1fc ABC  F HI  L  OPQR                             4   none  RNI         011100011.01  JCXZ continued
+1fd
+1fe   CD  G    L NOP  S U       A     -> tmpa      5   INT   FARCALL2
+1ff  B D F H  KL N    ST        B     -> E         5   UNC   INTR     F`;
+
+        let allMicrocode = [];
+        let labelIndex = {};
+
+        // 8086 instruction grid data (based on result.txt)
+        const instructionGrid = [
+            // Row 0
+            [{name:'ADD', ops:'Eb Gb', opcode:0x00}, {name:'ADD', ops:'Ev Gv', opcode:0x01}, {name:'ADD', ops:'Gb Eb', opcode:0x02}, {name:'ADD', ops:'Gv Ev', opcode:0x03},
+             {name:'ADD', ops:'AL Ib', opcode:0x04}, {name:'ADD', ops:'AX Iv', opcode:0x05}, {name:'PUSH', ops:'ES', opcode:0x06}, {name:'POP', ops:'ES', opcode:0x07},
+             {name:'OR', ops:'Eb Gb', opcode:0x08}, {name:'OR', ops:'Ev Gv', opcode:0x09}, {name:'OR', ops:'Gb Eb', opcode:0x0A}, {name:'OR', ops:'Gv Ev', opcode:0x0B},
+             {name:'OR', ops:'AL Ib', opcode:0x0C}, {name:'OR', ops:'AX Iv', opcode:0x0D}, {name:'PUSH', ops:'CS', opcode:0x0E}, null],
+            // Row 1
+            [{name:'ADC', ops:'Eb Gb', opcode:0x10}, {name:'ADC', ops:'Ev Gv', opcode:0x11}, {name:'ADC', ops:'Gb Eb', opcode:0x12}, {name:'ADC', ops:'Gv Ev', opcode:0x13},
+             {name:'ADC', ops:'AL Ib', opcode:0x14}, {name:'ADC', ops:'AX Iv', opcode:0x15}, {name:'PUSH', ops:'SS', opcode:0x16}, {name:'POP', ops:'SS', opcode:0x17},
+             {name:'SBB', ops:'Eb Gb', opcode:0x18}, {name:'SBB', ops:'Ev Gv', opcode:0x19}, {name:'SBB', ops:'Gb Eb', opcode:0x1A}, {name:'SBB', ops:'Gv Ev', opcode:0x1B},
+             {name:'SBB', ops:'AL Ib', opcode:0x1C}, {name:'SBB', ops:'AX Iv', opcode:0x1D}, {name:'PUSH', ops:'DS', opcode:0x1E}, {name:'POP', ops:'DS', opcode:0x1F}],
+            // Row 2
+            [{name:'AND', ops:'Eb Gb', opcode:0x20}, {name:'AND', ops:'Ev Gv', opcode:0x21}, {name:'AND', ops:'Gb Eb', opcode:0x22}, {name:'AND', ops:'Gv Ev', opcode:0x23},
+             {name:'AND', ops:'AL Ib', opcode:0x24}, {name:'AND', ops:'AX Iv', opcode:0x25}, {name:'ES:', ops:'', opcode:0x26}, {name:'DAA', ops:'', opcode:0x27},
+             {name:'SUB', ops:'Eb Gb', opcode:0x28}, {name:'SUB', ops:'Ev Gv', opcode:0x29}, {name:'SUB', ops:'Gb Eb', opcode:0x2A}, {name:'SUB', ops:'Gv Ev', opcode:0x2B},
+             {name:'SUB', ops:'AL Ib', opcode:0x2C}, {name:'SUB', ops:'AX Iv', opcode:0x2D}, {name:'CS:', ops:'', opcode:0x2E}, {name:'DAS', ops:'', opcode:0x2F}],
+            // Row 3
+            [{name:'XOR', ops:'Eb Gb', opcode:0x30}, {name:'XOR', ops:'Ev Gv', opcode:0x31}, {name:'XOR', ops:'Gb Eb', opcode:0x32}, {name:'XOR', ops:'Gv Ev', opcode:0x33},
+             {name:'XOR', ops:'AL Ib', opcode:0x34}, {name:'XOR', ops:'AX Iv', opcode:0x35}, {name:'SS:', ops:'', opcode:0x36}, {name:'AAA', ops:'', opcode:0x37},
+             {name:'CMP', ops:'Eb Gb', opcode:0x38}, {name:'CMP', ops:'Ev Gv', opcode:0x39}, {name:'CMP', ops:'Gb Eb', opcode:0x3A}, {name:'CMP', ops:'Gv Ev', opcode:0x3B},
+             {name:'CMP', ops:'AL Ib', opcode:0x3C}, {name:'CMP', ops:'AX Iv', opcode:0x3D}, {name:'DS:', ops:'', opcode:0x3E}, {name:'AAS', ops:'', opcode:0x3F}],
+            // Row 4
+            [{name:'INC', ops:'AX', opcode:0x40}, {name:'INC', ops:'CX', opcode:0x41}, {name:'INC', ops:'DX', opcode:0x42}, {name:'INC', ops:'BX', opcode:0x43},
+             {name:'INC', ops:'SP', opcode:0x44}, {name:'INC', ops:'BP', opcode:0x45}, {name:'INC', ops:'SI', opcode:0x46}, {name:'INC', ops:'DI', opcode:0x47},
+             {name:'DEC', ops:'AX', opcode:0x48}, {name:'DEC', ops:'CX', opcode:0x49}, {name:'DEC', ops:'DX', opcode:0x4A}, {name:'DEC', ops:'BX', opcode:0x4B},
+             {name:'DEC', ops:'SP', opcode:0x4C}, {name:'DEC', ops:'BP', opcode:0x4D}, {name:'DEC', ops:'SI', opcode:0x4E}, {name:'DEC', ops:'DI', opcode:0x4F}],
+            // Row 5
+            [{name:'PUSH', ops:'AX', opcode:0x50}, {name:'PUSH', ops:'CX', opcode:0x51}, {name:'PUSH', ops:'DX', opcode:0x52}, {name:'PUSH', ops:'BX', opcode:0x53},
+             {name:'PUSH', ops:'SP', opcode:0x54}, {name:'PUSH', ops:'BP', opcode:0x55}, {name:'PUSH', ops:'SI', opcode:0x56}, {name:'PUSH', ops:'DI', opcode:0x57},
+             {name:'POP', ops:'AX', opcode:0x58}, {name:'POP', ops:'CX', opcode:0x59}, {name:'POP', ops:'DX', opcode:0x5A}, {name:'POP', ops:'BX', opcode:0x5B},
+             {name:'POP', ops:'SP', opcode:0x5C}, {name:'POP', ops:'BP', opcode:0x5D}, {name:'POP', ops:'SI', opcode:0x5E}, {name:'POP', ops:'DI', opcode:0x5F}],
+            // Row 6 (empty in result.txt)
+            [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+            // Row 7
+            [{name:'JO', ops:'Jb', opcode:0x70}, {name:'JNO', ops:'Jb', opcode:0x71}, {name:'JB', ops:'Jb', opcode:0x72}, {name:'JNB', ops:'Jb', opcode:0x73},
+             {name:'JZ', ops:'Jb', opcode:0x74}, {name:'JNZ', ops:'Jb', opcode:0x75}, {name:'JBE', ops:'Jb', opcode:0x76}, {name:'JA', ops:'Jb', opcode:0x77},
+             {name:'JS', ops:'Jb', opcode:0x78}, {name:'JNS', ops:'Jb', opcode:0x79}, {name:'JPE', ops:'Jb', opcode:0x7A}, {name:'JPO', ops:'Jb', opcode:0x7B},
+             {name:'JL', ops:'Jb', opcode:0x7C}, {name:'JGE', ops:'Jb', opcode:0x7D}, {name:'JLE', ops:'Jb', opcode:0x7E}, {name:'JG', ops:'Jb', opcode:0x7F}],
+            // Row 8
+            [{name:'GRP1', ops:'Eb,Ib', opcode:0x80}, {name:'GRP1', ops:'Ev,Iv', opcode:0x81}, {name:'GRP1', ops:'Eb,Ib', opcode:0x82}, {name:'GRP1', ops:'Ev,Ib', opcode:0x83},
+             {name:'TEST', ops:'Gb Eb', opcode:0x84}, {name:'TEST', ops:'Gv Ev', opcode:0x85}, {name:'XCHG', ops:'Gb Eb', opcode:0x86}, {name:'XCHG', ops:'Gv Ev', opcode:0x87},
+             {name:'MOV', ops:'Eb Gb', opcode:0x88}, {name:'MOV', ops:'Ev Gv', opcode:0x89}, {name:'MOV', ops:'Gb Eb', opcode:0x8A}, {name:'MOV', ops:'Gv Ev', opcode:0x8B},
+             {name:'MOV', ops:'Ew Sw', opcode:0x8C}, {name:'LEA', ops:'Gv M', opcode:0x8D}, {name:'MOV', ops:'Sw Ew', opcode:0x8E}, {name:'POP', ops:'Ev', opcode:0x8F}],
+            // Row 9
+            [{name:'NOP', ops:'', opcode:0x90}, {name:'XCHG', ops:'CX AX', opcode:0x91}, {name:'XCHG', ops:'DX AX', opcode:0x92}, {name:'XCHG', ops:'BX AX', opcode:0x93},
+             {name:'XCHG', ops:'SP AX', opcode:0x94}, {name:'XCHG', ops:'BP AX', opcode:0x95}, {name:'XCHG', ops:'SI AX', opcode:0x96}, {name:'XCHG', ops:'DI AX', opcode:0x97},
+             {name:'CBW', ops:'', opcode:0x98}, {name:'CWD', ops:'', opcode:0x99}, {name:'CALL', ops:'Ap', opcode:0x9A}, {name:'WAIT', ops:'', opcode:0x9B},
+             {name:'PUSHF', ops:'', opcode:0x9C}, {name:'POPF', ops:'', opcode:0x9D}, {name:'SAHF', ops:'', opcode:0x9E}, {name:'LAHF', ops:'', opcode:0x9F}],
+            // Row A
+            [{name:'MOV', ops:'AL Ob', opcode:0xA0}, {name:'MOV', ops:'AX Ov', opcode:0xA1}, {name:'MOV', ops:'Ob AL', opcode:0xA2}, {name:'MOV', ops:'Ov AX', opcode:0xA3},
+             {name:'MOVSB', ops:'', opcode:0xA4}, {name:'MOVSW', ops:'', opcode:0xA5}, {name:'CMPSB', ops:'', opcode:0xA6}, {name:'CMPSW', ops:'', opcode:0xA7},
+             {name:'TEST', ops:'AL Ib', opcode:0xA8}, {name:'TEST', ops:'AX Iv', opcode:0xA9}, {name:'STOSB', ops:'', opcode:0xAA}, {name:'STOSW', ops:'', opcode:0xAB},
+             {name:'LODSB', ops:'', opcode:0xAC}, {name:'LODSW', ops:'', opcode:0xAD}, {name:'SCASB', ops:'', opcode:0xAE}, {name:'SCASW', ops:'', opcode:0xAF}],
+            // Row B
+            [{name:'MOV', ops:'AL Ib', opcode:0xB0}, {name:'MOV', ops:'CL Ib', opcode:0xB1}, {name:'MOV', ops:'DL Ib', opcode:0xB2}, {name:'MOV', ops:'BL Ib', opcode:0xB3},
+             {name:'MOV', ops:'AH Ib', opcode:0xB4}, {name:'MOV', ops:'CH Ib', opcode:0xB5}, {name:'MOV', ops:'DH Ib', opcode:0xB6}, {name:'MOV', ops:'BH Ib', opcode:0xB7},
+             {name:'MOV', ops:'AX Iv', opcode:0xB8}, {name:'MOV', ops:'CX Iv', opcode:0xB9}, {name:'MOV', ops:'DX Iv', opcode:0xBA}, {name:'MOV', ops:'BX Iv', opcode:0xBB},
+             {name:'MOV', ops:'SP Iv', opcode:0xBC}, {name:'MOV', ops:'BP Iv', opcode:0xBD}, {name:'MOV', ops:'SI Iv', opcode:0xBE}, {name:'MOV', ops:'DI Iv', opcode:0xBF}],
+            // Row C
+            [null, null, {name:'RET', ops:'Iw', opcode:0xC2}, {name:'RET', ops:'', opcode:0xC3},
+             {name:'LES', ops:'Gv Mp', opcode:0xC4}, {name:'LDS', ops:'Gv Mp', opcode:0xC5}, {name:'MOV', ops:'Eb Ib', opcode:0xC6}, {name:'MOV', ops:'Ev Iv', opcode:0xC7},
+             null, null, {name:'RETF', ops:'Iw', opcode:0xCA}, {name:'RETF', ops:'', opcode:0xCB},
+             {name:'INT', ops:'3', opcode:0xCC}, {name:'INT', ops:'Ib', opcode:0xCD}, {name:'INTO', ops:'', opcode:0xCE}, {name:'IRET', ops:'', opcode:0xCF}],
+            // Row D
+            [{name:'GRP2', ops:'', opcode:0xD0, nonClickable:true}, {name:'GRP2', ops:'', opcode:0xD1, nonClickable:true}, {name:'GRP2', ops:'', opcode:0xD2, nonClickable:true}, {name:'GRP2', ops:'', opcode:0xD3, nonClickable:true},
+             {name:'AAM', ops:'I0', opcode:0xD4}, {name:'AAD', ops:'I0', opcode:0xD5}, null, {name:'XLAT', ops:'', opcode:0xD7},
+             {name:'ESC', ops:'0', opcode:0xD8}, {name:'ESC', ops:'1', opcode:0xD9}, {name:'ESC', ops:'2', opcode:0xDA}, {name:'ESC', ops:'3', opcode:0xDB},
+             {name:'ESC', ops:'4', opcode:0xDC}, {name:'ESC', ops:'5', opcode:0xDD}, {name:'ESC', ops:'6', opcode:0xDE}, {name:'ESC', ops:'7', opcode:0xDF}],
+            // Row E
+            [{name:'LOOPNZ', ops:'Jb', opcode:0xE0}, {name:'LOOPZ', ops:'Jb', opcode:0xE1}, {name:'LOOP', ops:'Jb', opcode:0xE2}, {name:'JCXZ', ops:'Jb', opcode:0xE3},
+             {name:'IN', ops:'AL Ib', opcode:0xE4}, {name:'IN', ops:'AX Ib', opcode:0xE5}, {name:'OUT', ops:'Ib AL', opcode:0xE6}, {name:'OUT', ops:'Ib AX', opcode:0xE7},
+             {name:'CALL', ops:'Jv', opcode:0xE8}, {name:'JMP', ops:'Jv', opcode:0xE9}, {name:'JMP', ops:'Ap', opcode:0xEA}, {name:'JMP', ops:'Jb', opcode:0xEB},
+             {name:'IN', ops:'AL DX', opcode:0xEC}, {name:'IN', ops:'AX DX', opcode:0xED}, {name:'OUT', ops:'DX AL', opcode:0xEE}, {name:'OUT', ops:'DX AX', opcode:0xEF}],
+            // Row F
+            [{name:'LOCK', ops:'', opcode:0xF0}, null, {name:'REPNZ', ops:'', opcode:0xF2}, {name:'REPZ', ops:'', opcode:0xF3},
+             {name:'HLT', ops:'', opcode:0xF4}, {name:'CMC', ops:'', opcode:0xF5}, {name:'GRP3a', ops:'', opcode:0xF6, nonClickable:true}, {name:'GRP3b', ops:'', opcode:0xF7, nonClickable:true},
+             {name:'CLC', ops:'', opcode:0xF8}, {name:'STC', ops:'', opcode:0xF9}, {name:'CLI', ops:'', opcode:0xFA}, {name:'STI', ops:'', opcode:0xFB},
+             {name:'CLD', ops:'', opcode:0xFC}, {name:'STD', ops:'', opcode:0xFD}, {name:'GRP4', ops:'', opcode:0xFE, nonClickable:true}, {name:'GRP5', ops:'', opcode:0xFF, nonClickable:true}]
+        ];
+
+        // Group instruction data
+        const groupInstructions = {
+            'GRP1': [
+                {name:'ADD', ops:'Eb,Ib', opcode:0x80, sub:0}, {name:'OR', ops:'Eb,Gb', opcode:0x80, sub:1}, {name:'ADC', ops:'Eb,Gb', opcode:0x80, sub:2}, {name:'SBB', ops:'Eb,Gb', opcode:0x80, sub:3},
+                {name:'AND', ops:'Eb,Gb', opcode:0x80, sub:4}, {name:'SUB', ops:'Eb,Gb', opcode:0x80, sub:5}, {name:'XOR', ops:'Eb,Gb', opcode:0x80, sub:6}, {name:'CMP', ops:'Eb,Gb', opcode:0x80, sub:7},
+                {name:'ADD', ops:'Ev,Iv', opcode:0x81, sub:0}, {name:'OR', ops:'Ev,Iv', opcode:0x81, sub:1}, {name:'ADC', ops:'Ev,Iv', opcode:0x81, sub:2}, {name:'SBB', ops:'Ev,Iv', opcode:0x81, sub:3},
+                {name:'AND', ops:'Ev,Iv', opcode:0x81, sub:4}, {name:'SUB', ops:'Ev,Iv', opcode:0x81, sub:5}, {name:'XOR', ops:'Ev,Iv', opcode:0x81, sub:6}, {name:'CMP', ops:'Ev,Iv', opcode:0x81, sub:7}
+            ],
+            'GRP2': [
+                {name:'ROL', ops:'Eb,1', opcode:0xD0, sub:0}, {name:'ROR', ops:'Eb,1', opcode:0xD0, sub:1}, {name:'RCL', ops:'Eb,1', opcode:0xD0, sub:2}, {name:'RCR', ops:'Eb,1', opcode:0xD0, sub:3},
+                {name:'SHL', ops:'Eb,1', opcode:0xD0, sub:4}, {name:'SHR', ops:'Eb,1', opcode:0xD0, sub:5}, null, {name:'SAR', ops:'Eb,1', opcode:0xD0, sub:7},
+                {name:'ROL', ops:'Ev,1', opcode:0xD1, sub:0}, {name:'ROR', ops:'Ev,1', opcode:0xD1, sub:1}, {name:'RCL', ops:'Ev,1', opcode:0xD1, sub:2}, {name:'RCR', ops:'Ev,1', opcode:0xD1, sub:3},
+                {name:'SHL', ops:'Ev,1', opcode:0xD1, sub:4}, {name:'SHR', ops:'Ev,1', opcode:0xD1, sub:5}, null, {name:'SAR', ops:'Ev,1', opcode:0xD1, sub:7}
+            ],
+            'GRP3': [
+                {name:'TEST', ops:'Eb', opcode:0xF6, sub:0}, null, {name:'NOT', ops:'Eb', opcode:0xF6, sub:2}, {name:'NEG', ops:'Eb', opcode:0xF6, sub:3},
+                {name:'MUL', ops:'Eb', opcode:0xF6, sub:4}, {name:'IMUL', ops:'Eb', opcode:0xF6, sub:5}, {name:'DIV', ops:'Eb', opcode:0xF6, sub:6}, {name:'IDIV', ops:'Eb', opcode:0xF6, sub:7},
+                {name:'TEST', ops:'Ev', opcode:0xF7, sub:0}, null, {name:'NOT', ops:'Ev', opcode:0xF7, sub:2}, {name:'NEG', ops:'Ev', opcode:0xF7, sub:3},
+                {name:'MUL', ops:'Ev', opcode:0xF7, sub:4}, {name:'IMUL', ops:'Ev', opcode:0xF7, sub:5}, {name:'DIV', ops:'Ev', opcode:0xF7, sub:6}, {name:'IDIV', ops:'Ev', opcode:0xF7, sub:7}
+            ],
+            'GRP4': [
+                {name:'INC', ops:'Eb', opcode:0xFE, sub:0}, {name:'DEC', ops:'Eb', opcode:0xFE, sub:1}, null, null, null, null, null, null
+            ],
+            'GRP5': [
+                {name:'INC', ops:'Ev', opcode:0xFF, sub:0}, {name:'DEC', ops:'Ev', opcode:0xFF, sub:1}, {name:'CALL', ops:'', opcode:0xFF, sub:2}, {name:'CALL', ops:'Ep', opcode:0xFF, sub:3},
+                {name:'JMP', ops:'', opcode:0xFF, sub:4}, {name:'JMP', ops:'Ep', opcode:0xFF, sub:5}, {name:'PUSH', ops:'', opcode:0xFF, sub:6}, null
+            ]
+        };
+
+        // Parse microcode data
+        function parseMicrocode(text) {
+            const lines = text.split(/\r?\n/);
+            allMicrocode = [];
+
+            lines.forEach(line => {
+                // Must start with a 3-hex-digit address
+                const m = line.match(/^\s*([0-9a-fA-F]{3})/);
+                if (!m) return;
+                const addr = m[1];
+
+                // Parse binary representation (A-U)
+                // The binary section is from position 4 to approximately position 28
+                // Extract just the letters that represent the binary encoding
+                const binarySection = line.substring(4, 30);
+                const binaryLetters = 'ABCDEFGHIJKLMNOPQRSTU';
+                let binaryStr = '';
+                let ones = 0;
+
+                for (let i = 0; i < 21; i++) {
+                    const letter = binaryLetters[i];
+                    // Check if this letter appears in the binary section
+                    if (binarySection.includes(letter)) {
+                        binaryStr += '1';
+                        ones++;
+                    } else {
+                        binaryStr += '0';
+                    }
+                }
+                if (ones === 0) binaryStr = '';
+
+                // Find the arrow to parse source and destination
+                const moveSection = line.substring(30, 50);
+                const arrowIdx = moveSection.indexOf('->');
+                let move = '';
+                let actionParts = [];
+                let opcodeIdx = -1;
+                let afterParts = [];
+                if (arrowIdx !== -1) {
+                    // Extract source (word before arrow)
+                    const source = moveSection.substring(0, arrowIdx).trim();
+                    let dest = moveSection.substring(arrowIdx + 2).trim();
+                    move = `${source} -> ${dest}`;
+                }
+                let opcode = line.substring(73, 87).trim().trim();
+                let asm = line.substring(87).trim();
+                const action = line.substring(50, 73).trim();
+
+                // Decode instruction type only if we have bits
+                const typ = (binaryStr && binaryStr.length >= 11) ? decodeType(binaryStr) : -1;
+
+                allMicrocode.push({
+                    addr,
+                    binary: binaryStr,
+                    move,
+                    action,
+                    opcode,
+                    asm,
+                    type: typ,
+                    raw: line
+                });
+            });
+
+            buildLabelIndex();
+            updateStats();
+        }
+
+        function calcUaddr() {
+            let uaddr = 0;
+            allMicrocode.forEach((mc, idx) => {
+                if (mc.opcode != "") {
+                    const op = mc.opcode.replace(/\?/g, "0").split(".");
+                    const AR = parseInt(op[0], 2);
+                    const CR = parseInt(op[1], 2) * 4;
+                    uaddr = (AR << 4) | CR;
+                }
+                mc.uaddr = uaddr;
+                uaddr++;
+            });
+        }
+
+        function buildLabelIndex() {
+            labelIndex = {};
+            allMicrocode.forEach((mc, idx) => {
+                if (mc.asm && mc.asm.trim()) {
+                    const tok = mc.asm.trim().split(/\s+/)[0];
+                    if (tok && labelIndex[tok] === undefined) labelIndex[tok] = idx; // keep first occurrence
+                }
+            });
+        }
+
+        function decodeType(binary) {
+            if (!binary || binary.length < 14) return -1;
+            // L = binary[11], M = binary[12], N = binary[13]
+            const L = binary[11];
+            const M = binary[12];
+            const N = binary[13];
+
+            const LM = L + M;
+            const LMN = L + M + N;
+
+            if (LM === '00') return 0;      // short jump
+            if (LM === '01') return 1;      // ALU
+            if (LMN === '100') return 4;    // bookkeeping
+            if (LMN === '101') return 5;    // long jump
+            if (LMN === '110') return 6;    // memory
+            if (LMN === '111') return 7;    // long call
+            return -1;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('microcodeTable');
+            tbody.innerHTML = '';
+
+            if (allMicrocode.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-results">No matching microcode instructions found</td></tr>';
+                return;
+            }
+
+            allMicrocode.forEach((mc, idx) => {
+                const row = document.createElement('tr');
+                const binaryCell = document.createElement('td');
+                binaryCell.className = 'binary';
+                binaryCell.innerHTML = createSegmentedBinary(mc.binary);
+
+                const addrCell = document.createElement('td');
+                addrCell.className = 'addr';
+                addrCell.textContent = mc.addr;
+
+                const moveCell = document.createElement('td');
+                moveCell.className = 'move';
+                moveCell.innerHTML = formatMove(mc.move);
+
+                const actionCell = document.createElement('td');
+                actionCell.className = 'action';
+                actionCell.innerHTML = formatAction(mc.action, mc.type, mc.uaddr);
+
+                const opcodeCell = document.createElement('td');
+                opcodeCell.className = 'opcode';
+                opcodeCell.textContent = mc.opcode;
+
+                const asmCell = document.createElement('td');
+                asmCell.className = 'asm';
+                asmCell.textContent = mc.asm;
+
+                row.appendChild(addrCell);
+                row.appendChild(binaryCell);
+                row.appendChild(moveCell);
+                row.appendChild(actionCell);
+                row.appendChild(opcodeCell);
+                row.appendChild(asmCell);
+
+                tbody.appendChild(row);
+            });
+
+            // After rendering, attach global tooltip handlers for all segments
+            attachGlobalTooltipHandlers();
+            // Attach click-to-jump handlers for long jump/call targets
+            attachJumpHandlers();
+        }
+
+        function attachJumpHandlers() {
+            const nodes = document.querySelectorAll('#microcodeTable .jump-target');
+            const tbody = document.getElementById('microcodeTable');
+            const jumpOverride = { 'EAOFFSET': '[i]' };
+            nodes.forEach(node => {
+                if (node.__hasJumpHandler) return;
+                node.__hasJumpHandler = true;
+
+                // Add hover handler for short jump offsets
+                if (node.classList.contains('short-jump-offset')) {
+                    node.addEventListener('mouseenter', (e) => {
+                        const targetUaddr = parseInt(node.getAttribute('data-target-uaddr'), 10);
+                        if (!isNaN(targetUaddr)) {
+                            const idx = allMicrocode.findIndex(mc => mc.uaddr === targetUaddr);
+                            if (idx !== -1) {
+                                const row = tbody.children[idx];
+                                if (row) {
+                                    row.classList.add('row-highlight');
+                                }
+                            }
+                        }
+                    });
+                    node.addEventListener('mouseleave', (e) => {
+                        const targetUaddr = parseInt(node.getAttribute('data-target-uaddr'), 10);
+                        if (!isNaN(targetUaddr)) {
+                            const idx = allMicrocode.findIndex(mc => mc.uaddr === targetUaddr);
+                            if (idx !== -1) {
+                                const row = tbody.children[idx];
+                                if (row) {
+                                    row.classList.remove('row-highlight');
+                                }
+                            }
+                        }
+                    });
+                }
+
+                node.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Handle short jump offset clicks
+                    if (node.classList.contains('short-jump-offset')) {
+                        const targetUaddr = parseInt(node.getAttribute('data-target-uaddr'), 10);
+                        if (!isNaN(targetUaddr)) {
+                            const idx = allMicrocode.findIndex(mc => mc.uaddr === targetUaddr);
+                            if (idx !== -1) {
+                                const row = tbody.children[idx];
+                                if (row) {
+                                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    row.classList.add('row-highlight');
+                                    setTimeout(() => row.classList.remove('row-highlight'), 1200);
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    // Handle regular jump label clicks
+                    let label = (node.getAttribute('data-jump-label') || node.textContent).trim();
+                    if (jumpOverride[label]) label = jumpOverride[label];
+                    let idx = labelIndex[label];
+                    if (idx === undefined) {
+                        // Fallback: search first row whose asm starts with the label
+                        idx = allMicrocode.findIndex(mc => mc.asm && mc.asm.trim().split(/\s+/)[0] === label);
+                    }
+                    if (idx !== undefined) {
+                        const row = tbody.children[idx];
+                        if (row) {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            row.classList.add('row-highlight');
+                            setTimeout(() => row.classList.remove('row-highlight'), 1200);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Create or get the single global tooltip element
+        function getGlobalTooltip() {
+            let tip = document.getElementById('globalTooltip');
+            if (!tip) {
+                tip = document.createElement('div');
+                tip.id = 'globalTooltip';
+                document.body.appendChild(tip);
+            }
+            return tip;
+        }
+
+        // Attach handlers to show a single global tooltip for all segments
+        function attachGlobalTooltipHandlers() {
+            const segments = document.querySelectorAll('#microcodeTable .binary-segment, #microcodeTable .with-tip');
+            const tip = getGlobalTooltip();
+
+            segments.forEach(seg => {
+                if (seg.__hasGlobalHandlers) return;
+                seg.__hasGlobalHandlers = true;
+
+                const getContent = () => {
+                    const inner = seg.querySelector('.tooltip');
+                    return inner ? inner.innerHTML : '';
+                };
+
+                const positionTip = (mode) => {
+                    const r = seg.getBoundingClientRect();
+                    const margin = 8;
+
+                    tip.style.opacity = '1';
+                    tip.style.visibility = 'visible';
+
+                    // Provisional placement
+                    if (mode === 'right') {
+                        let left = Math.round(r.right + margin);
+                        let top = Math.round(r.top + r.height * 0.6);
+                        tip.style.left = `${left}px`;
+                        tip.style.top = `${top}px`;
+                        tip.style.transform = 'translate(0, -50%)';
+
+                        const tr = tip.getBoundingClientRect();
+                        if (tr.right > window.innerWidth - margin) {
+                            left = Math.round(r.left - tr.width - margin);
+                            tip.style.left = `${left}px`;
+                        }
+                        const halfH = tr.height / 2;
+                        const minTop = Math.round(halfH + margin);
+                        const maxTop = Math.round(window.innerHeight - margin - halfH);
+                        top = Math.max(minTop, Math.min(maxTop, top));
+                        tip.style.top = `${top}px`;
+                    } else {
+                        // above centered
+                        let left = Math.round(r.left + r.width / 2);
+                        let top = Math.round(r.top - margin);
+                        tip.style.left = `${left}px`;
+                        tip.style.top = `${top}px`;
+                        tip.style.transform = 'translate(-50%, -100%)';
+
+                        const tr = tip.getBoundingClientRect();
+                        const halfW = tr.width / 2;
+                        const minLeft = Math.round(halfW + margin);
+                        const maxLeft = Math.round(window.innerWidth - margin - halfW);
+                        left = Math.max(minLeft, Math.min(maxLeft, left));
+                        tip.style.left = `${left}px`;
+
+                        if (tr.top < margin) {
+                            // fallback: place below
+                            top = Math.round(r.bottom + margin);
+                            tip.style.top = `${top}px`;
+                            tip.style.transform = 'translate(-50%, 0)';
+                        }
+                    }
+                };
+
+                const onEnter = () => {
+                    tip.innerHTML = getContent();
+                    const row = seg.closest('tr');
+                    const tbody = row && row.parentElement;
+                    const index = tbody ? Array.prototype.indexOf.call(tbody.children, row) : 0;
+                    const mode = index <= 1 ? 'right' : 'above';
+                    positionTip(mode);
+                    // update on scroll/resize
+                    seg.__globalScroll = () => positionTip(mode);
+                    seg.__globalResize = () => positionTip(mode);
+                    window.addEventListener('scroll', seg.__globalScroll, { passive: true });
+                    window.addEventListener('resize', seg.__globalResize);
+                };
+
+                const onMove = () => {
+                    const row = seg.closest('tr');
+                    const tbody = row && row.parentElement;
+                    const index = tbody ? Array.prototype.indexOf.call(tbody.children, row) : 0;
+                    const mode = index <= 1 ? 'right' : 'above';
+                    positionTip(mode);
+                };
+
+                const onLeave = () => {
+                    tip.style.opacity = '0';
+                    tip.style.visibility = 'hidden';
+                    window.removeEventListener('scroll', seg.__globalScroll || (()=>{}));
+                    window.removeEventListener('resize', seg.__globalResize || (()=>{}));
+                    seg.__globalScroll = null;
+                    seg.__globalResize = null;
+                };
+
+                seg.addEventListener('mouseenter', onEnter);
+                seg.addEventListener('mousemove', onMove);
+                seg.addEventListener('mouseleave', onLeave);
+            });
+        }
+
+        function createSegmentedBinary(binary) {
+            // Break binary into segments:
+            // ABCDE (bits 0-4): Destination
+            // FGHIJ (bits 5-9): Source
+            // K (bit 10): Flag
+            // LMNOPQRSTU (bits 11-20): Action
+
+            const dest = binary.slice(0, 5);
+            const src = binary.slice(5, 10);
+            const flag = binary.slice(10, 11);
+            const action = binary.slice(11);
+
+            return `
+                ${createSegment(dest, 'dest', 'Destination', 'EDCBA')}
+                ${createSegment(src, 'src', 'Source', 'FGHIJ')}
+                ${createSegment(flag, 'flag', 'Flag', 'K')}
+                ${createSegment(action, 'action', 'Action/Type', 'LMNOPQRSTU')}
+            `;
+        }
+
+        // --- Move/Action tooltips ---
+
+        const locationDescriptions = {
+            // Hidden temporaries and buses
+            'tmpa': 'Internal ALU temporary register A.',
+            'tmpA': 'Internal ALU temporary register A.',
+            'tmpb': 'Internal ALU temporary register B (implicit 2nd ALU operand).',
+            'tmpB': 'Internal ALU temporary register B (implicit 2nd ALU operand).',
+            'tmpc': 'Internal ALU temporary register C.',
+            'tmpC': 'Internal ALU temporary register C.',
+            'tmpaL': 'Low byte of tmpa.',
+            'tmpaH': 'High byte of tmpa.',
+            'tmpbL': 'Low byte of tmpb.',
+            'tmpbH': 'High byte of tmpb.',
+            'SIGMA': 'Result of the last ALU operation.',
+            'Σ': 'Result of the last ALU operation.',
+            'ONES': 'Constant of all 1s (0xFF/0xFFFF).',
+            'ZERO': 'Constant zero.',
+
+            // Upper registers and pointers
+            'PC': 'Program counter (microcode AR/CR combined).',
+            'IND': 'Address offset register used for bus accesses.',
+            'OPR': 'Operand register: last word read/written from the bus (excl. prefetch).',
+            'Q': 'Prefetch queue byte: the next instruction byte.',
+
+            // General-purpose and segment-related
+            'RA': 'ES segment register.',
+            'RC': 'CS segment register.',
+            'RS': 'SS segment register.',
+            'RD': 'DS segment register.',
+            'XA': 'AX general register.',
+            'BC': 'CX general register.',
+            'DE': 'DX general register.',
+            'HL': 'BX general register.',
+            'SP': 'Stack Pointer.',
+            'MP': 'BP register.',
+            'IJ': 'SI index register.',
+            'IK': 'DI index register.',
+
+            // Low registers and misc
+            'A': 'AL register.',
+            'B': 'CH register.',
+            'E': 'DL register.',
+            'F': 'Flags register.',
+            'X': 'AH register.',
+            'M': 'M: effective-address register/bus-selected operand per ModRM.',
+            'R': 'R: register selected by ModRM r field (operand register).',
+            'N': 'N: destination operand register for the instruction (often called R in some contexts).',
+
+            // Special sinks
+            'no dest': 'No writeback destination for this micro-instruction.'
+        };
+
+        const typeDescriptions = {
+            0: 'Type 0 – Short Jump: LMNOPQRSTU = 00ccccdddd (c=condition, d=dest).',
+            1: 'Type 1 – ALU Operation: 01ooooossn (o=op, s=source, n=NX).',
+            4: 'Type 4 – Bookkeeping: 100xxxxyyy (x=op1, y=op2).',
+            5: 'Type 5 – Long Jump: 101cccdddd (c=condition, d=dest).',
+            6: 'Type 6 – Memory R/W: 110dirssuu (d=dir, i=IRQ, r=RNI, ss=segment, uu=IND update).',
+            7: 'Type 7 – Long Call: 111cccdddd (c=condition, d=dest).'
+        };
+
+        const actionDescriptions = {
+            // Bookkeeping op1 (OPQR)
+            'MAXC': 'Set internal counter to 15 or 7 depending on word size.',
+            'FLUSH': 'Flush the instruction prefetch queue.',
+            'CF1': 'Invert F1 flag.',
+            'CITF': 'Clear Interrupt and Trap flags.',
+            'RCY': 'Reset the Carry flag.',
+            'CCOF': 'Clear Carry and Overflow flags.',
+            'SCOF': 'Set Carry and Overflow flags.',
+            'WAIT': 'Terminal step of WAIT instruction flow.',
+            'none': 'No operation.',
+
+            // Bookkeeping op2 (STU)
+            'RNI': 'Run-Next-Instruction, marking end of microcode for this instruction.',
+            'WB': 'Write back to effective address; when memory, skip one micro-op in the next step.',
+            'CORR': 'Correct PC based on prefetch queue bytes (usually after SUSP).',
+            'SUSP': 'Suspend prefetching.',
+            'RTN': 'Return to saved microcode location.',
+            'L8': 'Length 8 bits: condition indicating the current instruction is byte-sized (8-bit) operation.',
+
+            // Memory type 6 fields/actions
+            'W': 'Initiate memory write bus cycle.',
+            'w': 'Initiate memory write bus cycle.',
+            'R': 'Initiate memory read bus cycle.',
+            'DA': 'Segment select: DA == ES.',
+            'D0': 'Segment select: D0 == segment 0 (vectors/port I/O).',
+            'DS': 'Segment select: DS == SS.',
+            'DD': 'Segment select: DD == DS by default (overrideable).',
+            'P2': 'IND update: +2 (word).',
+            'BL': 'IND update: by word size and direction.',
+            'M2': 'IND update: -2 (word).',
+            'P0': 'IND update: no change.',
+
+            // ALU operation primitives
+            'INC2': 'Add 2 (increment by 2): dedicated ALU op to add constant 2; used for stack updates and word stepping.',
+            'DEC2': 'Subtract 2 (decrement by 2): dedicated ALU op to subtract constant 2; used for PUSH and word-stepping.',
+            'XI': 'Opcode-dependent ALU operation: function selected via internal X register so multiple opcodes share microcode.',
+            'RRCY': 'Rotate Right through Carry: bit0 -> CF, previous CF -> MSB.',
+            'LRCY': 'Rotate Left through Carry: MSB -> CF, previous CF -> bit0.',
+            'PASS': 'Pass argument through: ALU outputs its input (Σ := arg) without modification.',
+            'ADD': 'Addition primitive: base ALU add operation (distinct from machine ADD).',
+            'DEC': 'Decrement primitive: subtract 1 (distinct from machine DEC).',
+            'INC': 'Increment primitive: add 1 (distinct from machine INC).',
+            'AND': 'Logical AND primitive: bitwise AND operation.',
+
+            // ALU/NX
+            'NX': 'NX: next-to-last micro-instruction in the routine (advance to next opcode after next uop).',
+            'NXT': 'NX: next-to-last micro-instruction in the routine (advance to next opcode after next uop).',
+
+            // Misc
+            'IRQ': 'Initial special IRQ acknowledge bus cycle.',
+            'F': 'Update Flags register.',
+            'FLAGS': 'Update Flags register.',
+
+            // Jump/Call conditions
+            'UNC': 'Unconditional: take the microcode jump/call without testing a condition.',
+            'NZ': 'Not Zero: internal Z16 latch is not zero.',
+            'X0': 'Opcode bit 3 is 1 (condition depends on the instruction encoding).',
+            'NCY': 'No Carry: carry flag is clear.',
+            'F1': 'F1 flag is active (micro-architectural loop/rep control).',
+            'INT': 'Interrupt pending condition is active.',
+            'XC': 'Opcode-defined condition (from low 4 bits of the opcode).',
+
+            // Extended condition tokens
+            'F1ZZ': 'Condition: REPNE state differs from ZF (REPNE ≠ ZF).',
+            'MOD1': 'Condition: 1-byte offset (addressing mode yields 1-byte displacement).',
+            'Z': 'Zero: internal Z16 latch equals zero.',
+            'NCZ': 'Counter not zero: internal counter is nonzero.',
+            'TEST': 'External TEST pin (hardware test input).',
+            'OF': 'Overflow flag is set.',
+            'CY': 'Carry flag is set.',
+            'NF1': 'F1 flag not active.',
+
+            // Microcode subroutines and routines (targets for long jumps/calls)
+            'AAEND': 'ASCII Adjust End: final step of AAM/AAD; writes result to AL and ends with RNI while updating flags.',
+            'AAD': 'ASCII Adjust for Division: adjusts AX for decimal input; uses CORX and ends at AAEND.',
+            'AAM': 'ASCII Adjust for Multiplication: prepares AL/AH for decimal multiply; calls CORD then AAEND.',
+            'CORX': 'Core multiply routine: performs shifts/adds to produce 32-bit product in tmpA:tmpC.',
+            'CORD': 'Core divide routine: long division for DIV/IDIV using tmpA/tmpC dividend and tmpB divisor.',
+            'EAOFFSET': 'Effective Address Offset: adds displacement to computed EA. Control then branches to one of: [i] (immediate displacement), EALOAD (if reading from memory), or EADONE (no memory read).',
+            'EADONE': 'Effective Address Done: no memory read, just update EA.',
+            'EALOAD': 'Effective Address Load: reads memory using EA in tmpA; result into IND/tmpB.',
+            'FARCALL': 'Far Call setup: prepares for pushing CS:IP in far call.',
+            'FARCALL2': 'Far Call routine 2: pushes old CS, updates CS, corrects PC (CORR), then jumps to NEARCALL.',
+            'FARRET': 'Far Return: pops IP and CS from stack (used by RETF/IRET).',
+            'IMULCOF': 'Signed multiply flag correction: sets CF/OF based on sign-extension fit.',
+            'INTR': 'Interrupt handler core: computes IVT address, loads CS:IP, clears IF/TF (CITF), pushes flags, branches to FARCALL2.',
+            'MULCOF': 'Unsigned multiply flag correction: sets/clears CF/OF depending on upper half zero.',
+            'NEARCALL': 'Near Call routine: pushes old PC, updates PC to target, flushes prefetch, then RNI.',
+            'NEGATE': 'Negation helper: two’s-complement of register pair based on F1 (sign tracking).',
+            'PREIDIV': 'Pre-signed division setup: prepares operands/sign state before CORD for IDIV.',
+            'PREIMUL': 'Pre-signed multiply setup: normalizes operands/sign state before CORX for IMUL.',
+            'RELJMP': 'Relative Jump helper: adds offset in tmpB to PC.',
+            'RPTI': 'Repeat-prefix interrupt helper: saves CX, corrects PC (CORR), flushes to force interrupt handling.',
+            'RPTS': 'Repeat-prefix test: checks CX; loops or ends via RNI as appropriate.'
+        };
+
+        function createTipSpan(label, title, description, extraRowsHTML = '', extraClass = '', extraAttrs = '') {
+            const tip = `
+                <div class="tooltip">
+                    <div class="tooltip-title">${title}</div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Name:</span>
+                        <span class="tooltip-value">${label}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Info:</span>
+                        <span class="tooltip-value">${description}</span>
+                    </div>
+                    ${extraRowsHTML}
+                </div>`;
+            const cls = extraClass ? ` with-tip ${extraClass}` : ' with-tip';
+            const attrs = extraAttrs ? ' ' + extraAttrs : '';
+            return `<span class="${cls.trim()}"${attrs}>${label}${tip}</span>`;
+        }
+
+        function formatMove(moveStr) {
+            const idx = moveStr.indexOf('->');
+            if (idx === -1) return moveStr;
+            const src = moveStr.slice(0, idx).trim();
+            const dest = moveStr.slice(idx + 2).trim();
+
+            const srcDesc = locationDescriptions[src] || 'Micro-architectural location.';
+            const destKey = dest === 'no dest' ? 'no dest' : dest;
+            const destDesc = locationDescriptions[destKey] || (destKey === 'no dest' ? 'No writeback destination.' : 'Micro-architectural location.');
+
+            const srcSpan = createTipSpan(src, 'Location', srcDesc);
+            const destSpan = createTipSpan(dest, 'Location', destDesc);
+            return `${srcSpan} <span class="sep">-&gt;</span> ${destSpan}`;
+        }
+
+        function formatAction(actionStr, typeNum, uaddr) {
+            const parts = actionStr.split(/\s+/).filter(Boolean);
+
+            const withTips = [];
+
+            // Include a type badge with tooltip if we have a valid type
+            if (typeNum !== undefined && typeDescriptions.hasOwnProperty(typeNum)) {
+                const title = 'Micro-instruction Type';
+                const desc = typeDescriptions[typeNum];
+                withTips.push(`<span class="type-badge type-${typeNum} with-tip">${typeNum}<div class="tooltip"><div class="tooltip-title">${title}</div><div class="tooltip-row"><span class="tooltip-label">Type:</span><span class="tooltip-value">${typeNum}</span></div><div class="tooltip-row"><span class="tooltip-label">Info:</span><span class="tooltip-value">${desc}</span></div></div></span>`);
+            }
+
+            // Flatten comma-separated tokens
+            const tokens = [];
+            parts.forEach(p => p.split(',').forEach(t => tokens.push(t)));
+
+            const routineNames = new Set(['AAEND','AAD','AAM','CORX','CORD','EAOFFSET','EALOAD','EADONE','FARCALL','FARCALL2','FARRET','IMULCOF','INTR','MULCOF','NEARCALL','NEGATE','PREIDIV','PREIMUL','RELJMP','RPTI','RPTS']);
+
+            tokens.slice(1).forEach((tok, idx) => {
+                if (!tok) return;
+
+                // Check if this is a short jump offset (type 0, last token, and it's a number)
+                const isLastToken = idx === tokens.slice(1).length - 1;
+                const isShortJump = typeNum === 0 && isLastToken && /^\d+$/.test(tok);
+
+                if (isShortJump && uaddr !== undefined) {
+                    // Calculate target address for short jump
+                    // Replace lower 4 bits of uaddr with the offset
+                    const offset = parseInt(tok, 10);
+                    const targetUaddr = (uaddr & 0xFFF0) | offset;
+
+                    // Make the offset hoverable and clickable
+                    withTips.push(`<span class="short-jump-offset jump-target" data-target-uaddr="${targetUaddr}" style="cursor: pointer; color: var(--accent-cyan);" title="Jump to uaddr ${targetUaddr.toString(16).padStart(3, '0')}">${tok}</span>`);
+                } else if (actionDescriptions[tok]) {
+                    const isTarget = routineNames.has(tok);
+                    const extra = isTarget ? 'jump-target' : '';
+                    const attrs = isTarget ? `data-jump-label="${tok}"` : '';
+                    withTips.push(createTipSpan(tok, 'Action', actionDescriptions[tok], '', extra, attrs));
+                } else if (locationDescriptions[tok]) {
+                    // Sometimes action list includes a location (e.g., XI tmpa)
+                    withTips.push(createTipSpan(tok, 'Location', locationDescriptions[tok]));
+                } else {
+                    // plain text fallback
+                    withTips.push(tok);
+                }
+            });
+
+            return withTips.join(' ');
+        }
+        function createSegment(bits, className, title, letters) {
+            const info = decodeSegment(bits, letters);
+
+            const bitsLabel = 'Bits';
+            const bitsValue = letters === 'LMNOPQRSTU' ? colorActionBits(bits) : bits;
+
+            const tooltipHTML = `
+                <div class="tooltip">
+                    <div class="tooltip-title">${title} Field</div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">${bitsLabel}:</span>
+                        <span class="tooltip-value">${bitsValue}</span>
+                    </div>
+                    ${info}
+                </div>
+            `;
+
+            return `<span class="binary-segment ${className}">${bits}${tooltipHTML}</span>`;
+        }
+
+        function colorActionBits(bits) {
+            const L = bits[0], M = bits[1], N = bits[2];
+            const LM = L + M;
+            const LMN = L + M + N;
+
+            const span = (cls, s) => `<span class="bits ${cls}">${s}</span>`;
+
+            let out = [];
+            if (LM === '00') {
+                const type = bits.substring(0, 2);
+                const cond = bits.substring(2, 6); // NOPQ
+                const dest = bits.substring(6);    // RSTU
+                out.push(span('bits-type', type));
+                out.push(span('bits-cond', cond));
+                out.push(span('bits-dest', dest));
+            } else if (LM === '01') {
+                const type = bits.substring(0, 2);
+                const op = bits.substring(2, 7);   // NOPQR
+                const src = bits.substring(7, 9);  // ST
+                const nx = bits.substring(9);      // U
+                out.push(span('bits-type', type));
+                out.push(span('bits-op', op));
+                out.push(span('bits-src', src));
+                out.push(span('bits-nx', nx));
+            } else if (LMN === '100') {
+                const type = bits.substring(0, 3);
+                const op1 = bits.substring(3, 7);  // OPQR
+                const op2 = bits.substring(7);     // STU
+                out.push(span('bits-type', type));
+                out.push(span('bits-op', op1));
+                out.push(span('bits-upd', op2));
+            } else if (LMN === '101' || LMN === '111') {
+                const type = bits.substring(0, 3);
+                const cond = bits.substring(3, 6); // OPQ
+                const dest = bits.substring(6);    // RSTU
+                out.push(span('bits-type', type));
+                out.push(span('bits-cond', cond));
+                out.push(span('bits-dest', dest));
+            } else if (LMN === '110') {
+                const type = bits.substring(0, 3);
+                const dir = bits[3];              // O
+                const irq = bits[4];              // P
+                const rni = bits[5];              // Q
+                const seg = bits.substring(6, 8); // RS
+                const upd = bits.substring(8);    // TU
+                out.push(span('bits-type', type));
+                out.push(span('bits-dir', dir));
+                out.push(span('bits-irq', irq));
+                out.push(span('bits-rni', rni));
+                out.push(span('bits-seg', seg));
+                out.push(span('bits-upd', upd));
+            } else {
+                // Fallback: show as-is
+                out.push(bits);
+            }
+            return out.join(' ');
+        }
+
+        function decodeSegment(bits, letters) {
+            if (letters === 'EDCBA') {
+                // Destination: bits are in ABCDE order but hardware uses EDCBA
+                const reversed = bits.split('').reverse().join('');
+                const value = parseInt(reversed, 2);
+                const reg = decodeRegister(value, true);
+                return `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Hardware order:</span>
+                        <span class="tooltip-value">${reversed} (EDCBA)</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Value:</span>
+                        <span class="tooltip-value">${value}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Register:</span>
+                        <span class="tooltip-value">${reg}</span>
+                    </div>
+                `;
+            } else if (letters === 'FGHIJ') {
+                // Source: bits are in FGHIJ order but hardware uses FGIJH
+                const reordered = bits[0] + bits[1] + bits[3] + bits[4] + bits[2];
+                const value = parseInt(reordered, 2);
+                const reg = decodeRegister(value, false);
+                return `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Hardware order:</span>
+                        <span class="tooltip-value">${reordered} (FGIJH)</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Value:</span>
+                        <span class="tooltip-value">${value}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Register:</span>
+                        <span class="tooltip-value">${reg}</span>
+                    </div>
+                `;
+            } else if (letters === 'K') {
+                const meaning = bits === '1' ? 'Update flags' : 'No flag update';
+                return `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Meaning:</span>
+                        <span class="tooltip-value">${meaning}</span>
+                    </div>
+                `;
+            } else if (letters === 'LMNOPQRSTU') {
+                const L = bits[0], M = bits[1], N = bits[2];
+                const LM = L + M;
+                const LMN = L + M + N;
+
+                let type = -1;
+                let typeName = '';
+                let details = '';
+
+                if (LM === '00') {
+                    type = 0;
+                    typeName = 'Short Jump';
+                    const NOPQ = N + bits[3] + bits[4] + bits[5];
+                    const RSTU = bits[6] + bits[7] + bits[8] + bits[9];
+                    const condition = decodeCondition(NOPQ, true);
+                    const dest = parseInt(RSTU, 2);
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Condition (NOPQ):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-cond\">${NOPQ}</span> - ${condition}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Dest (RSTU):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-dest\">${RSTU}</span> (${dest})</span>
+                        </div>
+                    `;
+                }
+                else if (LM === '01') {
+                    type = 1;
+                    typeName = 'ALU Operation';
+                    const NOPQR = bits.substring(2, 7);
+                    const ST = bits.substring(7, 9);
+                    const U = bits[9];
+                    const op = decodeALUOp(NOPQR);
+                    const src = ST === '00' ? 'tmpa' : ST === '01' ? 'tmpb' : 'tmpc';
+                    const nx = U === '1' ? 'Yes' : 'No';
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Operation:</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-op\">${NOPQR}</span> - ${op}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Source (ST):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-src\">${ST}</span> - ${src}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">NX (next):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-nx\">${U}</span> - ${nx}</span>
+                        </div>
+                    `;
+                }
+                else if (LMN === '100') {
+                    type = 4;
+                    typeName = 'Bookkeeping';
+                    const OPQR = bits.substring(3, 7);
+                    const STU = bits.substring(7, 10);
+                    const op1 = decodeBookkeepingOp1(OPQR);
+                    const op2 = decodeBookkeepingOp2(STU);
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Op1 (OPQR):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-op\">${OPQR}</span> - ${op1}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Op2 (STU):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-upd\">${STU}</span> - ${op2}</span>
+                        </div>
+                    `;
+                }
+                else if (LMN === '101') {
+                    type = 5;
+                    typeName = 'Long Jump';
+                    const OPQ = bits.substring(3, 6);
+                    const RSTU = bits.substring(6, 10);
+                    const condition = decodeCondition(OPQ, false);
+                    const dest = parseInt(RSTU, 2);
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Condition (OPQ):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-cond\">${OPQ}</span> - ${condition}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Dest (RSTU):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-dest\">${RSTU}</span> (${dest})</span>
+                        </div>
+                    `;
+                }
+                else if (LMN === '110') {
+                    type = 6;
+                    typeName = 'Memory R/W';
+                    const O = bits[3];
+                    const P = bits[4];
+                    const Q = bits[5];
+                    const RS = bits.substring(6, 8);
+                    const TU = bits.substring(8, 10);
+                    const dir = O === '0' ? 'Read' : 'Write';
+                    const irq = P === '1' ? 'Yes' : 'No';
+                    const rni = Q === '1' ? 'Yes' : 'No';
+                    const seg = decodeSegment_Mem(RS);
+                    const upd = decodeINDUpdate(TU);
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Direction (O):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-dir\">${O}</span> - ${dir}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">IRQ Ack (P):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-irq\">${P}</span> - ${irq}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">RNI (Q):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-rni\">${Q}</span> - ${rni}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Segment (RS):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-seg\">${RS}</span> - ${seg}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">IND Update (TU):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-upd\">${TU}</span> - ${upd}</span>
+                        </div>
+                    `;
+                }
+                else if (LMN === '111') {
+                    type = 7;
+                    typeName = 'Long Call';
+                    const OPQ = bits.substring(3, 6);
+                    const RSTU = bits.substring(6, 10);
+                    const condition = decodeCondition(OPQ, false);
+                    const dest = parseInt(RSTU, 2);
+                    details = `
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Condition (OPQ):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-cond\">${OPQ}</span> - ${condition}</span>
+                        </div>
+                        <div class=\"tooltip-row\">
+                            <span class=\"tooltip-label\">Dest (RSTU):</span>
+                            <span class=\"tooltip-value\"><span class=\"bits bits-dest\">${RSTU}</span> (${dest})</span>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Type:</span>
+                        <span class="tooltip-value"><span class="type-badge type-${type}">${type}</span> - ${typeName}</span>
+                    </div>
+                    ${details}
+                `;
+            }
+
+            return '';
+        }
+
+        function formatBinary(binary) {
+            // Add spaces for readability: ABCDE FGHIJ K LMNOPQRSTU
+            return binary.slice(0, 5) + ' ' + binary.slice(5, 10) + ' ' +
+                   binary.slice(10, 11) + ' ' + binary.slice(11);
+        }
+
+
+        function decodeRegister(code, isDest) {
+            const regs = {
+                0: 'RA (ES)', 1: 'RC (CS)', 2: 'RS (SS)', 3: 'RD (DS)',
+                4: 'PC', 5: 'IND', 6: 'OPR', 7: 'Q',
+                8: 'A (AL)', 10: 'E (DL)', 15: 'F (Flags)',
+                16: 'X (AH)', 17: 'B (CH)', 18: 'M', 19: 'N', 20: 'SIGMA(source)/tmpaL(destination)',
+                21: 'ONES(source)/tmpbL(destination)', 22: 'ZERO(source)/tmpaH(destination)', 23: 'ZERO(destination)/tmpbH(source)',
+                24: 'XA (AX)', 25: 'BC (CX)', 26: 'DE (DX)', 27: 'HL (BX)',
+                28: 'SP', 29: 'MP (BP)', 30: 'IJ (SI)', 31: 'IK (DI)',
+                12: 'tmpa', 13: 'tmpb', 14: 'tmpc'
+            };
+            return regs[code] || `Unknown (${code})`;
+        }
+
+        function decodeCondition(bits, isShort) {
+            const conditions = {
+                '000': 'UNC (unconditional)',
+                '010': 'NZ (not zero)',
+                '011': 'X0 (opcode bit 3)',
+                '100': 'NCY (no carry)',
+                '101': 'F1 (F1 flag)',
+                '110': 'INT (interrupt)',
+                '111': 'XC (opcode condition)',
+                '0000': 'F1ZZ (REPNE≠ZF)',
+                '0001': 'MOD1 (1 byte offset)',
+                '0010': 'L8 (length 8-bit operation)',
+                '0011': 'Z (zero)',
+                '0100': 'NCZ (counter not zero)',
+                '0101': 'TEST (TEST pin)',
+                '0110': 'OF (overflow)',
+                '0111': 'CY (carry)',
+                '1001': 'NF1 (F1 not active)'
+            };
+            return conditions[bits] || `Unknown (${bits})`;
+        }
+
+        function decodeALUOp(bits) {
+            const ops = {
+                '00000': 'ADD', '00010': 'ADC', '00101': 'SUBT', '00100': 'AND',
+                '01010': 'LRCY (RCL)', '01011': 'RRCY (RCR)',
+                '10000': 'PASS', '10001': 'XI (opcode-dependent)',
+                '11000': 'INC', '11001': 'DEC', '11010': 'COM1 (NOT)',
+                '11011': 'NEG', '11100': 'INC2', '11101': 'DEC2'
+            };
+            return ops[bits] || `Unknown (${bits})`;
+        }
+
+        function decodeBookkeepingOp1(bits) {
+            const ops = {
+                '0000': 'MAXC', '0001': 'FLUSH', '0010': 'CF1', '0011': 'CITF',
+                '0100': 'RCY', '0110': 'CCOF', '0111': 'SCOF', '1000': 'WAIT',
+                '1111': 'none'
+            };
+            return ops[bits] || bits;
+        }
+
+        function decodeBookkeepingOp2(bits) {
+            const ops = {
+                '000': 'RNI', '001': 'WB', '010': 'CORR', '011': 'SUSP',
+                '100': 'RTN', '111': 'none'
+            };
+            return ops[bits] || bits;
+        }
+
+        function decodeSegment_Mem(bits) {
+            const segs = {
+                '00': 'DA (ES)',
+                '01': 'D0 (seg 0)',
+                '10': 'DS (SS)',
+                '11': 'DD (DS default)'
+            };
+            return segs[bits] || bits;
+        }
+
+        function decodeINDUpdate(bits) {
+            const upds = {
+                '00': 'P2 (IND+2)',
+                '01': 'BL (by word/dir)',
+                '10': 'M2 (IND-2)',
+                '11': 'P0 (no change)'
+            };
+            return upds[bits] || bits;
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allMicrocode.length;
+        }
+
+        // Hint management
+        const HINT_KEY = 'mcx_hover_hint_seen_v1';
+        function showHoverHintOnce() {
+            try {
+                if (localStorage.getItem(HINT_KEY)) return;
+            } catch (_) { /* ignore storage errors */ }
+            const hintEl = document.getElementById('hoverHint');
+            if (!hintEl) return;
+            hintEl.style.display = 'block';
+            document.body.classList.add('hint-active');
+            // Auto-hide after a short delay but keep "seen" unset unless user interacts
+            const autoTimer = setTimeout(() => {
+                try { localStorage.setItem(HINT_KEY, '1'); } catch (_) {}
+                hintEl.style.display = 'none';
+                document.body.classList.remove('hint-active');
+            }, 8000);
+
+            const dismiss = () => {
+                hintEl.style.display = 'none';
+                document.body.classList.remove('hint-active');
+            };
+            const markSeenAndDismiss = () => {
+                try { localStorage.setItem(HINT_KEY, '1'); } catch (_) {}
+                dismiss();
+            };
+
+            document.getElementById('hintDismiss')?.addEventListener('click', () => {
+                clearTimeout(autoTimer);
+                dismiss();
+            });
+            document.getElementById('hintNoShow')?.addEventListener('click', () => {
+                clearTimeout(autoTimer);
+                markSeenAndDismiss();
+            });
+        }
+
+        // Match opcode pattern against microcode entry
+        function matchOpcodePattern(pattern, opcode) {
+            if (!pattern) return false;
+
+            // Pattern format: AR.CR where AR is 9 bits, CR is 4 bits
+            // For regular opcodes, match against lower 8 bits of AR
+            // For GRP4/5, opcode may be 9 bits (bit 8 is set)
+            const parts = pattern.split('.');
+            if (parts.length < 2) return false;
+
+            const arPattern = parts[0].replace(/_/g, ''); // Remove underscore separators
+            if (arPattern.length < 8) return false;
+
+            // Check if this is a 9-bit match (for GRP4/5)
+            const is9Bit = opcode > 0xFF;
+            const bitsToMatch = is9Bit ? 9 : 8;
+
+            // Get the pattern bits we need to match
+            const patternToMatch = arPattern.substring(arPattern.length - bitsToMatch);
+
+            // Convert opcode to binary string
+            const opcodeBinary = opcode.toString(2).padStart(bitsToMatch, '0');
+
+            // Match pattern (? = wildcard)
+            for (let i = 0; i < bitsToMatch; i++) {
+                if (patternToMatch[i] !== '?' && patternToMatch[i] !== opcodeBinary[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Find microcode entry for instruction
+        function findMicrocodeForInstruction(opcode, subOpcode) {
+            // For GRP3/GRP4/GRP5 (F6/F7/FE/FF), use special encoding
+            // AR = (op & 1) << 8 + (op & 0xf8) + reg
+            // i.e., replace lowest 3 bits with reg field, put bit 0 at bit 8
+            let searchOpcode = opcode;
+
+            if ((opcode === 0xF6 || opcode === 0xF7 || opcode === 0xFE || opcode === 0xFF) && subOpcode !== undefined) {
+                // Special encoding for GRP3/GRP4/GRP5
+                const bit0 = opcode & 1;          // Bit 0 of opcode
+                const upper5 = opcode & 0xF8;     // Upper 5 bits (bits 7-3)
+                searchOpcode = (bit0 << 8) | upper5 | subOpcode;
+            }
+
+            for (let i = 0; i < allMicrocode.length; i++) {
+                const mc = allMicrocode[i];
+                if (matchOpcodePattern(mc.opcode, searchOpcode)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Scroll to microcode row
+        function scrollToMicrocodeRow(index) {
+            if (index < 0 || index >= allMicrocode.length) return;
+
+            const tbody = document.getElementById('microcodeTable');
+            const rows = tbody.getElementsByTagName('tr');
+            if (index < rows.length) {
+                rows[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Highlight the row briefly
+                rows[index].style.transition = 'background-color 0.3s';
+                rows[index].style.backgroundColor = '#007acc';
+                setTimeout(() => {
+                    rows[index].style.backgroundColor = '';
+                }, 2000);
+            }
+        }
+
+        // Handle instruction click
+        function handleInstructionClick(opcode, subOpcode) {
+            const mcIndex = findMicrocodeForInstruction(opcode, subOpcode);
+            if (mcIndex >= 0) {
+                // Close modal
+                document.getElementById('instructionPicker').classList.remove('active');
+                // Scroll to microcode
+                setTimeout(() => scrollToMicrocodeRow(mcIndex), 100);
+            } else {
+                const opcodeStr = subOpcode !== undefined
+                    ? `0x${opcode.toString(16).toUpperCase()}/${subOpcode}`
+                    : `0x${opcode.toString(16).toUpperCase()}`;
+                alert('Microcode entry not found for opcode ' + opcodeStr);
+            }
+        }
+
+        // Render instruction grid
+        function renderInstructionGrid() {
+            const container = document.getElementById('pickerContent');
+
+            // Main grid
+            const gridHTML = `
+                <div class="instruction-grid">
+                    ${renderGridHeader()}
+                    ${instructionGrid.map((row, rowIndex) => renderGridRow(row, rowIndex)).join('')}
+                </div>
+                ${renderGroupSections()}
+            `;
+
+            container.innerHTML = gridHTML;
+
+            // Add click handlers
+            container.querySelectorAll('.grid-cell:not(.grid-header):not(.empty)').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const opcode = parseInt(cell.dataset.opcode, 10);
+                    const subOpcode = cell.dataset.subopcode !== undefined ? parseInt(cell.dataset.subopcode, 10) : undefined;
+                    if (!isNaN(opcode)) {
+                        handleInstructionClick(opcode, subOpcode);
+                    }
+                });
+            });
+        }
+
+        function renderGridHeader() {
+            const headers = ['', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+            return headers.map(h => `<div class="grid-cell grid-header">${h}</div>`).join('');
+        }
+
+        function renderGridRow(row, rowIndex) {
+            const rowLabel = rowIndex.toString(16).toUpperCase();
+            let html = `<div class="grid-cell grid-header">${rowLabel}</div>`;
+
+            row.forEach(inst => {
+                if (inst === null) {
+                    html += `<div class="grid-cell empty"></div>`;
+                } else {
+                    const nonClickableClass = inst.nonClickable ? ' non-clickable' : '';
+                    const dataAttr = inst.nonClickable ? '' : `data-opcode="${inst.opcode}"`;
+                    html += `
+                        <div class="grid-cell${nonClickableClass}" ${dataAttr}>
+                            <div class="instruction-name">${inst.name}</div>
+                            <div class="instruction-operands">${inst.ops || '&nbsp;'}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            return html;
+        }
+
+        function renderGroupSections() {
+            // Group info - split GRP3 into GRP3a (F6) and GRP3b (F7)
+            const groupInfo = [
+                { name: 'GRP1', opcodes: '80-83', opcode: 0x80 },
+                { name: 'GRP2', opcodes: 'D0-D3', opcode: 0xD0 },
+                { name: 'GRP3a', opcodes: 'F6', opcode: 0xF6 },
+                { name: 'GRP3b', opcodes: 'F7', opcode: 0xF7 },
+                { name: 'GRP4', opcodes: 'FE', opcode: 0xFE },
+                { name: 'GRP5', opcodes: 'FF', opcode: 0xFF }
+            ];
+
+            let html = `
+                <div class="group-section">
+                    <div class="group-title">Group Instructions</div>
+                    <div class="instruction-grid" style="grid-template-columns: 80px 80px repeat(8, 90px);">
+                        <div class="grid-cell grid-header">Group</div>
+                        <div class="grid-cell grid-header">Opcode</div>
+                        <div class="grid-cell grid-header">0</div>
+                        <div class="grid-cell grid-header">1</div>
+                        <div class="grid-cell grid-header">2</div>
+                        <div class="grid-cell grid-header">3</div>
+                        <div class="grid-cell grid-header">4</div>
+                        <div class="grid-cell grid-header">5</div>
+                        <div class="grid-cell grid-header">6</div>
+                        <div class="grid-cell grid-header">7</div>
+            `;
+
+            // Render each group as one row
+            groupInfo.forEach(group => {
+                // Determine which instruction list to use
+                let instructions;
+                if (group.name.startsWith('GRP3')) {
+                    // For GRP3a/GRP3b, filter GRP3 instructions by opcode
+                    instructions = groupInstructions['GRP3'].filter(inst => inst && inst.opcode === group.opcode);
+                } else {
+                    const groupKey = group.name;
+                    instructions = groupInstructions[groupKey] || [];
+                }
+
+                html += `
+                    <div class="grid-cell grid-header" style="background: var(--bg-tertiary);">${group.name}</div>
+                    <div class="grid-cell grid-header" style="background: var(--bg-tertiary);">${group.opcodes}</div>
+                `;
+
+                // Render 8 sub-instructions (just the instruction names, no operands)
+                for (let i = 0; i < 8; i++) {
+                    const inst = instructions.find(inst => inst && inst.sub === i && inst.opcode === group.opcode);
+                    if (inst) {
+                        html += `
+                            <div class="grid-cell" data-opcode="${inst.opcode}" data-subopcode="${inst.sub}">
+                                <div class="instruction-name" style="margin: 0;">${inst.name}</div>
+                            </div>
+                        `;
+                    } else {
+                        html += `<div class="grid-cell empty"></div>`;
+                    }
+                }
+            });
+
+            html += `</div></div>`;
+
+            // Add documentation note at the bottom
+            html += `
+                <div class="group-section">
+                    <div class="group-title">GRP3/GRP4/GRP5 Microcode Mapping</div>
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; border: 1px solid var(--border-light); line-height: 1.6;">
+                        <p style="margin-bottom: 10px; color: var(--text-primary);">
+                            For GRP3a (F6), GRP3b (F7), GRP4 (FE), and GRP5 (FF) instructions, the microcode address is computed using a special encoding:
+                        </p>
+                        <code style="display: block; background: var(--bg-primary); padding: 10px; border-radius: 4px; color: var(--accent-yellow); margin: 10px 0; font-family: 'Courier New', monospace;">
+                            AR = (opcode & 1) << 8 | (opcode & 0xF8) | reg
+                        </code>
+                        <p style="margin: 10px 0; color: var(--text-secondary); font-size: 0.9em;">
+                            This replaces the lowest 3 bits of the opcode with the ModR/M reg field and places the original bit 0 at bit 8.
+                        </p>
+                        <p style="margin: 10px 0; color: var(--text-primary);">
+                            <strong style="color: var(--accent-primary);">Example:</strong> FF/4 (JMP Ev)
+                        </p>
+                        <ul style="margin-left: 20px; color: var(--text-secondary); font-size: 0.9em;">
+                            <li>Opcode: 0xFF = <code style="color: var(--accent-yellow);">1111_1111</code></li>
+                            <li>Reg field: 4 = <code style="color: var(--accent-yellow);">100</code></li>
+                            <li>Bit 0: <code style="color: var(--accent-cyan);">1</code></li>
+                            <li>Upper 5 bits (bits 7-3): <code style="color: var(--accent-cyan);">1111_1000</code> (0xF8)</li>
+                            <li>Result: AR = <code style="color: var(--accent-primary);">1_1111_1100</code> (0x1FC) → microcode line <strong style="color: var(--accent-primary);">0D8</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            return html;
+        }
+
+        // Initialize: try to load the full source; fall back to embedded text
+        async function loadAndInit() {
+            parseMicrocode(embeddedMicrocode);
+            calcUaddr();
+            renderTable();
+            // After initial render, show the hint if applicable
+            showHoverHintOnce();
+            // Render instruction picker
+            renderInstructionGrid();
+        }
+        loadAndInit();
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Load saved theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        body.className = `${savedTheme}-theme`;
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            body.className = `${newTheme}-theme`;
+            themeToggle.textContent = newTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Setup instruction picker modal handlers
+        document.getElementById('openPickerBtn')?.addEventListener('click', () => {
+            document.getElementById('instructionPicker').classList.add('active');
+        });
+
+        document.getElementById('closePickerBtn')?.addEventListener('click', () => {
+            document.getElementById('instructionPicker').classList.remove('active');
+        });
+
+        document.getElementById('instructionPicker')?.addEventListener('click', (e) => {
+            if (e.target.id === 'instructionPicker') {
+                document.getElementById('instructionPicker').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

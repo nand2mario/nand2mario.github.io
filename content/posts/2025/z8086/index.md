@@ -33,7 +33,7 @@ My goals were simple:
 
 Here’s the high‑level view:
 
-![z8086 block diagram](z8086.svg)
+<img src="z8086.svg" alt="z8086 block diagram" class="no-border">
 
 (You can cross-reference function blocks against the [die shot](/2025/8086_dieshot).)
 

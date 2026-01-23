@@ -27,7 +27,9 @@ GISCUS_CATEGORY_ID = "DIC_kwDOMuaEes4C1UwO"  # Fill in from giscus.app
 
 # Directories
 ROOT_DIR = Path(__file__).parent.parent
-CONTENT_DIR = ROOT_DIR / "content" / "posts"
+CONTENT_ROOT = ROOT_DIR / "content"
+CONTENT_DIR = CONTENT_ROOT / "posts"
+STATIC_DIR = ROOT_DIR / "static"
 OUTPUT_DIR = ROOT_DIR / "public" / "neo"
 TEMPLATES_DIR = ROOT_DIR / "bin" / "templates"
 
@@ -122,21 +124,66 @@ def collect_posts():
     return posts
 
 
+def collect_pages():
+    """Collect pages from content directories other than posts."""
+    pages = []
+
+    for item in CONTENT_ROOT.iterdir():
+        if not item.is_dir() or item.name == 'posts':
+            continue
+
+        # Check for _index.md (section index)
+        index_file = item / '_index.md'
+        if index_file.exists():
+            with open(index_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            frontmatter, body = parse_frontmatter(content)
+            pages.append({
+                'path': item,
+                'file': index_file,
+                'title': frontmatter.get('title', item.name.title()),
+                'url': f"/{item.name}/",
+                'body': body,
+                'is_index': True
+            })
+
+        # Check for individual .md files
+        for md_file in item.glob('*.md'):
+            if md_file.name.startswith('_'):
+                continue
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            frontmatter, body = parse_frontmatter(content)
+            slug = md_file.stem
+            pages.append({
+                'path': item,
+                'file': md_file,
+                'title': frontmatter.get('title', slug.replace('_', ' ').title()),
+                'url': f"/{item.name}/{slug}/",
+                'body': body,
+                'is_index': False
+            })
+
+    return pages
+
+
 def render_markdown(content, post_url=""):
     """Convert markdown to HTML."""
     # Handle image references with optional attributes like {width="800"}
-    # Convert relative image paths to proper URLs
     def fix_image_path(match):
         alt = match.group(1)
         src = match.group(2)
-        # Keep relative paths as-is (they'll be relative to the post directory)
         return f'![{alt}]({src})'
 
     content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)\s*\{[^}]*\}', fix_image_path, content)
 
     # Convert markdown to HTML
-    md = markdown.Markdown(extensions=['fenced_code', 'tables', 'toc'])
+    md = markdown.Markdown(extensions=['fenced_code', 'tables', 'toc', 'md_in_html'])
     html = md.convert(content)
+
+    # Prefix absolute paths with BASE_PATH (for images and links)
+    # e.g., src="/2025/img.webp" -> src="/neo/2025/img.webp"
+    html = re.sub(r'(src|href)="/([^"]+)"', rf'\1="{BASE_PATH}/\2"', html)
 
     return html
 
@@ -362,34 +409,70 @@ def build_site():
                 f.write(home_html)
             print(f"  Generated: /page/{page_num}/")
 
-    # Generate static pages
-    projects_html = generate_static_page(
-        "Projects",
-        "<p>Projects coming soon.</p>",
-        "nav_projects"
-    )
-    projects_dir = OUTPUT_DIR / 'projects'
-    projects_dir.mkdir(parents=True, exist_ok=True)
-    with open(projects_dir / 'index.html', 'w', encoding='utf-8') as f:
-        f.write(projects_html)
-    print("  Generated: /projects/")
+    # Generate content pages from other directories
+    pages = collect_pages()
+    content_dirs_processed = set()
 
-    guides_html = generate_static_page(
-        "Guides",
-        "<p>Guides coming soon.</p>",
-        "nav_guides"
-    )
-    guides_dir = OUTPUT_DIR / 'guides'
-    guides_dir.mkdir(parents=True, exist_ok=True)
-    with open(guides_dir / 'index.html', 'w', encoding='utf-8') as f:
-        f.write(guides_html)
-    print("  Generated: /guides/")
+    for page in pages:
+        html_content = render_markdown(page['body'])
+
+        # Determine which nav item to highlight
+        nav_key = f"nav_{page['path'].name}"
+        active_nav = nav_key if nav_key in ["nav_projects", "nav_guides"] else ""
+
+        page_html = generate_static_page(
+            page['title'],
+            html_content,
+            active_nav
+        )
+
+        # Create output directory
+        page_output_dir = OUTPUT_DIR / page['url'].strip('/')
+        page_output_dir.mkdir(parents=True, exist_ok=True)
+
+        with open(page_output_dir / 'index.html', 'w', encoding='utf-8') as f:
+            f.write(page_html)
+        print(f"  Generated: {page['url']}")
+
+        # Track which content directories we've seen
+        content_dirs_processed.add(page['path'])
+
+    # Copy assets from content directories to matching output paths
+    # e.g., content/2025/image.webp -> public/neo/2025/image.webp
+    for content_dir in content_dirs_processed:
+        dir_name = content_dir.name
+        output_asset_dir = OUTPUT_DIR / dir_name
+        output_asset_dir.mkdir(parents=True, exist_ok=True)
+
+        for asset in content_dir.iterdir():
+            if asset.is_file() and not asset.name.endswith('.md'):
+                shutil.copy2(asset, output_asset_dir / asset.name)
+                print(f"  Copied: /{dir_name}/{asset.name}")
+
+    # Generate placeholder for projects if not in content
+    if not (CONTENT_ROOT / 'projects').exists():
+        projects_html = generate_static_page("Projects", "<p>Projects coming soon.</p>", "nav_projects")
+        projects_dir = OUTPUT_DIR / 'projects'
+        projects_dir.mkdir(parents=True, exist_ok=True)
+        with open(projects_dir / 'index.html', 'w', encoding='utf-8') as f:
+            f.write(projects_html)
+        print("  Generated: /projects/ (placeholder)")
 
     # Copy CSS
     css_dir = OUTPUT_DIR / 'css'
     css_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(TEMPLATES_DIR / 'style.css', css_dir / 'style.css')
     print("  Copied: /css/style.css")
+
+    # Copy static files
+    if STATIC_DIR.exists():
+        for item in STATIC_DIR.rglob('*'):
+            if item.is_file():
+                rel_path = item.relative_to(STATIC_DIR)
+                dest = OUTPUT_DIR / rel_path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, dest)
+                print(f"  Copied: /{rel_path}")
 
     print(f"\nSite generated successfully in {OUTPUT_DIR}")
 

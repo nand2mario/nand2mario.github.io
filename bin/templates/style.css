@@ -267,7 +267,8 @@ main {
 .post-content img {
     max-width: 100%;
     height: auto;
-    margin: 16px 0;
+    margin: 16px auto;
+    display: block;
     border-radius: 6px;
     border: 1px solid #d0d7de;
 }
@@ -352,6 +353,62 @@ main {
 .page-content {
     font-size: 16px;
     line-height: 1.7;
+}
+
+.page-content h1,
+.page-content h2,
+.page-content h3,
+.page-content h4 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.page-content h2 {
+    font-size: 24px;
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: 8px;
+}
+
+.page-content h3 { font-size: 20px; }
+
+.page-content p {
+    margin-bottom: 16px;
+}
+
+.page-content a {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.page-content a:hover {
+    text-decoration: underline;
+}
+
+.page-content ul,
+.page-content ol {
+    margin-bottom: 16px;
+    padding-left: 2em;
+}
+
+.page-content li {
+    margin-bottom: 4px;
+}
+
+.page-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 16px auto;
+    display: block;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+}
+
+/* Utility: no border on images */
+img.no-border,
+.no-border img {
+    border: none;
 }
 
 /* Footer */
