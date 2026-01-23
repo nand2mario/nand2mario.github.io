@@ -17,7 +17,7 @@ from html import escape
 SITE_TITLE = "Small Things Retro"
 SITE_BYLINE = "Retro gaming and computing experiments by nand2mario."
 POSTS_PER_PAGE = 10
-BASE_PATH = "/neo"  # URL prefix for the site (e.g., "/neo" or "" for root)
+BASE_PATH = ""  # URL prefix for the site (e.g., "/neo" or "" for root)
 
 # Giscus comments (get these values from https://giscus.app/)
 GISCUS_REPO = "nand2mario/nand2mario.github.io"
@@ -30,7 +30,7 @@ ROOT_DIR = Path(__file__).parent.parent
 CONTENT_ROOT = ROOT_DIR / "content"
 CONTENT_DIR = CONTENT_ROOT / "posts"
 STATIC_DIR = ROOT_DIR / "static"
-OUTPUT_DIR = ROOT_DIR / "public" / "neo"
+OUTPUT_DIR = ROOT_DIR / "public"
 TEMPLATES_DIR = ROOT_DIR / "bin" / "templates"
 
 
