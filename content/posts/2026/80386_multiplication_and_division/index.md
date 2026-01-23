@@ -45,17 +45,7 @@ To save silicon, the 386 reuses the main ALU for the per-iteration add/subtract 
 
 The classic multiplication algorithm in processors is the Booth algorithm. However, the 80386 does not use that. Instead, an "add-and-shift" multiplication algorithm is used. This is similar to grade-school long multiplication. The difference is that instead of moving from lower digits to higher, we shift to the right. Here's the data layout:
 
-```
-   MULTMP    ,    TMPB           ->
-multiplicand    multiplier  
-
-   +--------------------------------------------+ 
-   |           |      product       |           |
-   +--------------------------------------------+
-   |         SIGMA       ||        TMPB         |
-   +--------------------------------------------+
-                64-bit accumulator
-```
+<img src="mul_layout.svg" alt="Multiplication data layout" class="no-border">
 
 Three key internal registers participate in multiplication: MULTMP, TMPB, and SIGMA. A notable challenge is that x86 instructions support 8-bit, 16-bit, and 32-bit operands. Consistent with the design philosophy of the 8086, the 386 achieves this flexibility by reusing the same registers and microcode routines for all operand sizes. In most cases, the identical hardware and microcode sequence accommodate different widths seamlessly. The diagram above shows how, for example, the result of multiplying two 16-bit numbers is arranged within a 32-bit product: it occupies the lower half of the SIGMA register and the upper half of TMPB.
 
@@ -80,7 +70,7 @@ The 80386 multiplication microcode is a direct realization of the algorithm abov
 
 Before diving in, here's a brief overview of the 80386 microcode syntax. Compared to the 8086, the 80386 microcode uses instructions that are 37 bits wide (versus 21 bits on the 8086) and contains additional fields for more complex operations. In the listing below, `src->dest` represents a register move (copy) operation. The `alujmp` field controls the ALU or the microcode sequencer: it can perform arithmetic (with `src` and `alu_src` as ALU inputs), initiate jumps to other microcode addresses (`alu_src` as the target), or trigger various other actions. Of particular note is the keyword `RPT` on the third line. It instructs the microcode sequencer to repeat the current micro-instruction, decrementing the internal COUNTR register each time, until COUNTR reaches zero (executing a total of COUNTR+1 iterations).
 
-```armasm
+```asm
 ; MUL/IMUL r
 ; src     dest    alu_src        alujmp  uop sub busop
 DSTREG -> MULTMP  BITS_V         LDCNTR          ; MULTMP=r (multiplicand), COUNTR=width-1
@@ -110,20 +100,7 @@ These variants are interesting because they only produce a single-width result (
 
 80386 uses the standard [non-restoring division algorithm](https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division) for division. Here's the data layout:
 
-```
-             TMPB
-           divisor
-
-   +---------------------------------------------+
-   |       SIGMA         ||       DIVTMP         |
-   +---------------------------------------------+
-          remainder              dividend
-                      <- shift left
-
-   +----------------------+
-   |       RESULT         |   quotient (built bit by bit)
-   +----------------------+
-```
+<img src="div_layout.svg" alt="Division data layout" class="no-border">
 
 The dividend is {SIGMA, DIVTMP} (max 64 bits), while the divisor is TMPB (max 32 bits). Each iteration shifts the dividend left by one bit and either adds or subtracts the divisor, building up the quotient in RESULT one bit at a time.
 
@@ -140,7 +117,7 @@ The dividend is {SIGMA, DIVTMP} (max 64 bits), while the divisor is TMPB (max 32
 
 Let's look at the division routine (`DIV r` at F6.6/F7.6) directly.
 
-```armasm
+```asm
 ; DIV r
 ; Note: COUNTR = BITS_V (7/15/31), RPT executes COUNTR+1 iterations
 eAX_AL -> DIVTMP  BITS_V         LDCNTR          ; DIVTMP = lower half of dividend, COUNTR=width-1
@@ -164,7 +141,7 @@ IDIV is more complex than DIV because it must handle signs. The approach is:
 
 Here's the IDIV microcode:
 
-```armasm
+```asm
 ; IDIV r
 -1                BITS_V         ADD             ; COUNTR=width-2
 SIGMA  -> COUNTR

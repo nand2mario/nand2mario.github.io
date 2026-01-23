@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 180" font-family="system-ui, -apple-system, sans-serif" font-size="14">
+  <!-- Title labels -->
+  <text x="80" y="25" font-weight="600" fill="#333">MULTMP</text>
+  <text x="220" y="25" fill="#666">,</text>
+  <text x="280" y="25" font-weight="600" fill="#333">TMPB</text>
+  <text x="380" y="25" fill="#666">→</text>
+
+  <text x="60" y="45" fill="#666" font-size="12">multiplicand</text>
+  <text x="260" y="45" fill="#666" font-size="12">multiplier</text>
+
+  <!-- Main 64-bit accumulator box -->
+  <rect x="30" y="70" width="440" height="50" fill="none" stroke="#333" stroke-width="2"/>
+
+  <!-- Divider lines -->
+  <line x1="140" y1="70" x2="140" y2="120" stroke="#333" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="250" y1="70" x2="250" y2="120" stroke="#999" stroke-width="2"/>
+  <line x1="360" y1="70" x2="360" y2="120" stroke="#333" stroke-width="1" stroke-dasharray="4"/>
+
+  <!-- Product label -->
+  <text x="250" y="100" text-anchor="middle" fill="#0969da" font-weight="500">product</text>
+
+  <!-- Register labels below -->
+  <rect x="30" y="130" width="220" height="30" fill="#f0f7ff" stroke="#0969da" stroke-width="1.5"/>
+  <rect x="250" y="130" width="220" height="30" fill="#fff7f0" stroke="#d97706" stroke-width="1.5"/>
+
+  <text x="140" y="150" text-anchor="middle" font-weight="600" fill="#0969da">SIGMA</text>
+  <text x="360" y="150" text-anchor="middle" font-weight="600" fill="#d97706">TMPB</text>
+
+  <!-- Double bar indicator -->
+  <line x1="248" y1="130" x2="248" y2="160" stroke="#333" stroke-width="1.5"/>
+  <line x1="252" y1="130" x2="252" y2="160" stroke="#333" stroke-width="1.5"/>
+
+  <!-- 64-bit accumulator label -->
+  <text x="250" y="178" text-anchor="middle" fill="#666" font-size="12">64-bit accumulator</text>
+</svg>
