@@ -19,6 +19,12 @@ SITE_BYLINE = "Retro gaming and computing experiments by nand2mario."
 POSTS_PER_PAGE = 10
 BASE_PATH = "/neo"  # URL prefix for the site (e.g., "/neo" or "" for root)
 
+# Giscus comments (get these values from https://giscus.app/)
+GISCUS_REPO = "nand2mario/nand2mario.github.io"
+GISCUS_REPO_ID = "R_kgDOMuaEeg"  # Fill in from giscus.app
+GISCUS_CATEGORY = "General"
+GISCUS_CATEGORY_ID = "DIC_kwDOMuaEes4C1UwO"  # Fill in from giscus.app
+
 # Directories
 ROOT_DIR = Path(__file__).parent.parent
 CONTENT_DIR = ROOT_DIR / "content" / "posts"
@@ -175,7 +181,11 @@ def generate_post_page(post, prev_post=None, next_post=None):
         author=post['author'],
         content=html_content,
         prev_link=prev_link,
-        next_link=next_link
+        next_link=next_link,
+        giscus_repo=GISCUS_REPO,
+        giscus_repo_id=GISCUS_REPO_ID,
+        giscus_category=GISCUS_CATEGORY,
+        giscus_category_id=GISCUS_CATEGORY_ID
     )
 
     # Render full page
