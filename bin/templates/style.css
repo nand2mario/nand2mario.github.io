@@ -1,0 +1,375 @@
+/* Small Things Retro - Minimalist GitHub-style CSS */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #24292f;
+    background-color: #ffffff;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.site-header {
+    border-bottom: 1px solid #d0d7de;
+    padding: 24px 0;
+    margin-bottom: 32px;
+}
+
+.site-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.site-title a {
+    color: #24292f;
+    text-decoration: none;
+}
+
+.site-title a:hover {
+    color: #0969da;
+}
+
+.site-byline {
+    color: #57606a;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Navigation */
+.site-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.site-nav a {
+    color: #24292f;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover {
+    color: #0969da;
+}
+
+.site-nav a.active {
+    border-bottom-color: #fd8c73;
+}
+
+/* Main content */
+main {
+    min-height: calc(100vh - 250px);
+}
+
+/* Post list (home page) */
+.post-list {
+    margin-bottom: 32px;
+}
+
+.post-preview {
+    padding: 24px 0;
+    border-bottom: 1px solid #d0d7de;
+}
+
+.post-preview:first-child {
+    padding-top: 0;
+}
+
+.post-preview h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.post-preview h2 a {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.post-preview h2 a:hover {
+    text-decoration: underline;
+}
+
+.post-preview .post-meta {
+    color: #57606a;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.post-preview p {
+    color: #57606a;
+    margin-bottom: 8px;
+}
+
+.read-more {
+    color: #0969da;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.read-more:hover {
+    text-decoration: underline;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-top: 1px solid #d0d7de;
+    margin-top: 32px;
+}
+
+.pagination a,
+.pagination span {
+    font-size: 14px;
+}
+
+.pagination a {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.pagination a:hover {
+    text-decoration: underline;
+}
+
+.pagination .disabled {
+    color: #8c959f;
+}
+
+.pagination .page-info {
+    color: #57606a;
+}
+
+/* Single post */
+.post {
+    padding-bottom: 32px;
+}
+
+.post-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #d0d7de;
+}
+
+.post-title {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 8px;
+}
+
+.post-meta {
+    color: #57606a;
+    font-size: 14px;
+}
+
+.post-meta .author {
+    margin-left: 8px;
+}
+
+/* Post navigation (prev/next) */
+.post-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #d0d7de;
+    gap: 24px;
+}
+
+.post-nav a {
+    color: #0969da;
+    text-decoration: none;
+    font-size: 14px;
+    max-width: 45%;
+}
+
+.post-nav a:hover {
+    text-decoration: underline;
+}
+
+.post-nav .prev-post {
+    text-align: left;
+}
+
+.post-nav .next-post {
+    text-align: right;
+    margin-left: auto;
+}
+
+/* Post content */
+.post-content {
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.post-content h1 { font-size: 28px; }
+.post-content h2 { font-size: 24px; border-bottom: 1px solid #d0d7de; padding-bottom: 8px; }
+.post-content h3 { font-size: 20px; }
+.post-content h4 { font-size: 16px; }
+
+.post-content p {
+    margin-bottom: 16px;
+}
+
+.post-content a {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.post-content a:hover {
+    text-decoration: underline;
+}
+
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 16px 0;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+}
+
+.post-content ul,
+.post-content ol {
+    margin-bottom: 16px;
+    padding-left: 2em;
+}
+
+.post-content li {
+    margin-bottom: 4px;
+}
+
+.post-content blockquote {
+    margin: 16px 0;
+    padding: 0 16px;
+    color: #57606a;
+    border-left: 4px solid #d0d7de;
+}
+
+.post-content code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 85%;
+    background-color: rgba(175, 184, 193, 0.2);
+    padding: 0.2em 0.4em;
+    border-radius: 6px;
+}
+
+.post-content pre {
+    margin: 16px 0;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 6px;
+}
+
+.post-content pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+}
+
+.post-content table {
+    width: 100%;
+    margin: 16px 0;
+    border-collapse: collapse;
+}
+
+.post-content th,
+.post-content td {
+    padding: 8px 16px;
+    border: 1px solid #d0d7de;
+}
+
+.post-content th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+
+.post-content hr {
+    margin: 24px 0;
+    border: 0;
+    border-top: 1px solid #d0d7de;
+}
+
+/* Static pages */
+.page {
+    padding-bottom: 32px;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #d0d7de;
+}
+
+.page-content {
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* Footer */
+.site-footer {
+    border-top: 1px solid #d0d7de;
+    padding: 24px 0;
+    margin-top: 48px;
+}
+
+.site-footer p {
+    color: #57606a;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .site-title {
+        font-size: 20px;
+    }
+
+    .site-nav {
+        gap: 16px;
+    }
+
+    .post-title,
+    .page-title {
+        font-size: 24px;
+    }
+
+    .post-preview h2 {
+        font-size: 18px;
+    }
+}
