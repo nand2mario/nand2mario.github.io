@@ -66,17 +66,28 @@ def collect_posts():
         # Check if it's a year directory or a post directory
         if year_dir.name.isdigit():
             # Year-based organization
-            for post_dir in year_dir.iterdir():
-                if post_dir.is_dir():
-                    index_file = post_dir / "index.md"
+            for item in year_dir.iterdir():
+                if item.is_dir():
+                    # Directory-based post with index.md
+                    index_file = item / "index.md"
                     if index_file.exists():
                         posts.append({
-                            'path': post_dir,
+                            'path': item,
                             'index_file': index_file,
                             'year': year_dir.name,
-                            'slug': post_dir.name,
-                            'url': f"/posts/{year_dir.name}/{post_dir.name}/"
+                            'slug': item.name,
+                            'url': f"/posts/{year_dir.name}/{item.name}/"
                         })
+                elif item.is_file() and item.suffix == '.md':
+                    # Standalone .md file
+                    slug = item.stem
+                    posts.append({
+                        'path': year_dir,
+                        'index_file': item,
+                        'year': year_dir.name,
+                        'slug': slug,
+                        'url': f"/posts/{year_dir.name}/{slug}/"
+                    })
         else:
             # Legacy posts without year
             if year_dir.is_dir():
@@ -170,12 +181,17 @@ def collect_pages():
 def render_markdown(content, post_url=""):
     """Convert markdown to HTML."""
     # Handle image references with optional attributes like {width="800"}
-    def fix_image_path(match):
+    # Convert to HTML img tags with attributes
+    def fix_image_with_attrs(match):
         alt = match.group(1)
         src = match.group(2)
-        return f'![{alt}]({src})'
+        attrs_str = match.group(3)
+        # Parse attributes like width="400"
+        attrs = re.findall(r'(\w+)=["\']([^"\']+)["\']', attrs_str)
+        attr_html = ' '.join(f'{k}="{v}"' for k, v in attrs)
+        return f'<img src="{src}" alt="{alt}" {attr_html}>'
 
-    content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)\s*\{[^}]*\}', fix_image_path, content)
+    content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)\s*\{([^}]*)\}', fix_image_with_attrs, content)
 
     # Convert markdown to HTML
     md = markdown.Markdown(extensions=['fenced_code', 'tables', 'toc', 'md_in_html'])
@@ -339,9 +355,19 @@ def generate_static_page(title, content_html, active_nav):
 
 def copy_post_assets(post, output_dir):
     """Copy images and other assets from post directory."""
+    # For directory-based posts (with index.md), copy all non-md files
+    # For standalone .md posts, only copy files with matching stem (e.g., post.jpg for post.md)
+    is_standalone = post['index_file'].name != 'index.md'
+
     for file in post['path'].iterdir():
-        if file.name != 'index.md' and file.is_file():
-            shutil.copy2(file, output_dir / file.name)
+        if not file.is_file():
+            continue
+        if file.suffix == '.md':
+            continue
+        # For standalone posts, only copy assets with matching stem
+        if is_standalone and not file.stem.startswith(post['slug']):
+            continue
+        shutil.copy2(file, output_dir / file.name)
 
 
 def build_site():
