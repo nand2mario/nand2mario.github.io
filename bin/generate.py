@@ -16,6 +16,7 @@ from html import escape
 # Configuration
 SITE_TITLE = "Small Things Retro"
 SITE_BYLINE = "Retro gaming and computing experiments by nand2mario."
+SITE_URL = "https://nand2mario.github.io"
 POSTS_PER_PAGE = 10
 BASE_PATH = ""  # URL prefix for the site (e.g., "/neo" or "" for root)
 
@@ -370,6 +371,40 @@ def copy_post_assets(post, output_dir):
         shutil.copy2(file, output_dir / file.name)
 
 
+def generate_rss(posts, max_items=20):
+    """Generate RSS feed XML."""
+    items = []
+    for post in posts[:max_items]:
+        pub_date = post['date_obj'].strftime('%a, %d %b %Y 00:00:00 GMT')
+        post_url = f"{SITE_URL}{BASE_PATH}{post['url']}"
+
+        # Get excerpt
+        html_content = render_markdown(post['body'])
+        excerpt = get_excerpt(html_content, 500)
+
+        items.append(f'''    <item>
+      <title>{escape(post['title'])}</title>
+      <link>{post_url}</link>
+      <guid>{post_url}</guid>
+      <pubDate>{pub_date}</pubDate>
+      <description>{escape(excerpt)}</description>
+    </item>''')
+
+    rss = f'''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{escape(SITE_TITLE)}</title>
+    <link>{SITE_URL}{BASE_PATH}/</link>
+    <description>{escape(SITE_BYLINE)}</description>
+    <language>en-us</language>
+    <lastBuildDate>{datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
+    <atom:link href="{SITE_URL}{BASE_PATH}/feed.xml" rel="self" type="application/rss+xml"/>
+{chr(10).join(items)}
+  </channel>
+</rss>'''
+    return rss
+
+
 def build_site():
     """Build the complete static site."""
     print(f"Building site from {CONTENT_DIR}")
@@ -499,6 +534,12 @@ def build_site():
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(item, dest)
                 print(f"  Copied: /{rel_path}")
+
+    # Generate RSS feed
+    rss_content = generate_rss(published_posts)
+    with open(OUTPUT_DIR / 'feed.xml', 'w', encoding='utf-8') as f:
+        f.write(rss_content)
+    print("  Generated: /feed.xml")
 
     print(f"\nSite generated successfully in {OUTPUT_DIR}")
 
