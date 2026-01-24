@@ -116,6 +116,28 @@ main {
     margin-bottom: 8px;
 }
 
+.post-excerpt {
+    color: #57606a;
+    margin-bottom: 8px;
+}
+
+.post-excerpt p {
+    margin-bottom: 8px;
+}
+
+.post-excerpt p:last-child {
+    margin-bottom: 0;
+}
+
+.post-excerpt a {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.post-excerpt a:hover {
+    text-decoration: underline;
+}
+
 .read-more {
     color: #0969da;
     text-decoration: none;

@@ -47,9 +47,25 @@ def parse_frontmatter(content):
 
 
 def get_excerpt(html_content, max_chars=300):
-    """Extract excerpt from HTML content."""
-    # Remove HTML tags for excerpt
-    text = re.sub(r'<[^>]+>', '', html_content)
+    """Extract excerpt from HTML content. Returns HTML if <!--more--> marker exists."""
+    # Check for <!--more--> marker and use content before it
+    more_match = re.search(r'<!--\s*more\s*-->', html_content, flags=re.IGNORECASE)
+    if more_match:
+        # Return HTML content before <!--more-->, preserving formatting
+        excerpt = html_content[:more_match.start()]
+        # Remove any other HTML comments
+        excerpt = re.sub(r'<!--.*?-->', '', excerpt, flags=re.DOTALL)
+        return excerpt.strip()
+
+    # No <!--more--> marker - use first paragraph
+    # Remove HTML comments first
+    clean_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
+    first_p = re.search(r'<p>(.*?)</p>', clean_content, flags=re.DOTALL)
+    if first_p:
+        return f'<p>{first_p.group(1)}</p>'
+
+    # Fall back to plain text truncation
+    text = re.sub(r'<[^>]+>', '', clean_content)
     text = re.sub(r'\s+', ' ', text).strip()
     if len(text) > max_chars:
         text = text[:max_chars].rsplit(' ', 1)[0] + '...'
@@ -305,7 +321,7 @@ def generate_home_page(posts, page_num, total_pages):
         <article class="post-preview">
             <h2><a href="{post_url}">{escape(post['title'])}</a></h2>
             <div class="post-meta">{post['date_formatted']}</div>
-            <p>{excerpt}</p>
+            <div class="post-excerpt">{excerpt}</div>
             <a href="{post_url}" class="read-more">Read more →</a>
         </article>
         '''
@@ -390,7 +406,7 @@ def generate_tag_page(tag, posts):
         <article class="post-preview">
             <h2><a href="{post_url}">{escape(post['title'])}</a></h2>
             <div class="post-meta">{post['date_formatted']}</div>
-            <p>{excerpt}</p>
+            <div class="post-excerpt">{excerpt}</div>
             <a href="{post_url}" class="read-more">Read more →</a>
         </article>
         '''
