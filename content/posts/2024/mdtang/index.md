@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [TangCore]
 ---
 
 Today we discuss Sega Genesis (or Mega Drive). The 16-bit game consoles held a special place in game history. After the 8-bit machines became extremely popular in the mid-1980s, companies had more resources to pour into R&D of the next generation, leading to more sophisticated designs. And the users truly desired "arcade-level performance", hence the "Blast Processing" marketing by Sega. These machines were well-received and significantly pushed the industry forward. Although companies like NEC and SNK entered the home console market during this period, the main rivalry was between two companies, Nintendo and Sega. [SNESTang](https://github.com/nand2mario/snestang) has been available for some time now. It is about time I bring the other major 16-bit machine, Sega Genesis or Mega Drive, to the Tang boards. [MDTang 0.1](https://github.com/nand2mario/mdtang) is a port of [Genesis-MiSTer](https://github.com/MiSTer-devel/Genesis_MiSTer) to Tang Mega 138K/138K Pro. In the future, it will also support TangConsole 60K when it is released.

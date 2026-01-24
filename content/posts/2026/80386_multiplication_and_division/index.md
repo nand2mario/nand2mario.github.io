@@ -1,20 +1,19 @@
 ---
 title: "80386 Multiplication and Division"
-date: 2026-01-23T09:10:12+08:00
-draft: true
+date: 2026-01-24T11:40:12+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [386]
 ---
 
-<style>
+<!-- <style>
   pre code { font-size: 0.85em; }
   code { font-size: 0.85em; }
-</style>
+</style> -->
 
-# 80386 Multiplication and Division
-
-<!-- *This is the first post of a series on building an FPGA core similar to the Intel 80386. The goal is to understand how this important processor works at the microarchitecture level, one subsystem at a time.* -->
+<!-- # 80386 Multiplication and Division -->
 
 When Intel released the 80386 in October 1985, it marked a watershed moment for personal computing. The 386 was the first 32-bit x86 processor, increasing the register width from 16 to 32 bits and vastly expanding the address space compared to its predecessors. This wasn't just an incremental upgrade—it was the foundation that would carry the PC architecture for decades to come.
 
@@ -195,7 +194,7 @@ Modern CPUs use dedicated multiplier arrays (often Booth-encoded Wallace trees) 
 
 The 386's "one bit per cycle" approach is elegant in its simplicity and its reuse of the main ALU. For an FPGA implementation, this microcode-driven design is actually quite practical - it minimizes hardware while still achieving reasonable performance.
 
-## Credits
+Follows me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
-Thanks [reenigne](https://www.reenigne.org/blog/), [dbalsom](https://github.com/dbalsom) and Ken Shirriff for disassembly and [silicon reverse engineering of the 80386](https://www.righto.com/search/label/386).
+Credits: Thanks [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego) and [Ken Shirriff](https://www.righto.com) for disassembly and [silicon reverse engineering of the 80386](https://www.righto.com/search/label/386).
 

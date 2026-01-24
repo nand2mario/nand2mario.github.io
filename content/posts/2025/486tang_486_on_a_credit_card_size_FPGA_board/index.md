@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [TangCore]
 ---
 
 Yesterday I released [486Tang](https://github.com/nand2mario/486tang) v0.1 on GitHub. It’s a port of the ao486 MiSTer PC core to the Sipeed Tang Console 138K FPGA. I’ve been trying to get an x86 core running on the Tang for a while. As far as I know, this is the first time ao486 has been ported to a non-Altera FPGA. Here’s a short write‑up of the project.

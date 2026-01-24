@@ -3,6 +3,7 @@ title: "Adding a Softcore to SNESTang - part 1"
 date: 2024-02-03T11:59:51+00:00
 draft: false
 sidebar: false
+tags: [TangCore]
 author: nand2mario
 ---
 

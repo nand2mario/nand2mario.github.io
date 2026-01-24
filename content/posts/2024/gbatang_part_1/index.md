@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [TangCore]
 ---
 
 Version 0.1 of [GBATang](https://github.com/nand2mario/gbatang) is just released. It is the first FPGA core for a 32-bit console available for Tang FPGA boards (Tang Mega 138K and the upcoming 60K). The journey is an interesting one for me. This first blog post discusses the experience of porting and building this core, its overall technical design and in more details, the CPU part.

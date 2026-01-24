@@ -15,7 +15,7 @@ from html import escape
 
 # Configuration
 SITE_TITLE = "Small Things Retro"
-SITE_BYLINE = "Retro gaming and computing experiments by nand2mario."
+SITE_BYLINE = "Retro gaming and computing experiments by nand2mario"
 SITE_URL = "https://nand2mario.github.io"
 POSTS_PER_PAGE = 10
 BASE_PATH = ""  # URL prefix for the site (e.g., "/neo" or "" for root)
@@ -112,6 +112,7 @@ def collect_posts():
         post['date'] = frontmatter.get('date')
         post['draft'] = frontmatter.get('draft', False)
         post['author'] = frontmatter.get('author', 'nand2mario')
+        post['tags'] = [str(t) for t in frontmatter.get('tags', [])]
         post['body'] = body
 
         # Parse date (normalize to naive datetime for comparison)
@@ -134,6 +135,19 @@ def collect_posts():
     posts.sort(key=lambda x: x['date_obj'], reverse=True)
 
     return posts
+
+
+def collect_tags(posts):
+    """Collect all tags and their associated posts."""
+    tags = {}
+    for post in posts:
+        if post['draft']:
+            continue
+        for tag in post.get('tags', []):
+            if tag not in tags:
+                tags[tag] = []
+            tags[tag].append(post)
+    return tags
 
 
 def collect_pages():
@@ -237,12 +251,20 @@ def generate_post_page(post, prev_post=None, next_post=None):
     if next_post:
         next_link = f'<a href="{BASE_PATH}{next_post["url"]}" class="next-post">{escape(next_post["title"])} →</a>'
 
+    # Generate tags HTML
+    tags_html = ""
+    if post.get('tags'):
+        tag_links = [f'<a href="{BASE_PATH}/tags/{tag}/" class="tag">{escape(tag)}</a>' for tag in post['tags']]
+        label = "Tag" if len(post['tags']) == 1 else "Tags"
+        tags_html = f'<div class="post-tags"><span class="tags-label">{label}:</span> ' + ' '.join(tag_links) + '</div>'
+
     # Render post content
     post_html = render_template(
         post_template,
         title=escape(post['title']),
         date=post['date_formatted'],
         author=post['author'],
+        tags=tags_html,
         content=html_content,
         prev_link=prev_link,
         next_link=next_link,
@@ -349,6 +371,48 @@ def generate_static_page(title, content_html, active_nav):
         site_byline=SITE_BYLINE,
         content=page_content,
         **nav_attrs
+    )
+
+    return page_html
+
+
+def generate_tag_page(tag, posts):
+    """Generate a page listing all posts with a given tag."""
+    base_template = load_template('base')
+
+    # Generate post list HTML
+    post_list_html = ""
+    for post in posts:
+        html_content = render_markdown(post['body'], post['url'])
+        excerpt = get_excerpt(html_content)
+        post_url = f"{BASE_PATH}{post['url']}"
+        post_list_html += f'''
+        <article class="post-preview">
+            <h2><a href="{post_url}">{escape(post['title'])}</a></h2>
+            <div class="post-meta">{post['date_formatted']}</div>
+            <p>{excerpt}</p>
+            <a href="{post_url}" class="read-more">Read more →</a>
+        </article>
+        '''
+
+    content_html = f'''
+    <div class="tag-page">
+        <h1>Posts tagged "{escape(tag)}"</h1>
+        <p class="tag-count">{len(posts)} post{"s" if len(posts) != 1 else ""}</p>
+        {post_list_html}
+    </div>
+    '''
+
+    page_html = render_template(
+        base_template,
+        title=f"Tag: {tag} - {SITE_TITLE}",
+        site_title=SITE_TITLE,
+        site_byline=SITE_BYLINE,
+        base_path=BASE_PATH,
+        content=content_html,
+        nav_home="",
+        nav_projects="",
+        nav_guides=""
     )
 
     return page_html
@@ -469,6 +533,18 @@ def build_site():
             with open(page_dir / 'index.html', 'w', encoding='utf-8') as f:
                 f.write(home_html)
             print(f"  Generated: /page/{page_num}/")
+
+    # Generate tag pages
+    tags = collect_tags(all_posts)
+    if tags:
+        print(f"Found {len(tags)} tags: {', '.join(sorted(tags.keys()))}")
+        for tag, tag_posts in tags.items():
+            tag_dir = OUTPUT_DIR / 'tags' / tag
+            tag_dir.mkdir(parents=True, exist_ok=True)
+            tag_html = generate_tag_page(tag, tag_posts)
+            with open(tag_dir / 'index.html', 'w', encoding='utf-8') as f:
+                f.write(tag_html)
+            print(f"  Generated: /tags/{tag}/")
 
     # Generate content pages from other directories
     pages = collect_pages()

@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [TangCore]
 ---
 
 [GBATang](https://github.com/nand2mario/gbatang) has been improving pretty quickly since its release and just reached [version 0.4](https://github.com/nand2mario/gbatang/releases).  More games are running. Graphics rendering has improved a lot. And sound bugs were fixed. Continuing [part one](../gbatang_part_1), let us discuss the components that were not covered in the first post.

@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [8086]
 ---
 
 After [486Tang](https://nand2mario.github.io/posts/2025/486tang_486_on_a_credit_card_size_fpga_board/), I wanted to go back to where x86 started. The result is [**z8086**](https://github.com/nand2mario/z8086): a 8086/8088 core that runs the **original Intel microcode**. Instead of hand‑coding hundreds of instructions, the core loads the recovered 512x21 ROM and recreates the micro‑architecture the ROM expects.

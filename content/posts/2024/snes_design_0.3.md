@@ -3,6 +3,7 @@ title: "Design notes for SNESTang 0.3"
 date: 2024-01-07T20:05:24+08:00
 draft: false
 sidebar: false
+tags: [TangCore]
 author: nand2mario
 ---
 

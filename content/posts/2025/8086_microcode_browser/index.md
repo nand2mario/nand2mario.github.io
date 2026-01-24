@@ -5,6 +5,7 @@ draft: false
 sidebar: false
 comment: true
 author: nand2mario
+tags: [8086]
 ---
 
 Since releasing [486Tang](/posts/2025/486tang_486_on_a_credit_card_size_fpga_board/), I’ve been working on recreating the 8086 with a design that stays as faithful as possible to the original chip. That exploration naturally led me deep into the original 8086 microcode — [extracted and disassembled](https://www.reenigne.org/blog/8086-microcode-disassembled/) by Andrew Jenner in 2020.
