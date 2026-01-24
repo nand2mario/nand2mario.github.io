@@ -197,5 +197,4 @@ The 386's "one bit per cycle" approach is elegant in its simplicity and its reus
 
 Follows me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
-Credits: Thanks [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego) and [Ken Shirriff](https://www.righto.com) for disassembly and [silicon reverse engineering of the 80386](https://www.righto.com/search/label/386).
-
+Credits: This analysis of the 80386 draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com). For a detailed examination of the silicon itself, see Ken Shirriff’s [silicon reverse engineering series on the 80386](https://www.righto.com/search/label/386).
