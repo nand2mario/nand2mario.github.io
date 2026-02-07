@@ -155,7 +155,7 @@ For memory operands, there's an additional twist: the bit index is a **signed of
 
 The barrel shifter is a good example of the 80386’s design style: invest in dedicated hardware where it pays off, and aggressively reuse that hardware. The barrel shifter supports eight shift and rotate instructions, double-precision shifts, and the bit test family—all driven by different microcode sequences that prepare the 64-bit input in instruction-specific ways.
 
-Parameterized microcode is a recurring theme in Intel CPUs. On the 8086, a single micro-op drove all ALU operations. Here, two micro-ops expose most of the barrel shifter's capabilities. With each generation, though, more work shifts from explicit microcode control to implicit hardware -- the 386 already handles EA calculation and stack addressing in dedicated logic that the microcode simply assumes is there. This makes the CPU faster, but also makes microcode-based reverse engineering harder, since more of the interesting behavior is hidden in the datapath.
+Parameterized microcode is a recurring theme in Intel CPUs. On the 8086, a single micro-op drove all ALU operations. Here, two micro-ops expose most of the barrel shifter's capabilities. With each generation, though, more work shifts from explicit microcode control to implicit hardware -- the 386 already handles EA calculation and stack addressing in dedicated logic that the microcode simply assumes is there. I'll cover these in a future post. These optimizations make the CPU faster, but also make microcode-based reverse engineering harder, since more of the interesting behavior is hidden in silicon.
 
 Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
