@@ -17,7 +17,9 @@ tags: [386]
 
 I’m currently building an 80386-compatible core in SystemVerilog, driven by the original Intel microcode extracted from real 386 silicon. Real mode is now operational in simulation, with more than 10,000 single-instruction test cases passing successfully, and work on protected-mode features is in progress. In the course of this work, corners of the 386 microcode and silicon have been examined in detail; this series documents the resulting findings.
 
-In the [previous post](/posts/2026/80386_multiplication_and_division/), we looked at multiplication and division -- iterative algorithms that process one bit per cycle. Today we look at how the CPU does shifts and rotates. The 386 has a dedicated **barrel shifter** that completes an arbitrary multi-bit shift in a single cycle.
+In the [previous post](/posts/2026/80386_multiplication_and_division/), we looked at multiplication and division -- iterative algorithms that process one bit per cycle. Shifts and rotates are a different story: the 386 has a dedicated **barrel shifter** that completes an arbitrary multi-bit shift in a single cycle. What's interesting is how the microcode makes one piece of hardware serve all shift and rotate variants -- and how the complex rotate-through-carry instructions are handled.
+
+<!--more-->
 
 ## A hybrid barrel shifter
 
