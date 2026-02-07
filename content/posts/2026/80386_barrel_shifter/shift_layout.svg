@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 480">
+  <style>
+    .inst { font: bold 13px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #374151; }
+    .data { font: 13px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #374151; }
+    .amt  { font: 13px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #6b7280; }
+    .bit  { font: 11px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #9ca3af; }
+    .half { font: 12px system-ui, -apple-system, sans-serif; fill: #6b7280; }
+    .note { font: italic 11.5px system-ui, -apple-system, sans-serif; fill: #9ca3af; }
+    .sep  { stroke: #e5e7eb; stroke-width: 1; }
+  </style>
+
+  <!-- Bit position labels -->
+  <text class="bit" x="110" y="14">63</text>
+  <text class="bit" x="278" y="14" text-anchor="end">32</text>
+  <text class="bit" x="284" y="14">31</text>
+  <text class="bit" x="452" y="14" text-anchor="end">0</text>
+
+  <!-- Half labels -->
+  <text class="half" x="194" y="30" text-anchor="middle">high half</text>
+  <text class="half" x="368" y="30" text-anchor="middle">low half</text>
+
+  <!-- Header separator -->
+  <line x1="108" y1="38" x2="454" y2="38" class="sep"/>
+
+  <!-- SHL x,c -->
+  <text class="inst" x="8" y="60">SHL x,c</text>
+  <rect x="108" y="46" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="64" text-anchor="middle">x</text>
+  <rect x="282" y="46" width="172" height="28" rx="3" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text class="data" x="368" y="64" text-anchor="middle">0</text>
+  <text class="amt" x="470" y="64">&gt;&gt; w-c</text>
+
+  <!-- SHR x,c -->
+  <text class="inst" x="8" y="96">SHR x,c</text>
+  <rect x="108" y="82" width="172" height="28" rx="3" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text class="data" x="194" y="100" text-anchor="middle">0</text>
+  <rect x="282" y="82" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="100" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="100">&gt;&gt; c</text>
+
+  <!-- ROL x,c -->
+  <text class="inst" x="8" y="132">ROL x,c</text>
+  <rect x="108" y="118" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="136" text-anchor="middle">x</text>
+  <rect x="282" y="118" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="136" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="136">&gt;&gt; w-(c%w)</text>
+
+  <!-- ROR x,c -->
+  <text class="inst" x="8" y="168">ROR x,c</text>
+  <rect x="108" y="154" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="172" text-anchor="middle">x</text>
+  <rect x="282" y="154" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="172" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="172">&gt;&gt; c%w</text>
+
+  <!-- SAR x,c -->
+  <text class="inst" x="8" y="204">SAR x,c</text>
+  <rect x="108" y="190" width="172" height="28" rx="3" fill="#fef3c7" stroke="#fcd34d"/>
+  <text class="data" x="194" y="208" text-anchor="middle">sign(x)</text>
+  <rect x="282" y="190" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="208" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="208">&gt;&gt; c</text>
+
+  <!-- Divider -->
+  <line x1="8" y1="228" x2="608" y2="228" class="sep" stroke-dasharray="4 3"/>
+
+  <!-- RCL x,c -->
+  <text class="inst" x="8" y="254">RCL x,c</text>
+  <rect x="108" y="240" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="258" text-anchor="middle">x</text>
+  <rect x="282" y="240" width="172" height="28" rx="3" fill="#d1fae5" stroke="#6ee7b7"/>
+  <text class="data" x="368" y="258" text-anchor="middle">{CF, x&gt;&gt;1}</text>
+  <text class="amt" x="470" y="258">&gt;&gt; w-c *</text>
+
+  <!-- RCR x,c -->
+  <text class="inst" x="8" y="290">RCR x,c</text>
+  <rect x="108" y="276" width="172" height="28" rx="3" fill="#d1fae5" stroke="#6ee7b7"/>
+  <text class="data" x="194" y="294" text-anchor="middle">{x, CF}</text>
+  <rect x="282" y="276" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="294" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="294">&gt;&gt; c   *</text>
+
+  <!-- Divider -->
+  <line x1="8" y1="314" x2="608" y2="314" class="sep" stroke-dasharray="4 3"/>
+
+  <!-- SHLD x,y,c -->
+  <text class="inst" x="8" y="340">SHLD x,y,c</text>
+  <rect x="108" y="326" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="344" text-anchor="middle">x</text>
+  <rect x="282" y="326" width="172" height="28" rx="3" fill="#ede9fe" stroke="#c4b5fd"/>
+  <text class="data" x="368" y="344" text-anchor="middle">y</text>
+  <text class="amt" x="470" y="344">&gt;&gt; w-c</text>
+
+  <!-- SHRD x,y,c -->
+  <text class="inst" x="8" y="376">SHRD x,y,c</text>
+  <rect x="108" y="362" width="172" height="28" rx="3" fill="#ede9fe" stroke="#c4b5fd"/>
+  <text class="data" x="194" y="380" text-anchor="middle">y</text>
+  <rect x="282" y="362" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="380" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="380">&gt;&gt; c</text>
+
+  <!-- Divider -->
+  <line x1="8" y1="400" x2="608" y2="400" class="sep" stroke-dasharray="4 3"/>
+
+  <!-- BITTST x,c -->
+  <text class="inst" x="8" y="426">BITTST x,c</text>
+  <rect x="108" y="412" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="194" y="430" text-anchor="middle">x</text>
+  <rect x="282" y="412" width="172" height="28" rx="3" fill="#dbeafe" stroke="#93c5fd"/>
+  <text class="data" x="368" y="430" text-anchor="middle">x</text>
+  <text class="amt" x="470" y="430">&gt;&gt; c</text>
+
+  <!-- Footnotes -->
+  <text class="note" x="108" y="460">* microcode reduces count mod (w+1) before shifting</text>
+  <text class="note" x="108" y="476">w = operand width (8, 16, or 32). BITTST: CF &#x2190; result bit 0.</text>
+</svg>
