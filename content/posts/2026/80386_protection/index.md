@@ -1,7 +1,7 @@
 ---
 title: "80386 Protection"
-date: 2026-02-24T13:00:00+08:00
-draft: true
+date: 2026-02-24T16:54:00+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
