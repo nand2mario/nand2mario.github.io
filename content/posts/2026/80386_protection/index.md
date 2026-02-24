@@ -1,6 +1,6 @@
 ---
-title: "80386 Protection Mechanisms"
-date: 2026-02-25T12:00:00+08:00
+title: "80386 Protection"
+date: 2026-02-24T13:00:00+08:00
 draft: true
 sidebar: false
 comment: true
@@ -8,143 +8,224 @@ author: nand2mario
 tags: [386]
 ---
 
-<!-- TODO: intro paragraph. connect to series. the "problem": how do you make protection fast? -->
+<!-- <style>
+  pre code { font-size: 0.85em; }
+  code { font-size: 0.85em; }
+</style> -->
 
-In the [previous post](/posts/2026/80386_barrel_shifter/), we looked at how the 386 reuses one barrel shifter for all shift and rotate instructions. This time we look at a much bigger topic: how the 386 enforces protection -- the mechanism that lets multiple programs and an operating system share one processor without stepping on each other. The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 split this work between three very different mechanisms: a dedicated PLA for privilege checking, a hardware state machine for page walks, and microcode for everything else.
+I'm building an 80386-compatible core in SystemVerilog and blogging the process. In the [previous post](/posts/2026/80386_barrel_shifter/), we looked at how the 386 reuses one barrel shifter for all shift and rotate instructions. This time we move from real mode to protected and talk about **protection**.
+
+The 80286 introduced "Protected Mode" in 1982. It was not popular. The mode was difficult to use, lacked paging, and had no way to return to real mode without a hardware reset. The 80386, arriving three years later, made protection usable -- adding paging, a flat 32-bit address space, per-page User/Supervisor control, and **Virtual 8086 mode** so that DOS programs could run inside a protected multitasking system. These features made possible Windows 3.0, OS/2, and early Linux.
+
+The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 manages this complexity on a 275,000-transistor budget. You cannot simply create multiple copies of "virtual machines" -- the transistor count doesn't allow it. Instead, the 386 employs a variety of techniques to implement multitasking support: a dedicated PLA for privilege checking, a hardware state machine for page walks, segment and paging caches, and microcode for everything else.
 
 <!--more-->
 
 ## The protection problem
 
-The 80386 separates programs from one another, and from the operating system, using two address translation layers: **Segmentation** and **Paging**.
-
-```mermaid
-flowchart LR
-    A[Logical Address\nSelector : Offset] -->|Segmentation Unit| B[Linear Address]
-    B -->|Paging Unit\nTLB / Page Tables| C[Physical Address]
-    C --> D[Main Memory]
-```
-
-Segmentation maps a logical address (a 16-bit selector plus a 32-bit offset) to a 32-bit linear address, enforcing privilege and limit checks along the way. Paging then translates that linear address to a physical address, adding a second layer of User/Supervisor and Read/Write protection. The two layers are independent -- segmentation is always active in protected mode, while paging is optional (controlled by CR0.PG).
-
-The 386 supports four privilege rings (0 through 3), but in practice nearly all operating systems use just two: ring 0 for the kernel and ring 3 for user programs. Three privilege levels interact on every segment access:
-
-*   **CPL (Current Privilege Level):** The privilege of the running code, stored in the low 2 bits of CS.
-*   **DPL (Descriptor Privilege Level):** The privilege assigned to the target segment by the OS.
-*   **RPL (Requested Privilege Level):** A field in the selector. This prevents a "confused deputy" attack: even if privileged code loads a selector, the RPL can restrict effective privilege to that of the original caller.
-
-The core rule for data access: `max(CPL, RPL) <= DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege validation logic. Checking all of this in microcode would take dozens of micro-instructions. Instead, the 386 offloads most of it to a dedicated hardware unit.
-
-## The Protection PLA
-
-<!-- TODO: ken shirriff photo of the protection unit die area? -->
-
-The 80386 achieves high-speed privilege checking through a dedicated combinational ROM that Intel called the **Protection PLA**. It occupies a significant fraction of the Protection Unit's die area and contains 148 product terms -- a substantial piece of combinational logic.
-
-### How the Protection PLA works
-
-Instead of comparing CPL, DPL, and RPL in microcode, the microcode issues a single **protection test operation** that hands control to the Protection PLA. A preprocessor called the "Tiny PLA" normalizes the processor's raw privilege levels and descriptor attributes into a compact 16-bit **state vector**:
-
-<!-- TODO: diagram of Protection PLA input structure? -->
+The first thing a multi-tasking operating system needs from hardware is **isolation**: multiple programs must share one processor without being able to read, write, or jump into each other's memory. The 80386 achieves this through two independent address translation layers.
 
 ```
- 15   14   13        11  10   9    8    7    6    5         0
-┌────┬────┬──────────┬────┬────┬────┬────┬────┬──────────────┐
-│ Q  │ b  │ DES type │ S  │ X  │ C  │ R  │ A  │~test_const[5:0]│
-└────┴────┴──────────┴────┴────┴────┴────┴────┴──────────────┘
-  │    │                                         │
-  │    └── Privilege match (DPL==CPL etc.)        └── Inverted test constant
-  └─── Privilege violation (RPL>DPL or CPL>DPL)       from microcode
+Logical Address          Linear Address           Physical Address
+(Selector:Offset)        (32-bit)                 (32-bit)
+       │                      │                         │
+       ▼                      ▼                         ▼
+  ┌──────────┐          ┌──────────┐              ┌──────────┐
+  │Segmentati│          │  Paging  │              │   Main   │
+  │on Unit   │─────────▶│  Unit    │─────────────▶│  Memory  │
+  └──────────┘          └──────────┘              └──────────┘
+   Privilege +           User/Super +
+   Limit checks          Read/Write checks
 ```
 
-Bits [15:6] encode the current privilege relationship and descriptor type. Bits [5:0] carry the **test constant** -- an identifier that tells the Protection PLA *what kind* of protection check to perform. The test constant is specified by the microcode and inverted by hardware before reaching the PLA.
+**Segmentation** maps a logical address (a 16-bit selector plus a 32-bit offset) to a 32-bit linear address, enforcing privilege and limit checks along the way. **Paging** then translates that linear address to a physical address, adding a second layer of User/Supervisor and Read/Write protection. The two layers are independent: segmentation is always active in protected mode, while paging is optional (controlled by CR0.PG).
 
-The Protection PLA evaluates all 148 product terms against this 16-bit input and produces an 18-bit output:
+The 386 supports four privilege rings (0 through 3), though in practice nearly all operating systems use just two: ring 0 for the kernel and ring 3 for user programs. Three privilege levels interact on every segment access: CPL (Current Privilege Level), DPL (Descriptor Privilege Level) and RPL (Requested Privilege Level).
 
-- **Bits [11:0]**: A 12-bit microcode address. `0x000` means "continue" (test passed). Any other value redirects the microcode sequencer -- to a fault handler (`0x801` for #GP, `0x863` for #SS, `0x871` for #NP) or to a gate dispatch routine.
-- **Bits [15:12]**: Four control flags: **N** (set the descriptor's Accessed bit), **K** (stack operation -- update CPL), **L** (limit check for ARPL/LSL), **M** (validation passed -- safe to commit the descriptor).
+The core rule for data access: `max(CPL, RPL) ≤ DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege validation logic. If all of these checks were done in microcode, each segment load would need a cascade of conditional branches: is it a code or data segment? Is it conforming? Is the RPL valid? Is the DPL valid? Is the segment present? Is it a gate? What kind of gate? Repeating these checks across dozens of instructions -- far CALL, far JMP, far RET, INT, IRET, MOV to segment register, task switch -- would bloat the microcode ROM and add cycles to every protected-mode operation.
 
-There are about 33 distinct test constants, covering every protection scenario on the 386:
+The 386 engineers solved this with a dedicated hardware unit.
 
-| Test | Constant | Checks |
-|------|----------|--------|
-| TST_SEL_CS | 0x01 | Code segment selector valid? |
-| TST_SEL_RET | 0x02 | Far return: same or cross privilege? |
-| TST_SEL_SS | 0x0C | Stack segment DPL == CPL == RPL? |
-| TST_DES_CALL | 0x15 | Far call target: segment or gate? |
-| TST_DES_CGDEST | 0x17 | Call gate destination code segment valid? |
-| TST_DES_INT_HW | 0x22 | Hardware interrupt gate type and privilege? |
+## A centralized protection unit
 
-Each test constant activates a different subset of the Protection PLA's product terms, encoding the specific privilege rules for that scenario. The result is a complete protection decision in a single evaluation -- no branching, no iteration.
+<figure>
+<img src="80386_labeled_protection.jpg" alt="80386 die photo with Protection Test Unit highlighted" style="max-width: 600px;">
+<figcaption style="text-align: center;">The 80386 die. The Protection Test Unit ROM is highlighted in red, sitting between the microcode ROM and the control logic.<br>
+<small>Base image: <a href="https://commons.wikimedia.org/wiki/File:Intel_80386_DX_die.JPG">Intel 80386 DX die</a>, Wikimedia Commons</small></figcaption>
+</figure>
 
-### The 3-delay-slot pipeline trick
+Intel documentation describes the 386's execution section as three units: the **Control Unit** (the microcode ROM), the **Data Unit** (registers and ALU), and the **Test Unit**, which "implements fast testing of complex memory protection functions." That Test Unit (labeled "Protection Test Unit" on the die shot) is physically visible on the die -- it is a PLA (Programmable Logic Array). This single piece of combinational logic replaces what would otherwise be hundreds of multi-cycle conditional branches in the microcode. Instead of testing privilege rules sequentially, the microcode issues a single **protection test operation**, and the PLA evaluates all applicable rules in parallel, producing a complete decision in one evaluation: continue, fault, or redirect to a gate handler.
 
-The Protection PLA operates asynchronously with respect to the microcode sequencer. After a protection test fires, it needs time to evaluate and produce its redirect address. The 386 exploits this by allowing the **next three micro-instructions** to execute before the redirect takes effect. The microcode is carefully written to use these delay slots productively.
+### Snoop, test, redirect
 
-Here's a concrete example from the `RETF` (far return) path. When returning from a far call, the microcode needs to know whether this is a same-privilege or cross-privilege return, because the two cases need very different handling:
+Here's how a protection test works. The microcode feeds three things to the Test PLA:
+
+1. **Descriptor attributes**: The Type, DPL, S (system/user), and Present bits from the segment descriptor being loaded, read from a register called PROTUN. For a few cases, the Test PLA takes the 16-bit selector (segment register value) as input.
+2. **Privilege state**: CPL, RPL, and their relationships, preprocessed by a small circuit called the "Tiny PLA" into two normalized bits (privilege violation, privilege match).
+3. **Test constant**: A 6-bit identifier from the microcode that tells the PLA *what kind* of check to perform -- is this a data segment load? A call gate? A far return?
+
+These are packed into a 16-bit state vector:
+
+```
+ 15   14   13   12   11   10    9    8    7    6    5          0
+┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬──────────────┐
+│ p1 │ p2 │    │    │ P  │ S  │ X  │ C/E│ R/W│ A  │ test constant│
+└────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴──────────────┘
+  │    │              │    │    │    │    │    │         │
+  │    │              │    └────┴────┴────┴────┘         └── Which check?
+  │    │              │         Descriptor type               (33 distinct tests)
+  │    │              │
+  │    │              └── Present (most of the times)
+  │    └── Privilege match (e.g., DPL == CPL)
+  └─── Privilege violation (e.g., RPL > DPL)
+```
+
+The Test PLA evaluates all 148 product terms against this input and produces an 18-bit output:
+
+- **Bits [13:2]**: A 12-bit microcode redirect address. `0x000` means "test passed, continue." Any other value hijacks the microcode sequencer -- to a fault handler (e.g., `0x85D` for #GP, `0x870` for #NP) or to a gate dispatch routine (e.g., `0x5BE` for a 386 call gate).
+- **Bits [17:14]**: Four control flags -- set the descriptor's Accessed bit, mark validation passed, request a limit check, or signal a stack operation.
+
+There are about 33 distinct test constants, covering every protection scenario on the 386. Each activates a different subset of the 148 product terms, encoding the specific privilege rules for that scenario. To give a feel for what the PLA does concretely, here are the possible outcomes for two tests:
+
+**TST\_DES\_CALL (0x15)** -- used by far CALL to classify the target descriptor:
+
+| State | PLA output | Meaning |
+|-------|-----------|---------|
+| User segment, code, privilege OK, present | → 0x5D5 (PASSED) + set A-bit | Valid code segment, proceed |
+| User segment, code, privilege OK, not present | → 0x870 (#NP) | Segment not present fault |
+| System descriptor (S=0) | → 0x5B8 (GATE\_HANDLER) | It's a gate -- dispatch by type |
+| Privilege violation or wrong type | → 0x000 (no match) | Falls through to #GP |
+
+**TST\_SEL\_RET (0x02)** -- used by far RET to test target segment selector to detect cross-privilege returns:
+
+| State | PLA output | Meaning |
+|-------|-----------|---------|
+| RPL == CPL (same privilege) | → 0x000 (continue) + limit check flag | Same-privilege return |
+| RPL > CPL (outer ring) | → 0x686 (RETF\_OUTER\_LEV) | Cross-privilege return path |
+| RPL < CPL (inner ring -- illegal) | → 0x85D (#GP) | Privilege violation |
+
+## Making it generic: the PTSAV/PTOVRR callback
+
+Nearly every protection-related instruction -- far CALL, far JMP, far RET, INT, IRET, MOV to segment register, task switch -- needs to load a segment descriptor from the GDT or LDT. The 386 microcode centralizes this into a shared subroutine called `LD_DESCRIPTOR`, which reads the 8-byte descriptor from memory and feeds the high DWORD (containing Type, DPL, S, and P bits) to the Test PLA for validation.
+
+But different callers need different validation rules. A `MOV DS, AX` needs to reject call gates but accept data segments. A `CALL FAR` needs to accept call gates *and* code segments. How can one shared subroutine perform different validation?
+
+The answer is what I think of as hardware-level dependency injection. Before calling LD_DESCRIPTOR, the caller saves its desired test constant into a hardware latch using a micro-op called **PTSAV** (Protection Save). Within LD_DESCRIPTOR, another micro-op called **PTOVRR** (Protection Override) retrieves and fires the saved test.
+
+Here's how a segment register load uses it:
 
 ```asm
-; RETF - far return from call
-; LD_DESCRIPTOR loads the target CS descriptor. TST_SEL_RET fires in
-; the LCALL delay slot to test if we're crossing privilege levels.
-681                    LD_DESCRIPTOR  LCALL           ; load target CS descriptor
-682  COUNTR -> SLCTR   TST_SEL_RET    PTSELE  DLY    ; fire privilege test
-                                                      ; result arrives 3 cycles later
-; Same-privilege path (Protection PLA returns 0x000 = continue):
-683  COUNTR            TMPC           PASS    SDEL    ; write descriptor to cache
-684            PAGER5  JMP_FAR_DONE   LJUMP   SPCR    ; set up far return
-685  TMPG      DESCOD                         IND=    ; IND = new EIP
-
-; Cross-privilege path (Protection PLA redirects to 0x686):
-; But first, the 3 delay slots of LD_DESCRIPTOR (5C9-5CB) execute:
-;   5C9: IND = table_base + index*8 + 4  (point to descriptor high DWORD)
-;   5CA: rd D                              (read high DWORD from memory)
-;   5CB: IND -= 4                          (point to low DWORD)
-; By the time the redirect takes effect at 686, the memory pipeline
-; is already primed with the new SS descriptor address.
-
-686                    LD_DESCRIPTOR2 LCALL   rd D    ; read low DWORD (IND ready!)
-687  OPR_R  -> PROTUN  TST_DES_SIMPLE PTOVRR  UNL    ; high DWORD arrives in OPR_R
+; MOV DS, r32 (protected mode)
+580            DES_SR  TST_DES_SIMPLE PTSAV1      DLY SPTR ; save test constant 0x10; set DS pointer
+581                    LD_DESCRIPTOR  LCALL                ; call LD_DESCRIPTOR subroutine
+582  DSTREG -> SLCTR   TST_SEL_NONSS  PTSELE      DLY      ; test selector (in LCALL delay slot)
 ```
 
-This is clever pipelining. The cross-privilege test at 682 and the descriptor read setup in the delay slots overlap perfectly. Whether the return is same-privilege or cross-privilege, no cycles are wasted -- the hardware is already prepared for whichever path the Protection PLA selects. The same pattern appears throughout the 386's protection microcode: fire a test, do useful work in the delay slots, and let the redirect arrive just in time.
+And here's how a far CALL uses a different test constant through the same subroutine:
 
-## The Paging Unit
-
-Operating underneath segmentation is the Paging Unit, which translates linear addresses into physical addresses. Paging divides memory into fixed 4 KB pages, allowing the OS to implement demand-paged virtual memory -- swapping pages to disk and bringing them back transparently.
-
-The 386 uses a two-level table lookup: a **Page Directory** (1024 entries, indexed by linear address bits [31:22]) and a **Page Table** (1024 entries, indexed by bits [21:12]). Each entry is 32 bits:
-
-```
- 31                  12  11     6  5  4  3  2  1  0
-┌──────────────────────┬────────┬──┬──┬──┬──┬──┬──┐
-│   Page Frame Address │  Avail │D │A │  │  │U/S│R/W│P│
-└──────────────────────┴────────┴──┴──┴──┴──┴──┴──┘
+```asm
+; Far CALL (protected mode)
+5AC            DES_CS  TST_DES_JMP    PTSAV7      DLY SPTR ; save test constant 0x15; set CS pointer
+5AD                    LD_DESCRIPTOR  LCALL                ; same subroutine
+5AE  COUNTR -> SLCTR   TST_SEL_CS     PTSELE               ; test selector (in LCALL delay slot)
 ```
 
-Paging introduces a secondary protection layer with just two bits per page:
+The only difference is the test constant: 0x10 for a data segment load, 0x15 for a far call target. 
 
-| Page Protection | Supervisor (CPL 0-2) | User (CPL 3) |
-| :--- | :--- | :--- |
-| **Supervisor (U/S=0)** | Read/Write | Access Denied (#PF) |
-| **User, Read-Only (R/W=0)** | Read/Write | Read Only |
-| **User, Read/Write (R/W=1)** | Read/Write | Read/Write |
+## Making it fast: 3-cycle delay slots
 
-The combined permission is the intersection of PDE and PTE permissions -- if either entry denies access, the access faults.
+The 386 microcode sequencer has a **one-cycle pipeline delay**: when a jump or `RNI` (run next instruction) is decoded, the micro-instruction immediately after it has already been fetched and will execute before the jump takes effect. This "delay slot" is a basic property of the sequencer, and the microcode is written to fill it with useful work rather than waste a cycle on a bubble. The examples in the PTSAV section above show this: at 582/5AE, the micro-instruction after LCALL executes before the subroutine begins.
+
+The Test PLA extends this idea much further. It operates asynchronously with respect to the sequencer. After a protection test fires, the PLA needs time to evaluate and produce its redirect address. Instead of stalling, the 386 allows the **next three micro-instructions** to execute before the redirect takes effect -- and the microcode is carefully written to use these delay slots productively. This is tremendously confusing when reading the microcode for the first time (huge credit to the disassembly work by [reenigne](https://www.reenigne.org/blog/about/)). But Intel did it for performance.
+
+Here's a concrete example from far return (`RETF`). When returning from a far call, the microcode needs to know whether this is a same-privilege or cross-privilege return, because the two cases need very different handling. Following the execution order (not address order):
+
+```asm
+; RETF (protected mode) — execution flows DOWN this listing
+;
+; Step 1: Call LD_DESCRIPTOR and fire the privilege test
+681                    LD_DESCRIPTOR  LCALL       ; jump to subroutine at 5C9
+682  COUNTR -> SLCTR   TST_SEL_RET    PTSELE DLY  ; (delay slot of LCALL, executed before 5C9) 
+                                                  ; fire privilege test
+                                                  ;   → PLA result takes effect 3 cycles later
+
+; Step 2: The 3 delay slots — these execute inside LD_DESCRIPTOR
+;         while the PLA is still evaluating
+5C9  SLCTR     DESSDT  4              IN=+        ; delay slot 1: compute descriptor address
+5CA                                   rd D        ; delay slot 2: read high DWORD from memory
+5CB                    -4         DLY IN+=        ; delay slot 3: IND points to low DWORD
+                                                  ;   → PLA result takes effect NOW
+...
+
+; Step 3a: Same-privilege (PLA returned 0x000 = continue)
+;          LD_DESCRIPTOR continues normally at 5CC...
+;          Eventually returns to the RETF caller here:
+683  COUNTR            TMPC           PASS   SDEL ; write descriptor to cache
+684            PAGER5  JMP_FAR_DONE   LJUMP  SPCR ; done — set up far return
+
+; Step 3b: Cross-privilege (PLA redirected to 0x686)
+;          IND is already primed by the 3 delay slots above!
+686                    LD_DESCRIPTOR2 LCALL rd D  ; read low DWORD (IND ready)
+687  OPR_R  -> PROTUN  TST_DES_SIMPLE PTOVRR UNL  ; validate descriptor
+```
+
+Whether the return is same-privilege or cross-privilege, the delay slots do useful work: they compute the descriptor address and start reading it from memory. By the time the PLA verdict arrives, the hardware is already prepared for whichever path is selected. No cycles are wasted.
+
+The tradeoff is complexity. The microcode must be carefully arranged so that the instructions in delay slots are either useful setup for both paths, or at least harmless if the redirect fires. Not every case is as clean as RETF. When a PLA redirect interrupts an LCALL, the return address is already pushed onto the microcode call stack (yes, the 386 has a microcode call stack) -- the redirected code must account for this stale entry. When multiple protection tests overlap, or when a redirect fires during a delay slot of *another* jump, the control flow becomes genuinely hard to reason about. During the FPGA core implementation, protection delay slot interactions were consistently the most difficult bugs to track down.
+
+### When delay slots aren't enough: RPT as a stall
+
+The 3-delay-slot scheme works when there is useful work to fill those three cycles. But some instructions genuinely need the protection result before they can proceed. `LAR` (Load Access Rights) and `VERR` (Verify Read), for example, exist solely to query protection status -- there is no useful setup to overlap with.
+
+The 386 solves this by repurposing `RPT` (Repeat). Normally, RPT implements loops -- it re-executes a micro-instruction while decrementing a counter, as we saw in the [multiplication post](/posts/2026/80386_multiplication_and_division/). But when a protection test is in flight, the hardware suppresses RPT's counter-decrement and turns it into a pure **stall**: the sequencer freezes until the PLA result arrives.
+
+```asm
+; LAR/LSL/VERR/VERW (verification instructions)
+70E  DSTREG -> SLCTR  TST_SEL_LLVV  PTSELA DLY   ; fire protection test on selector
+70F  SLCTR     DESSDT 4             SNOFLT IN=+  ; set up descriptor address
+710                                 BITS32 RPT   ; ← stall here until PLA result arrives
+711  SLCTR2 -> TMPE   8             LDBSRU rd D  ; read descriptor (after stall lifts)
+```
+
+When the PLA result arrives, the stall lifts and execution resumes -- either continuing forward (test passed) or redirecting to a fault handler.
+
+## Speeding up virtual memory
+
+The segmentation and paging scheme of x86 processors has been discussed extensively elsewhere (see the [OSDev wiki](https://wiki.osdev.org/Paging), the [Writing an OS in Rust](https://os.phil-opp.com/paging-introduction/) series, or the [Intel 386 Programmer's Reference Manual](https://css.csail.mit.edu/6.858/2014/readings/i386.pdf), Chapter 5). Here I'll focus on what the actual silicon does to make it fast.
+
+### The fast path: 1.5 cycles from EA to physical address
+
+Virtual memory is conceptually simple but potentially devastating to performance. Every memory access must go through segmentation (add segment base, check limit) and then paging (look up the page table). Naively, paging alone requires two additional memory reads per access -- one for the page directory entry, one for the page table entry.
+
+Intel's 1986 ICCD paper *Performance Optimizations of the 80386* reveals how tightly this was optimized. The entire address translation pipeline -- effective address calculation, segment relocation, and TLB lookup -- completes in **1.5 clock cycles**:
+
+```
+Clock cycle 0               │ Clock cycle 1
+────────────────────────────│──────────────────────
+EA = base + index + disp    │
+  (32-bit adder)            │  Linear = EA + seg_base
+                            │    (32-bit adder)
+                            │  TLB lookup: linear → physical
+                            │    (combinational, parallel)
+                            │          ↓
+                            │    Physical address → Bus Unit
+```
+
+The segmentation unit performs two operations simultaneously: adding the segment base to produce the linear address and comparing the effective address against the segment limit. Both use dedicated 32-bit adder/subtractor circuits.
+
+The TLB lookup is **combinational** -- it evaluates in the same half-cycle as the limit check, requiring no additional clock. The common case (TLB hit, no page boundary crossing) adds zero overhead to a memory access. This is why the **Segment Descriptor Cache** (left) and **Page Cache** (TLB, top-left) together occupy such substantial die area -- they are the fast path that makes protected mode competitive with real mode.
 
 ### The TLB
 
-To avoid the two memory reads on every access, the 386 includes a **32-entry Translation Lookaside Buffer** organized as an 8-set, 4-way set-associative cache. Each entry stores the virtual-to-physical mapping along with combined PDE+PTE permission bits (writable, user, dirty, accessed). Intel's documentation claims a 98% hit rate for typical workloads.
+To avoid the two memory reads on every access, the 386 includes a **32-entry Translation Lookaside Buffer (TLB)** organized as 8 sets with 4 ways each. Each entry stores the virtual-to-physical mapping along with the combined PDE+PTE permission bits.
 
-TLB lookup is **combinational** -- all four ways in the indexed set are checked in parallel, producing a physical address in half a clock period. This means the common case (TLB hit, no DWORD crossing) adds zero overhead to a memory access.
+32 entries may sound small by modern standards (current x86 processors have thousands of TLB entries), but it covers 128 KB of memory -- enough for the working set of most 1980s programs. A TLB miss is not catastrophic either; the hardware page walker handles it transparently in about 20 cycles.
 
 The TLB is flushed entirely on any write to CR3 (the page directory base register). There is no per-entry invalidation on the 386 -- that arrived with the 486's `INVLPG` instruction.
 
-### The hardware page walker
+### The slow path: hardware page walks
 
-When a TLB miss occurs, the 386 cannot afford to handle it in microcode -- that would take too many cycles and stall the instruction pipeline. Instead, a **dedicated hardware state machine** performs the page walk transparently:
-
-<!-- TODO: state machine diagram -->
+How often does the "slow path" actually trigger? With 32 TLB entries covering 128 KB, Intel claimed a 98% hit rate for typical workloads of the era. That sounds impressive, but a 2% miss rate means a page walk every 50 memory accesses -- still quite frequent. So the 386 overlaps page walks with normal instruction execution wherever possible. A **dedicated hardware state machine** performs each walk:
 
 ```
               ┌──────────┐
@@ -156,20 +237,16 @@ When a TLB miss occurs, the 386 cannot afford to handle it in microcode -- that 
               └────┬──────┘
                    │
               ┌────▼──────┐    PDE.P=0
-              │ Check PDE ├──────────────► FAULT (P=0)
+              │ Check PDE ├──────────────► PAGE FAULT
               └────┬──────┘
                    │ PDE.P=1
               ┌────▼──────┐
               │ Read PTE  │ ← PDE[31:12] | table_index | 00
               └────┬──────┘
                    │
-              ┌────▼──────┐    PTE.P=0
-              │ Check PTE ├──────────────► FAULT (P=0)
-              └────┬──────┘
-                   │ PTE.P=1
-              ┌────▼──────────┐  permission fail
-              │ Check perms   ├──────────► FAULT (P=1)
-              └────┬──────────┘
+              ┌────▼──────┐    PTE.P=0 or
+              │ Check PTE ├──────────────► PAGE FAULT
+              └────┬──────┘    perm fail
                    │ OK
               ┌────▼──────┐
               │ Write PDE │ ← set Accessed bit
@@ -178,189 +255,100 @@ When a TLB miss occurs, the 386 cannot afford to handle it in microcode -- that 
               │ Write PTE │ ← set Accessed (+ Dirty if write)
               └────┬──────┘
               ┌────▼──────┐
-              │   DONE    │ → update TLB, resume access
+              │   DONE    │ → update TLB, resume original access
               └───────────┘
 ```
 
-An important behavioral detail: **the 386 only writes back Accessed/Dirty bits on a fully successful walk**. If the PDE is not present, or the PTE is not present, or the permission check fails, the walker goes directly to FAULT with no write-back. This means the OS can examine page table entries after a fault and know that the hardware hasn't modified them -- a property that `test386.asm` explicitly verifies by checking `PDE.A == 0` and `PTE.A == 0` in its page fault handler.
+What surprised me during the implementation is that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue. This is why the "Paging Unit" random logic occupies such a large area on the die.
 
-The write-back sequence uses locked bus cycles (LOCK# asserted), ensuring atomicity on multiprocessor systems. The entire walk takes approximately 9 clock cycles in the best case.
+The A/D bits exist entirely for the operating system's benefit. The Accessed bit tells the OS which pages have been recently used, enabling page replacement algorithms to choose pages to evict when memory runs low. The Dirty bit tells the OS which pages have been modified and must be written back to disk before eviction; clean pages can simply be discarded and re-read from disk later.
 
-## Cross-privilege transitions: where microcode takes over
+### Contrast: segment descriptor A-bit writeback
 
-The Protection PLA handles the *decision* of whether a privilege transition is allowed. But the *mechanics* of actually switching privilege levels -- loading new stack pointers from the TSS, pushing and popping stack frames, validating multiple descriptors -- are too complex for hardware. This is where the microcode earns its keep.
+Both page table entries and segment descriptors have an Accessed bit that the hardware must set on use -- but the mechanisms are strikingly different.
 
-### LD_DESCRIPTOR: the workhorse subroutine
+For pages, as we just saw, the walker sets A/D bits entirely in hardware. The microcode sequencer never even knows it happened.
 
-Almost every protection operation needs to load a segment descriptor from the GDT or LDT. The `LD_DESCRIPTOR` microcode subroutine handles this, reading both DWORDs of the 8-byte descriptor and feeding the high DWORD to the Protection PLA for validation:
-
-```asm
-; LD_DESCRIPTOR subroutine
-; Input: COUNTR = selector
-; Output: descriptor loaded into cache, Protection PLA validation complete
-5C9  SLCTR     DESSDT  4              IN=+      ; IND = table_base + index*8 + 4
-5CA                                   rd D      ; read descriptor high DWORD
-5CB                    -4         DLY IN+=      ; IND -= 4 (point to low DWORD)
-5CC                                   rd D      ; read descriptor low DWORD
-5CD  OPR_R  -> PROTUN  TST_DES_SIMPLE PTOVRR UNL ; feed high DWORD to Protection PLA
-     ; result: CONTINUE, #NP (not present), or gate dispatch
-     ; delay slots 5CE-5D0 execute while the PLA evaluates
-5CE  OPR_R  -> TMPB                   BITS32    ; TMPB = high DWORD
-5CF                    0x10           LDBSLU DLY ; set up barrel shift
-5D0  OPR_R  -> TMPC    TMPB           SHIFT  UNL ; extract base/limit fields
-```
-
-This subroutine is called (via `LCALL`) from far CALL, far JMP, far RET, INT, IRET, MOV to segment register, and task switch -- every operation that loads a segment descriptor.
-
-### Call gates: the full privilege transition
-
-A **call gate** is the x86 mechanism for controlled privilege escalation -- the equivalent of a system call. When user code (ring 3) executes `CALL FAR` targeting a call gate descriptor, the 386 must:
-
-1. Validate the gate descriptor (DPL, type)
-2. Extract the target CS selector and EIP from the gate
-3. Load and validate the target code segment descriptor
-4. Read new SS:ESP from the TSS for the target privilege level
-5. Switch to the new stack
-6. Copy parameters from old stack to new stack (count specified in gate)
-7. Push old SS, ESP, CS, EIP on the new stack
-8. Begin execution at the gate's target CS:EIP
-
-The microcode for this is substantial. Here's the entry point:
+For segments, the job is split between hardware and microcode. When LD_DESCRIPTOR fires its protection test at 5CD, the Test PLA OR's the A-bit (bit 8 of the descriptor high DWORD) into a temporary register called PROTUN. Then the microcode at `PROT_TESTS_PASSED` takes over and writes the modified value back to the GDT or LDT in memory:
 
 ```asm
-; Far CALL through a call gate (386)
-5B8  PROTUN -> COUNT5  TST_DES_CGATE  PTGATE         ; validate gate type and privilege
-     ; dispatches to: CALLGATE386, CALLGATE286, TASKGATE, #NP, or TSS
-5B9  SIGMA  -> TMPH                   SINTHW RPT     ; TMPH = gate's target CS selector
-5BA            DES_CS  TST_DES_CGDEST PTSAV7 DLY SPTR ; save test for destination CS
-
-; CALLGATE386 - extract 32-bit target offset from gate descriptor
-5BE  TMPC              0xffff         AND             ; low 16 bits of offset
-5BF  SIGMA  -> TMPC
-5C0  TMPB              0xffff0000     AND             ; high 16 bits of offset
-5C1  SIGMA             TMPC           OR              ; combine to 32-bit offset
-5C2  SIGMA  -> TMPG    LD_DESCRIPTOR  JMP             ; TMPG = target EIP; load CS descriptor
-5C3  TMPH   -> SLCTR   TST_SEL_CS     PTSELE DLY     ; validate CS selector
+; PROT_TESTS_PASSED — write back descriptor with Accessed bit set
+5D5  SIGMA  -> TMPC    4              DLY  IN+=  ; IND += 4 (point back to high DWORD)
+5D6  PROTUN -> OPR_W                  WR W       ; write PROTUN (with A-bit) to GDT/LDT
+5D7  TMPB      DESPTR  0       BITSDE DLY  SDEH  ; wait for write; set cache high DWORD
 ```
 
-If the Protection PLA determines that a privilege level change is needed, the microcode enters the `MORE_PRIVILEGE` path which reads SS:ESP from the TSS and performs the stack switch. The word count field from the gate descriptor controls how many parameters are copied from the old stack to the new one.
+Three microcode cycles for the writeback alone. That's acceptable because segment loads are already expensive multi-cycle operations, and the designers likely expected them to be infrequent -- most programs load their segments once at startup and never touch them again. Page translations happen on *every* memory access, so the same approach would be ruinous. Hence the fully autonomous hardware walker.
 
-<!-- TODO: consider showing the MORE_PRIVILEGE / stack switch microcode (5FB-608) -->
+## Virtual 8086 mode
 
-### Interrupt gates: similar but different
+The 80386 introduced Virtual 8086 (V86) mode -- allowing real-mode DOS programs to run inside protected mode under OS supervision. While not full virtualization in the modern sense, V86 was the first practical hardware-assisted mechanism on x86 for running legacy software in a protected environment.
 
-Hardware interrupts and exceptions follow a similar pattern. The interrupt vector is multiplied by 8 to index into the IDT, and the gate descriptor is loaded and validated:
+How does V86 work at the hardware level? When the `VM` bit (bit 17) of EFLAGS is set, the processor enters a hybrid state: it is still in protected mode with paging and privilege rings active, but most instructions execute as if the processor were in real mode. Segment addresses are computed as `selector << 4` with a fixed 64 KB limit, just like the 8086.
+
+Recall that the Entry PLA maps opcodes to microcode entry points. One of its input bits is a "protected mode" flag. Many instructions have both a real-mode and a protected-mode entry point -- for instance, `MOV ES, reg` maps to address 009 (a single microcode line) in real mode, but to 580 (which initiates a full descriptor load with protection tests) in protected mode. The trick that makes V86 work is to define this flag as:
+
+```
+entry_p_bit = PE & ~VM
+```
+
+When VM=1, the protected-mode bit goes low and the Entry PLA selects real-mode entry points -- `MOV ES, reg` takes the fast one-line path, not the expensive descriptor load. Meanwhile, CPL is hardwired to 3 whenever VM=1, so the V86 task always runs at the lowest privilege level, under full paging protection. The OS can use paging to virtualize the 8086's 1 MB address space, even simulating A20 address line wraparound by mapping pages to the same physical frames.
+
+### A winding road to enter V86
+
+V86 mode is entered through `IRETD` when the VM bit is set in the stacked EFLAGS. The microcode detects this with a conditional jump:
 
 ```asm
-; Protected-mode interrupt entry
-8B0  SIGMA  -> TMPB    3              LDBSLU         ; prepare shift left 3
-8B1  0                 TMPB           SHIFT          ; SIGMA = vector * 8
-8B2  SIGMA     DESIDT  4              SMISC1 DLY IN=+ ; IND = IDT base + offset + 4
-8B3  SIGMA  -> SLCTR2  0x10           LDBSRU  rd D   ; read gate high DWORD
-8B4  EFLAGS -> FLAGSB  -4             FLGSBA DLY IN+= ; backup EFLAGS; IND -= 4
-8B5  OPR_R  -> PROTUN  0xffff0000     AND     UNL rd D ; extract offset[31:16]
-     ...
-8B9  SIGMA  -> TMPG    TST_DES_INT_HW PTF            ; TMPG = target EIP; validate gate
-     ; dispatches to INTGATE386, INTGATE286, TRAPGATE386, or #GP
+; IRETD — check if returning to V86 mode
+67E                    IRETd_V86      LJMPVM       ; jump if VM=1 in stacked EFLAGS
 ```
 
-The key difference from call gates: **interrupt gates automatically clear the IF (Interrupt Flag)**, preventing nested interrupts. Trap gates leave IF unchanged. Both clear the NT (Nested Task) flag. This distinction is encoded in the Protection PLA's gate type discrimination -- the same hardware that routes call gates also routes interrupt and trap gates to the correct microcode handler.
+The V86 return path is one of the longest microcode sequences on the 386. It pops **nine DWORDs** from the stack -- EIP, CS, EFLAGS, ESP, SS, ES, DS, FS, GS -- compared to three for a normal IRET. The microcode then sets up fixed access rights for every segment register:
 
 ```asm
-; INTGATE386 - clears IF
-8CB                                   CLI             ; clear interrupt flag
-
-; TRAPGATE386 - leaves IF alone, clears NT
-8CC  -1                0x4000         XOR             ; mask = ~NT
-8CD  SIGMA  -> TMPB                   CMISC2
-8CE  EFLAGS            TMPB           AND             ; EFLAGS &= ~NT
-8CF  SIGMA  -> EFLAGS
+; IRETd_V86 — set up V86 segment state
+643  0                 3              SHIFT  DLY IN+D ; SIGMA = 3 << 13 = 0x6000 (DPL=3)
+644  OPR_R  -> TMPB                          UNL RD D ; TMPB = popped SS; read ES
+645  SIGMA             0x8200         OR     DLY IN+D ; SIGMA = 0xE200 (V86 access rights)
+...
+64C  TMPC      DES_CS                            SAR  ; CS.access_rights = 0xE200
+64D  COUNTR    DES_CS                            SBRM ; CS.base = selector << 4
+64E  MDTMP     DES_CS                            SLIM ; CS.limit = 0xFFFF
 ```
 
-## Virtual 8086 Mode
+Every V86 segment gets the same treatment: access rights `0xE200` (Present, DPL=3, writable data segment), base = selector shifted left by 4, and limit = 64 KB. The microcode loops through all six segment register caches using a counter, applying the same fixed descriptor to each one. This is pure real-mode emulation, enforced at ring 3 with full paging protection underneath.
 
-To run legacy 8086 programs alongside protected-mode tasks, the 386 introduced **Virtual 8086 (V86) mode**. When a task's `EFLAGS.VM` bit is set, the processor executes 8086 code using real-mode-style segment addressing (base = selector << 4, limit = 0xFFFF), but the task actually runs at ring 3 under full paging protection. The OS can use paging to virtualize the 8086's 1 MB address space, even simulating the infamous A20 address wraparound by mapping the first and last 64 KB to the same physical pages.
+### Trap-and-emulate: IOPL-sensitive instructions
 
-### Entering V86 mode
+Real-mode programs freely execute `CLI` and `STI` to control interrupts, `PUSHF` and `POPF` to manipulate flags, `INT n` for DOS and BIOS calls, and `IN`/`OUT` for hardware I/O. In normal protected mode, these instructions are privilege-checked -- they execute normally if the caller has sufficient privilege, and fault otherwise. The 386 can't simply let V86 tasks execute them freely -- a DOS program disabling interrupts would bring down the whole system -- but trapping on every `INT 21h` call would make V86 useless.
 
-V86 mode is entered through `IRETD` with the VM bit set in the stacked EFLAGS. The microcode detects this with a conditional jump:
+The solution is **trap-and-emulate**, the same principle later generalized in hardware virtualization extensions. V86 mode adds a special rule: since V86 tasks always run at CPL=3, if the OS sets IOPL < 3, instructions that affect interrupt state -- `CLI`, `STI`, `PUSHF`, `POPF`, `INT n`, `IRET` -- generate #GP(0) instead of executing normally. The OS's V86 monitor catches each #GP fault, emulates the instruction in software, and resumes the V86 task.
+
+In microcode, the privilege check reduces to a single conditional jump:
 
 ```asm
-; IRETD - return from interrupt
-67E                    IRETd_V86      LJMPVM          ; goto V86 path if VM=1 in stacked EFLAGS
+; CLI/STI — check I/O privilege
+7F7                    CLI_STI        JIO_OK       ; jump to handler if CPL ≤ IOPL
+; fall through to #GP(0) if CPL > IOPL
 ```
 
-The V86 return path is one of the longest microcode sequences on the 386. It pops **nine DWORDs** from the stack: EIP, CS, EFLAGS, ESP, SS, ES, DS, FS, GS (compared to three for a normal IRET). For each segment register, it sets up fixed V86 access rights:
-
-```asm
-; IRETd_V86 - restore V86 segment state
-643  0                 3              SHIFT           ; SIGMA = 3 << 13 = 0x6000 (DPL=3)
-645  SIGMA             0x8200         OR              ; SIGMA = 0xE200
-     ; 0xE200 = Present | DPL=3 | Data, Writable (fixed V86 access rights)
-     ...
-64C  TMPC      DES_CS                     SAR        ; CS.access_rights = 0xE200
-64D  COUNTR    DES_CS                     SBRM       ; CS.base = selector << 4
-64E  MDTMP     DES_CS                     SLIM       ; CS.limit = 0xFFFF
-```
-
-Every V86 segment gets the same treatment: access rights `0xE200` (present, DPL=3, writable data segment), base = selector shifted left by 4, and limit = 64 KB. The microcode loops through all six segment register caches (ES, CS, SS, DS, FS, GS) using a `JCT4N1` loop with a counter.
-
-### IOPL-sensitive instructions
-
-Because 8086 programs freely use `CLI`, `STI`, `PUSHF`, `POPF`, and `INT`, which are privileged in protected mode, the 386 uses the **I/O Privilege Level** (IOPL field in EFLAGS) to control V86 behavior. If `IOPL < 3`, these instructions fault with #GP(0), letting the OS's Virtual Machine Monitor emulate them:
-
-```asm
-; CLI/STI in V86 mode
-7F7                    CLI_STI        JIO_OK          ; check CPL <= IOPL
-; PUSHF in V86 mode
-7F9                    p_PUSHFd       JIO_OK          ; check CPL <= IOPL
-; POPF in V86 mode
-7FB                    p_POPFd        JIO_OK          ; check CPL <= IOPL
-```
-
-`JIO_OK` is a conditional jump that checks the IOPL -- if the current privilege level is insufficient, execution falls through to a #GP fault.
-
-### V86 fault frame
-
-When a fault or interrupt occurs in V86 mode, the CPU must save extra state. In addition to the normal ring 3 -> ring 0 frame (SS, ESP, EFLAGS, CS, EIP, error code), it pushes the four data segment registers (GS, FS, DS, ES) and zeroes them out:
-
-```asm
-; Push V86 segment registers on ring-0 stack during fault dispatch
-5F3  GS     -> OPR_W                       WR W      ; push GS
-5F5  FS     -> OPR_W                       WR W      ; push FS
-     ... (DS, ES follow)
-
-; Then zero all data segment registers
-63B  0      -> DS                          SAR       ; DS = 0, clear cache
-63C  0      -> ES                          SAR       ; ES = 0
-63D  0      -> FS                          SAR       ; FS = 0
-63E  0      -> GS                          SAR       ; GS = 0
-```
-
-This creates a 9-DWORD stack frame (vs. 5 DWORDs for a normal privilege-crossing interrupt). The handler runs in protected mode at ring 0 with clean segment registers. When it executes `IRETD` with VM=1, the full V86 state is restored.
-
-## Faults and exceptions
-
-When any protection rule is violated, the CPU raises an exception:
-
-*   **#GP (General Protection Fault, INT 13):** The catch-all. Triggered by segment limit violations, privilege violations, bad selectors, restricted V86 instructions, and many other conditions.
-*   **#SS (Stack Fault, INT 12):** Stack segment limit violation or not-present stack segment.
-*   **#NP (Segment Not Present, INT 11):** Attempted to use a descriptor with P=0.
-*   **#PF (Page Fault, INT 14):** Not-present page or page-level protection violation. CR2 holds the faulting linear address; the error code encodes P/W/U bits.
-*   **#TS (Invalid TSS, INT 10):** TSS limit too small or bad TSS segment.
-
-Page faults are **restartable**: the CPU saves the machine state as it was *before* the faulting instruction, so the OS can fix up the page tables and re-execute the instruction transparently. This is what makes demand paging work -- the application never knows the page was absent.
+`JIO_OK` ("jump if I/O OK") tests whether `CPL ≤ IOPL`. The same check gates `PUSHF`, `POPF`, `INT n`, and `IRET`. The monitor then emulates each instruction as appropriate: maintaining a virtual interrupt flag per V86 task, reflecting software interrupts through the real-mode interrupt vector table, virtualizing I/O accesses, and so on.
 
 ## Conclusion
 
-The 386's protection architecture is a study in practical engineering tradeoffs. The designers put dedicated hardware exactly where it paid off most:
+The 386's protection architecture is a study in practical engineering tradeoffs on a transistor budget. The designers put dedicated hardware exactly where it paid off most:
 
-- **The Protection PLA** resolves complex privilege decisions in a single cycle, using 148 product terms and a 3-delay-slot pipeline to overlap protection checks with useful work.
-- **The page walker** is a simple but effective state machine that handles TLB misses transparently, including the subtle requirement of only writing back A/D bits on successful walks.
-- **Microcode** handles the stateful, multi-step operations -- stack switches, descriptor loading, V86 frame management -- that are too irregular for fixed hardware but too important to leave to software.
+- **The Test PLA** resolves complex privilege decisions in a single evaluation, using 148 product terms and a 3-delay-slot pipeline to overlap checks with useful work. The PTSAV/PTOVRR mechanism lets one shared subroutine serve dozens of callers with different validation rules.
+- **The page walker** is a simple but effective state machine that handles TLB misses transparently, running in parallel with the microcode and arbitrating its own bus access.
+- **Microcode** handles the stateful, multi-step operations -- stack switches, descriptor loading, V86 frame management -- that are too irregular for fixed hardware.
+- **V86 mode** dedicates an entire processor mode to backward compatibility, using fixed descriptor access rights and IOPL-based trapping to run unmodified 8086 code under full protection.
 
 This layered approach -- hardware for the fast path, microcode for the complex path -- is a recurring theme in x86 design that persists to this day.
 
+There are many topics we haven't covered: interrupts, exceptions, task switching, and seldom-visited corners like call gates. I'll try to address them in future posts.
+
+As an aside: the 386's `POPAD` instruction has a famous bug that affects all steppings. EAX is written in the RNI (run-next-instruction) delay slot via an indirect register file access -- the only instruction that does this. When the next instruction uses a base+index addressing mode, the register file write from POPAD collides with the EA calculation's register file read, corrupting the address. A fitting example of how timing abstractions in a pipelined microcode machine can sometimes leak.
+
 Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
-Credits: This analysis of the 80386 draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com).
+Credits: This analysis of the 80386 draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com). Jim Slager's [1986 ICCD paper](https://ieeexplore.ieee.org/document/1674632) on 386 performance optimizations provided key details on the address pipeline.
