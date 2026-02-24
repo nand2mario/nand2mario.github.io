@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 200">
+  <style>
+    .bit { font: bold 12px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #374151; }
+    .bitnum { font: 11px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #9ca3af; }
+    .desc { font: 12px system-ui, -apple-system, sans-serif; fill: #6b7280; }
+    .group { font: 11px system-ui, -apple-system, sans-serif; fill: #6b7280; }
+  </style>
+
+  <!-- Bit number labels -->
+  <text class="bitnum" x="42" y="16" text-anchor="middle">15</text>
+  <text class="bitnum" x="82" y="16" text-anchor="middle">14</text>
+  <text class="bitnum" x="122" y="16" text-anchor="middle">13</text>
+  <text class="bitnum" x="162" y="16" text-anchor="middle">12</text>
+  <text class="bitnum" x="202" y="16" text-anchor="middle">11</text>
+  <text class="bitnum" x="242" y="16" text-anchor="middle">10</text>
+  <text class="bitnum" x="282" y="16" text-anchor="middle">9</text>
+  <text class="bitnum" x="322" y="16" text-anchor="middle">8</text>
+  <text class="bitnum" x="362" y="16" text-anchor="middle">7</text>
+  <text class="bitnum" x="402" y="16" text-anchor="middle">6</text>
+  <text class="bitnum" x="510" y="16" text-anchor="middle">5 .. 0</text>
+
+  <!-- Boxes -->
+  <rect x="22" y="24" width="40" height="30" rx="2" fill="#fef3c7" stroke="#fcd34d" stroke-width="1"/>
+  <text class="bit" x="42" y="44" text-anchor="middle">p1</text>
+  <rect x="62" y="24" width="40" height="30" rx="2" fill="#fef3c7" stroke="#fcd34d" stroke-width="1"/>
+  <text class="bit" x="82" y="44" text-anchor="middle">p2</text>
+  <rect x="102" y="24" width="40" height="30" rx="2" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+  <rect x="142" y="24" width="40" height="30" rx="2" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+  <rect x="182" y="24" width="40" height="30" rx="2" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+  <text class="bit" x="202" y="44" text-anchor="middle">P</text>
+  <rect x="222" y="24" width="40" height="30" rx="2" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1"/>
+  <text class="bit" x="242" y="44" text-anchor="middle">S</text>
+  <rect x="262" y="24" width="40" height="30" rx="2" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1"/>
+  <text class="bit" x="282" y="44" text-anchor="middle">X</text>
+  <rect x="302" y="24" width="40" height="30" rx="2" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1"/>
+  <text class="bit" x="322" y="44" text-anchor="middle">C/E</text>
+  <rect x="342" y="24" width="40" height="30" rx="2" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1"/>
+  <text class="bit" x="362" y="44" text-anchor="middle">R/W</text>
+  <rect x="382" y="24" width="40" height="30" rx="2" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1"/>
+  <text class="bit" x="402" y="44" text-anchor="middle">A</text>
+  <rect x="422" y="24" width="176" height="30" rx="2" fill="#ede9fe" stroke="#c4b5fd" stroke-width="1"/>
+  <text class="bit" x="510" y="44" text-anchor="middle">test constant</text>
+
+  <!-- Annotations — ordered top (closest to boxes) to bottom (farthest) -->
+
+  <!-- Row 1 (closest): Descriptor bits -->
+  <text class="group" x="322" y="74" text-anchor="middle">Descriptor bits</text>
+
+  <!-- Row 2: P: Present -->
+  <line x1="202" y1="54" x2="202" y2="100" stroke="#9ca3af" stroke-width="0.8"/>
+  <text class="desc" x="210" y="110">P: Present (most of time)</text>
+
+  <!-- Row 2 (right): test constant -->
+  <line x1="510" y1="54" x2="510" y2="100" stroke="#9ca3af" stroke-width="0.8"/>
+  <text class="desc" x="440" y="110">Which check? (33 tests)</text>
+
+  <!-- Row 3: p2 -->
+  <line x1="82" y1="54" x2="82" y2="130" stroke="#9ca3af" stroke-width="0.8"/>
+  <text class="desc" x="90" y="140">p2: privilege match (e.g. DPL == CPL)</text>
+
+  <!-- Row 4 (farthest): p1 -->
+  <line x1="42" y1="54" x2="42" y2="158" stroke="#9ca3af" stroke-width="0.8"/>
+  <text class="desc" x="50" y="168">p1: privilege violation (e.g. RPL > DPL)</text>
+</svg>

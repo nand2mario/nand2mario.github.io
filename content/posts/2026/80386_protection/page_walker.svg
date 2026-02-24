@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480">
+  <style>
+    .label { font: 13px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #374151; }
+    .detail { font: 11px 'SFMono-Regular','Menlo','Consolas',monospace; fill: #6b7280; }
+    .fault { font: bold 12px system-ui, -apple-system, sans-serif; fill: #dc2626; }
+    .cond { font: 11px system-ui, -apple-system, sans-serif; fill: #6b7280; }
+    .arrow { stroke: #374151; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+    .farrow { stroke: #dc2626; stroke-width: 1.2; fill: none; marker-end: url(#fh); }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5" fill="none" stroke="#374151" stroke-width="1"/>
+    </marker>
+    <marker id="fh" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+      <path d="M0,0 L7,2.5 L0,5" fill="none" stroke="#dc2626" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <!-- PW_IDLE -->
+  <rect x="220" y="10" width="120" height="32" rx="4" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.2"/>
+  <text class="label" x="280" y="31" text-anchor="middle">PW_IDLE</text>
+
+  <!-- Arrow + label -->
+  <line x1="280" y1="42" x2="280" y2="64" class="arrow"/>
+  <text class="cond" x="288" y="58">TLB miss</text>
+
+  <!-- Read PDE -->
+  <rect x="220" y="68" width="120" height="32" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.2"/>
+  <text class="label" x="280" y="89" text-anchor="middle">Read PDE</text>
+  <text class="detail" x="350" y="89">CR3[31:12] | dir | 00</text>
+
+  <line x1="280" y1="100" x2="280" y2="122" class="arrow"/>
+
+  <!-- Check PDE -->
+  <rect x="220" y="126" width="120" height="32" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.2"/>
+  <text class="label" x="280" y="147" text-anchor="middle">Check PDE</text>
+
+  <!-- Fault arrow from Check PDE -->
+  <line x1="340" y1="142" x2="480" y2="142" class="farrow"/>
+  <text class="cond" x="368" y="136">PDE.P=0</text>
+  <rect x="486" y="128" width="90" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+  <text class="fault" x="531" y="147" text-anchor="middle">PAGE FAULT</text>
+
+  <!-- OK path -->
+  <line x1="280" y1="158" x2="280" y2="180" class="arrow"/>
+  <text class="cond" x="288" y="174">PDE.P=1</text>
+
+  <!-- Read PTE -->
+  <rect x="220" y="184" width="120" height="32" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.2"/>
+  <text class="label" x="280" y="205" text-anchor="middle">Read PTE</text>
+  <text class="detail" x="350" y="205">PDE[31:12] | tbl | 00</text>
+
+  <line x1="280" y1="216" x2="280" y2="238" class="arrow"/>
+
+  <!-- Check PTE -->
+  <rect x="220" y="242" width="120" height="32" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.2"/>
+  <text class="label" x="280" y="263" text-anchor="middle">Check PTE</text>
+
+  <!-- Fault arrow from Check PTE -->
+  <line x1="340" y1="258" x2="480" y2="258" class="farrow"/>
+  <text class="cond" x="354" y="252">PTE.P=0 or</text>
+  <text class="cond" x="354" y="264">perm fail</text>
+  <rect x="486" y="244" width="90" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+  <text class="fault" x="531" y="263" text-anchor="middle">PAGE FAULT</text>
+
+  <!-- OK path -->
+  <line x1="280" y1="274" x2="280" y2="296" class="arrow"/>
+  <text class="cond" x="288" y="290">OK</text>
+
+  <!-- Write PDE -->
+  <rect x="220" y="300" width="120" height="32" rx="4" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.2"/>
+  <text class="label" x="280" y="321" text-anchor="middle">Write PDE</text>
+  <text class="detail" x="350" y="321">set Accessed bit</text>
+
+  <line x1="280" y1="332" x2="280" y2="354" class="arrow"/>
+
+  <!-- Write PTE -->
+  <rect x="220" y="358" width="120" height="32" rx="4" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.2"/>
+  <text class="label" x="280" y="379" text-anchor="middle">Write PTE</text>
+  <text class="detail" x="350" y="379">set A (+ D if write)</text>
+
+  <line x1="280" y1="390" x2="280" y2="412" class="arrow"/>
+
+  <!-- DONE -->
+  <rect x="220" y="416" width="120" height="32" rx="4" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1.2"/>
+  <text class="label" x="280" y="437" text-anchor="middle">DONE</text>
+  <text class="detail" x="350" y="437">update TLB, resume</text>
+</svg>

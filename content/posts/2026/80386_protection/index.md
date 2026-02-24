@@ -25,18 +25,7 @@ The x86 protection model is notoriously complex, with four privilege rings, segm
 
 The first thing a multi-tasking operating system needs from hardware is **isolation**: multiple programs must share one processor without being able to read, write, or jump into each other's memory. The 80386 achieves this first through memory protection -- implemented through two independent address translation layers.
 
-```
-Logical Address          Linear Address           Physical Address
-(Selector:Offset)        (32-bit)                 (32-bit)
-       │                      │                         │
-       ▼                      ▼                         ▼
-  ┌──────────┐          ┌──────────┐              ┌──────────┐
-  │Segmentati│          │  Paging  │              │   Main   │
-  │on Unit   │─────────▶│  Unit    │─────────────▶│  Memory  │
-  └──────────┘          └──────────┘              └──────────┘
-   Privilege +           User/Super +
-   Limit checks          Read/Write checks
-```
+<img src="addr_translation.svg" alt="Address translation pipeline" class="no-border">
 
 *Segmentation* maps a logical address (a 16-bit selector plus a 32-bit offset) to a 32-bit linear address, enforcing privilege and limit checks along the way. *Paging* then translates that linear address to a physical address, adding a second layer of User/Supervisor and Read/Write protection. The two layers are independent: segmentation is always active in protected mode, while paging is optional (controlled by CR0.PG).
 
@@ -66,19 +55,7 @@ Here's how a protection test works. The microcode feeds three things to the Test
 
 These are packed into a 16-bit state vector:
 
-```
- 15   14   13   12   11   10    9    8    7    6    5          0
-┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬──────────────┐
-│ p1 │ p2 │    │    │ P  │ S  │ X  │ C/E│ R/W│ A  │ test constant│
-└────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴──────────────┘
-  │    │              │    │    │    │    │    │         │
-  │    │              │    └────┴────┴────┴────┘         └── Which check?
-  │    │              │         Descriptor type               (33 distinct tests)
-  │    │              │
-  │    │              └── Present (most of the time)
-  │    └── Privilege match (e.g., DPL == CPL)
-  └─── Privilege violation (e.g., RPL > DPL)
-```
+<img src="pla_state_vector.svg" alt="PLA state vector" class="no-border">
 
 The Test PLA evaluates all 148 product terms against this input and produces an 18-bit output:
 
@@ -201,17 +178,7 @@ Virtual memory is conceptually simple but potentially devastating to performance
 
 Intel's 1986 ICCD paper *Performance Optimizations of the 80386* reveals how tightly this was optimized. The entire address translation pipeline -- effective address calculation, segment relocation, and TLB lookup -- completes in **1.5 clock cycles**:
 
-```
-Clock cycle 0               │ Clock cycle 1
-────────────────────────────│──────────────────────
-EA = base + index + disp    │
-  (32-bit adder)            │  Linear = EA + seg_base
-                            │    (32-bit adder)
-                            │  TLB lookup: linear → physical
-                            │    (combinational, parallel)
-                            │          ↓
-                            │    Physical address → Bus Unit
-```
+<img src="addr_pipeline.svg" alt="Address pipeline timing" class="no-border">
 
 The segmentation unit performs two operations simultaneously: adding the segment base to produce the linear address and comparing the effective address against the segment limit. Both use dedicated 32-bit adder/subtractor circuits.
 
@@ -229,37 +196,7 @@ The TLB is flushed entirely on any write to CR3 (the page directory base registe
 
 How often does the "slow path" actually trigger? With 32 TLB entries covering 128 KB, Intel claimed a 98% hit rate for typical workloads of the era. That sounds impressive, but a 2% miss rate means a page walk every 50 memory accesses -- still quite frequent. So the 386 overlaps page walks with normal instruction execution wherever possible. A **dedicated hardware state machine** performs each walk:
 
-```
-              ┌───────────┐
-              │ PW_IDLE   │
-              └────┬──────┘
-                   │ TLB miss
-              ┌────▼──────┐
-              │ Read PDE  │ ← CR3[31:12] | dir_index | 00
-              └────┬──────┘
-                   │
-              ┌────▼──────┐    PDE.P=0
-              │ Check PDE ├──────────────► PAGE FAULT
-              └────┬──────┘
-                   │ PDE.P=1
-              ┌────▼──────┐
-              │ Read PTE  │ ← PDE[31:12] | table_index | 00
-              └────┬──────┘
-                   │
-              ┌────▼──────┐    PTE.P=0 or
-              │ Check PTE ├──────────────► PAGE FAULT
-              └────┬──────┘    perm fail
-                   │ OK
-              ┌────▼──────┐
-              │ Write PDE │ ← set Accessed bit
-              └────┬──────┘
-              ┌────▼──────┐
-              │ Write PTE │ ← set Accessed (+ Dirty if write)
-              └────┬──────┘
-              ┌────▼──────┐
-              │   DONE    │ → update TLB, resume original access
-              └───────────┘
-```
+<img src="page_walker.svg" alt="Page walker state machine" class="no-border">
 
 What surprised me during the implementation is that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue. This is why the "Paging Unit" random logic occupies such a large area on the die.
 
