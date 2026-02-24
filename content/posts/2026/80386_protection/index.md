@@ -23,7 +23,7 @@ The x86 protection model is notoriously complex, with four privilege rings, segm
 
 ## The protection problem
 
-The first thing a multi-tasking operating system needs from hardware is **isolation**: multiple programs must share one processor without being able to read, write, or jump into each other's memory. The 80386 achieves this first through memory protection -- implemented through two independent address translation layers.
+The first thing a multi-tasking operating system needs from hardware is **isolation**: multiple programs must share one processor without being able to read, write, or jump into each other's memory. The 80386 achieves this through memory protection -- two independent address translation layers.
 
 <img src="addr_translation.svg" alt="Address translation pipeline" class="no-border">
 
@@ -87,7 +87,7 @@ Nearly every protection-related instruction -- far CALL, far JMP, far RET, INT, 
 
 But different callers need different validation rules. A `MOV DS, AX` needs to reject call gates but accept data segments. A `CALL FAR` needs to accept call gates *and* code segments. How can one shared subroutine perform different validation?
 
-The answer is what I think of as hardware-level dependency injection. Before calling LD_DESCRIPTOR, the caller saves its desired test constant into a hardware latch using a micro-op called **PTSAV** (Protection Save). Within LD_DESCRIPTOR, another micro-op called **PTOVRR** (Protection Override) retrieves and fires the saved test.
+The answer is essentially hardware-level dependency injection. Before calling LD_DESCRIPTOR, the caller saves its desired test constant into a hardware latch using a micro-op called **PTSAV** (Protection Save). Within LD_DESCRIPTOR, another micro-op called **PTOVRR** (Protection Override) retrieves and fires the saved test.
 
 Here's how a segment register load uses it:
 
@@ -150,7 +150,7 @@ The key is the test TST_SEL_RET on line 682. It compares the RPL of the return C
 
 Either way, the delay slots do useful work: they compute the descriptor address and start reading it from memory. By the time the PLA verdict arrives, the hardware is already prepared for whichever path is selected. No cycles are wasted.
 
-The tradeoff is complexity. The microcode must be carefully arranged so that the instructions in delay slots are either useful setup for both paths, or at least harmless if the redirect fires. Not every case is as clean as RETF. When a PLA redirect interrupts an LCALL, the return address is already pushed onto the microcode call stack (yes, the 386 has a microcode call stack) -- the redirected code must account for this stale entry. When multiple protection tests overlap, or when a redirect fires during a delay slot of *another* jump, the control flow becomes genuinely hard to reason about. During the FPGA core implementation, protection delay slot interactions were consistently the most difficult bugs to track down.
+The tradeoff is complexity. The microcode must be carefully arranged so that the instructions in delay slots are either useful setup for both paths, or at least harmless if the redirect fires. Not every case is as clean as RETF. When a PLA redirect interrupts an LCALL, the return address is already pushed onto the microcode call stack (yes, the 386 has a microcode call stack) -- the redirected code must account for this stale entry. When multiple protection tests overlap, or when a redirect fires during a delay slot of *another* jump, the control flow becomes hard to reason about. During the FPGA core implementation, protection delay slot interactions were consistently the most difficult bugs to track down.
 
 ### When delay slots aren't enough: RPT as a stall
 
@@ -198,7 +198,7 @@ How often does the "slow path" actually trigger? With 32 TLB entries covering 12
 
 <img src="page_walker.svg" alt="Page walker state machine" class="no-border">
 
-What surprised me during the implementation is that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue. This is why the "Paging Unit" random logic occupies such a large area on the die.
+What surprised me during the implementation is that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue.
 
 The A/D bits exist entirely for the operating system's benefit. The Accessed bit tells the OS which pages have been recently used, enabling page replacement algorithms to choose pages to evict when memory runs low. The Dirty bit tells the OS which pages have been modified and must be written back to disk before eviction; clean pages can simply be discarded and re-read from disk later.
 
@@ -259,7 +259,7 @@ Every V86 segment gets the same treatment: access rights `0xE200` (Present, DPL=
 
 ### Trap-and-emulate: IOPL-sensitive instructions
 
-Real-mode programs freely execute `CLI` and `STI` to control interrupts, `PUSHF` and `POPF` to manipulate flags, `INT n` for DOS and BIOS calls, and `IN`/`OUT` for hardware I/O. In normal protected mode, these instructions are privilege-checked -- they execute normally if the caller has sufficient privilege, and fault otherwise. The 386 can't simply let V86 tasks execute them freely -- a DOS program disabling interrupts would bring down the whole system -- but trapping on every `INT 21h` call would make V86 useless.
+Real-mode programs freely execute `CLI` and `STI` to control interrupts, `PUSHF` and `POPF` to manipulate flags, `INT n` for DOS and BIOS calls, and `IN`/`OUT` for hardware I/O. In normal protected mode, these instructions are privilege-checked -- they execute normally if the caller has sufficient privilege, and fault otherwise. The 386 can't simply let V86 tasks execute them freely -- a DOS program disabling interrupts would bring down the whole system -- but trapping on every `INT 21h` call would make V86 impractically slow.
 
 The solution is **trap-and-emulate**, the same principle later generalized in hardware virtualization extensions. V86 mode adds a special rule: since V86 tasks always run at CPL=3, if the OS sets IOPL < 3, instructions that affect interrupt state -- `CLI`, `STI`, `PUSHF`, `POPF`, `INT n`, `IRET` -- generate #GP(0) instead of executing normally. The OS's V86 monitor catches each #GP fault, emulates the instruction in software, and resumes the V86 task.
 
@@ -286,7 +286,7 @@ This layered approach -- hardware for the fast path, microcode for the complex p
 
 There are many topics we haven't covered: interrupts, exceptions, task switching, and seldom-visited corners like call gates. I'll try to address them in future posts.
 
-As an aside: the early 386's `POPAD` instruction has a famous bug. EAX is written in the RNI (run-next-instruction) delay slot via an indirect register file access -- the only instruction that does this. When the next instruction uses a base+index addressing mode, the register file write from POPAD collides with the EA calculation's register file read, corrupting the address. A fitting example of how the complex optimizations can lead to problems.
+As an aside: the early 386's `POPAD` instruction has a famous bug. EAX is written in the RNI (run-next-instruction) delay slot via an indirect register file access -- the only instruction that does this. When the next instruction uses a base+index addressing mode, the register file write from POPAD collides with the EA calculation's register file read, corrupting the address. A fitting example of how complex optimizations can lead to problems.
 
 Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
