@@ -17,7 +17,7 @@ I'm building an 80386-compatible core in SystemVerilog and blogging the process.
 
 The 80286 introduced "Protected Mode" in 1982. It was not popular. The mode was difficult to use, lacked paging, and offered no way to return to real mode without a hardware reset. The 80386, arriving three years later, made protection usable -- adding paging, a flat 32-bit address space, per-page User/Supervisor control, and Virtual 8086 mode so that DOS programs could run inside a protected multitasking system. These features made possible Windows 3.0, OS/2, and early Linux.
 
-The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 manages this complexity on a 275,000-transistor budget. You cannot simply create multiple copies of "virtual machines" -- the transistor count doesn't allow it. Instead, the 386 employs dedicated units and a variety of techniques to implement protection: a dedicated PLA for privilege checking, a hardware state machine for page walks, segment and paging caches, and microcode for everything else.
+The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 manages this complexity on a 275,000-transistor budget. You cannot simply create multiple copies of "virtual machines" -- the transistor count doesn't allow it. Instead, the 386 employs a variety of techniques to implement protection: a dedicated PLA for privilege checking, a hardware state machine for page walks, segment and paging caches, and microcode for everything else.
 
 <!--more-->
 
@@ -31,7 +31,7 @@ The first thing a multi-tasking operating system needs from hardware is **isolat
 
 The 386 supports four privilege rings (0 through 3), though in practice nearly all operating systems use just two: ring 0 for the kernel and ring 3 for user programs. Three privilege levels interact on every segment access: CPL (Current Privilege Level), DPL (Descriptor Privilege Level), and RPL (Requested Privilege Level).
 
-The main rule for data access is `max(CPL, RPL) ≤ DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege validation logic. If all of these checks were done in microcode, each segment load would need a cascade of conditional branches: is it a code or data segment? Is it conforming? Is the RPL valid? Is the DPL valid? Is the segment present? This would greatly bloat the microcode ROM and add cycles to every protected-mode operation.
+The main rule for data access is `max(CPL, RPL) ≤ DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege validation logic. If all these checks were done in microcode, each segment load would need a cascade of conditional branches: is it a code or data segment? Is it conforming? Is the RPL valid? Is the DPL valid? Is the segment present? This would greatly bloat the microcode ROM and add cycles to every protected-mode operation.
 
 The 386 engineers solved this with a dedicated hardware unit.
 
@@ -50,7 +50,7 @@ Intel documentation describes the 386's **Protection Test Unit** as a component 
 Here's how a protection test works. The microcode feeds three things to the Test PLA:
 
 1. **Descriptor attributes**: The Type, DPL, S (system/user), and Present bits from the segment descriptor being loaded, held in a register called PROTUN. In a few cases, the Test PLA takes the 16-bit selector (segment register value) as input instead.
-2. **Privilege state**: CPL, RPL, and their relationships, preprocessed by a small circuit called the "Tiny PLA" into two normalized bits (privilege violation, privilege match).
+2. **Privilege state**: CPL, RPL, and their relationships, preprocessed into two normalized bits (p1, p2).
 3. **Test constant**: A 6-bit identifier from the microcode that tells the PLA *what kind* of check to perform.
 
 These are packed into a 16-bit state vector:
@@ -107,7 +107,7 @@ And here's how a far CALL uses a different test constant through the same subrou
 5AE  COUNTR -> SLCTR   TST_SEL_CS     PTSELE               ; test selector (in LCALL delay slot)
 ```
 
-The only difference is the test constant: 0x10 for a data segment load, 0x15 for a far call target. 
+The only difference is the test constant: 0x10 for a data segment load, 0x15 for a far call target.
 
 ## Making it fast: 3-cycle delay slots
 
@@ -182,7 +182,7 @@ Intel's 1986 ICCD paper *Performance Optimizations of the 80386* reveals how tig
 
 The segmentation unit performs two operations simultaneously: adding the segment base to produce the linear address and comparing the effective address against the segment limit. Both use dedicated 32-bit adder/subtractor circuits.
 
-The TLB lookup is **combinational** -- it evaluates in the same half-cycle as the limit check, requiring no additional clock. The common case (TLB hit, no page boundary crossing) adds zero overhead to a memory access. This is why the **Segment Descriptor Cache** (left) and **Page Cache** (TLB, top-left) together occupy such substantial die area -- they are the fast path that makes protected mode competitive with real mode.
+The TLB lookup is **combinational** -- it evaluates in the same half-cycle as the limit check, requiring no additional clock. The common case (TLB hit, no page boundary crossing) adds zero overhead to a memory access. This is why the **Segment Descriptor Cache** and **Page Cache** (TLB) together occupy such substantial die area -- they are the fast path that makes protected mode competitive with real mode.
 
 ### The TLB
 
@@ -198,13 +198,13 @@ How often does the "slow path" actually trigger? With 32 TLB entries covering 12
 
 <img src="page_walker.svg" alt="Page walker state machine" class="no-border">
 
-What surprised me during the implementation is that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue.
+What surprised me was that this entire walk is **fully hardware-driven** -- no microcode involvement at all. The state machine reads the page directory entry, reads the page table entry, checks permissions, and writes back the Accessed and Dirty bits, all autonomously. Since it's hardware-driven, it runs in parallel with the microcode and needs its own memory bus arbitration -- the paging unit must share the bus with both data accesses from the microcode and prefetch requests from the instruction queue.
 
 The A/D bits exist entirely for the operating system's benefit. The Accessed bit tells the OS which pages have been recently used, enabling page replacement algorithms to choose pages to evict when memory runs low. The Dirty bit tells the OS which pages have been modified and must be written back to disk before eviction; clean pages can simply be discarded and re-read from disk later.
 
 ### Contrast: segment descriptor A-bit writeback
 
-Both page table entries and segment descriptors have an Accessed bit that the hardware must set on use -- but the mechanisms are strikingly different.
+Both page table entries and segment descriptors have an Accessed bit that the hardware must set on use -- but the mechanisms are quite different.
 
 For pages, as we just saw, the walker sets A/D bits entirely in hardware. The microcode sequencer never even knows it happened.
 
@@ -221,7 +221,7 @@ Three microcode cycles for the writeback alone. That's acceptable because segmen
 
 ## Virtual 8086 mode
 
-The 80386 introduced Virtual 8086 (V86) mode -- allowing real-mode DOS programs to run inside protected mode under OS supervision. While not full virtualization in the modern sense, V86 was the first practical hardware-assisted mechanism on x86 for running legacy software in a protected environment.
+The 80386 introduced Virtual 8086 (V86) mode -- allowing real-mode DOS programs to run inside protected mode under OS supervision. While not full virtualization in the modern sense, V86 was the first practical hardware-assisted mechanism on x86 for running legacy software in a protected environment -- used widely in Windows 3.x and Windows 9x.
 
 How does V86 work at the hardware level? When the `VM` bit (bit 17) of EFLAGS is set, the processor enters a hybrid state: it is still in protected mode with paging and privilege rings active, but most instructions execute as if the processor were in real mode. Segment addresses are computed as `selector << 4` with a fixed 64 KB limit, just like the 8086.
 
@@ -290,4 +290,4 @@ As an aside: the early 386's `POPAD` instruction has a famous bug. EAX is writte
 
 Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
-Credits: This analysis of the 80386 draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com). Jim Slager's [1986 ICCD paper](https://ieeexplore.ieee.org/document/1674632) on 386 performance optimizations provided key details on the address pipeline.
+Credits: This analysis of the 80386 draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com).
