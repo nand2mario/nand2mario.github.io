@@ -17,7 +17,7 @@ I'm building an 80386-compatible core in SystemVerilog and blogging the process.
 
 The 80286 introduced "Protected Mode" in 1982. It was not popular. The mode was difficult to use, lacked paging, and offered no way to return to real mode without a hardware reset. The 80386, arriving three years later, made protection usable -- adding paging, a flat 32-bit address space, per-page User/Supervisor control, and Virtual 8086 mode so that DOS programs could run inside a protected multitasking system. These features made possible Windows 3.0, OS/2, and early Linux.
 
-The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 manages this complexity on a 275,000-transistor budget. You cannot simply create multiple copies of "virtual machines" -- the transistor count doesn't allow it. Instead, the 386 employs a variety of techniques to implement protection: a dedicated PLA for privilege checking, a hardware state machine for page walks, segment and paging caches, and microcode for everything else.
+The x86 protection model is notoriously complex, with four privilege rings, segmentation, paging, call gates, task switches, and virtual 8086 mode. What's interesting from a hardware perspective is how the 386 manages this complexity on a 275,000-transistor budget. The 386 employs a variety of techniques to implement protection: a dedicated PLA for protection checking, a hardware state machine for page table walks, segment and paging caches, and microcode for everything else.
 
 <!--more-->
 
@@ -31,7 +31,7 @@ The first thing a multi-tasking operating system needs from hardware is **isolat
 
 The 386 supports four privilege rings (0 through 3), though in practice nearly all operating systems use just two: ring 0 for the kernel and ring 3 for user programs. Three privilege levels interact on every segment access: CPL (Current Privilege Level), DPL (Descriptor Privilege Level), and RPL (Requested Privilege Level).
 
-The main rule for data access is `max(CPL, RPL) ≤ DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege validation logic. If all these checks were done in microcode, each segment load would need a cascade of conditional branches: is it a code or data segment? Is it conforming? Is the RPL valid? Is the DPL valid? Is the segment present? This would greatly bloat the microcode ROM and add cycles to every protected-mode operation.
+The main rule for data access is `max(CPL, RPL) ≤ DPL`. For code transfers, the rules get considerably more complex -- conforming segments, call gates, and interrupt gates each have different privilege and state validation logic. If all these checks were done in microcode, each segment load would need a cascade of conditional branches: is it a code or data segment? Is the segment present? Is it conforming? Is the RPL valid? Is the DPL valid? This would greatly bloat the microcode ROM and add cycles to every protected-mode operation.
 
 The 386 engineers solved this with a dedicated hardware unit.
 
@@ -43,7 +43,7 @@ The 386 engineers solved this with a dedicated hardware unit.
 <small>Base image: <a href="https://commons.wikimedia.org/wiki/File:Intel_80386_DX_die.JPG">Intel 80386 DX die</a>, Wikimedia Commons</small></figcaption>
 </figure>
 
-Intel documentation describes the 386's **Protection Test Unit** as a component that "implements fast testing of complex memory protection functions." It is mostly composed of a PLA (Programmable Logic Array), referred to as Test PLA by Intel, that is physically visible by its regular appearance on the die. This single piece of combinational logic replaces what would otherwise be hundreds of multi-cycle conditional branches in the microcode. Instead of testing privilege rules sequentially, the microcode issues a single **protection test operation**, and the PLA evaluates all applicable rules in parallel, producing a complete decision in one evaluation: continue, fault, or redirect to a gate handler.
+Intel documentation describes the 386's **Protection Test Unit** as a component that "implements fast testing of complex memory protection functions." It is mostly composed of a PLA (Programmable Logic Array), referred to as Test PLA by Intel, that is physically visible by its regular appearance on the die. This single piece of combinational logic replaces what would otherwise be dozens of multi-cycle conditional branches in the microcode. Instead of testing privilege rules sequentially, the microcode issues a single **protection test operation**, and the PLA evaluates all applicable rules in parallel, producing a complete decision in one evaluation: continue, fault, or redirect to a gate handler.
 
 ### Snoop, test, redirect
 
