@@ -59,7 +59,8 @@ These are packed into a 16-bit state vector:
 
 The Test PLA evaluates all 148 product terms against this input and produces an 18-bit output:
 
-- **Bits [13:2]**: A 12-bit microcode redirect address. `0x000` means "test passed, continue." Any other value hijacks the microcode sequencer -- to a fault handler (e.g., `0x85D` for #GP, `0x870` for #NP) or to a gate dispatch routine (e.g., `0x5BE` for a 386 call gate).
+- **Bit [1]**: Jump or continue. When set, the microcode sequencer jumps to the redirect address in bits [13:2]; when clear, the check passed and execution continues normally.
+- **Bits [13:2]**: A 12-bit microcode redirect address -- a fault handler (e.g., `0x85D` for #GP, `0x870` for #NP) or a gate dispatch routine (e.g., `0x5BE` for a 386 call gate).
 - **Bits [17:14]**: Four control flags -- set the descriptor's Accessed bit, mark validation passed, request a limit check, or signal a stack operation.
 
 There are about 33 distinct test constants, covering every protection scenario on the 386. Each activates a different subset of the 148 product terms, encoding the specific privilege rules for that scenario. To give a feel for what the PLA does concretely, here are the possible outcomes for two tests:
