@@ -228,6 +228,15 @@ def render_markdown(content, post_url=""):
     md = markdown.Markdown(extensions=['fenced_code', 'tables', 'toc', 'md_in_html'])
     html = md.convert(content)
 
+    # Wrap markdown-generated tables so small tables can stay compact while
+    # wider ones scroll horizontally instead of breaking the layout.
+    html = re.sub(
+        r'(<table>.*?</table>)',
+        r'<div class="table-wrap">\1</div>',
+        html,
+        flags=re.DOTALL,
+    )
+
     # Prefix absolute paths with BASE_PATH (for images and links)
     # e.g., src="/2025/img.webp" -> src="/neo/2025/img.webp"
     html = re.sub(r'(src|href)="/([^"]+)"', rf'\1="{BASE_PATH}/\2"', html)
