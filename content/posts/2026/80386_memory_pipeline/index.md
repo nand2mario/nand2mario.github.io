@@ -167,35 +167,31 @@ Intel designers again optimized for the common case here. If the effective-addre
 
 ## Early start
 
-One of the most interesting discoveries in Intel's ICCD paper is the **early start** optimization.
+One of the most interesting memory optimizations in the 80386 is **Early Start**. For some instructions, the address path does not wait for the new instruction to "start" in the usual microcoded sense. Instead, it begins address-related work in the **last cycle of the previous instruction**, overlapping that work with the previous instruction's writeback.
 
-The basic idea is simple: for some instructions, the address path does not wait for the new instruction to "start" in the usual microcoded sense. Instead, it begins address-related work in the **last cycle of the previous instruction**, overlapping that work with the previous instruction's writeback.
-
-Here's an example of an early-start instruction: POP
+Our earlier example of `MOV AX, 123h` followed by `ADD [AX+45h], 2` is exactly such a case. The execution order is:
 
 ```asm
-; POP rv
-09F  SIGMA  -> eSP                                    RD   3
-0A0                                           RNI DLY
-0A1  OPR_R  -> DSTREG                             UNL
+; MOV r,i
+005  IMM                              PASS    RNI
+006  SIGMA  -> DSTREG
+; ADD m,i
+039  EFLAGS -> FLAGSB                 FLGSBA          RD   9
+03A                                               DLY
+...
 ```
 
-### What makes early start possible
+In the second cycle, at microcode address `006`, the result of the `MOV` instruction (`0x123`) is written into `AX`. That same cycle is also the hardwired early-start window for the following `ADD`. During that cycle, the address path peeks ahead, sees that the next instruction needs `AX+45h`, and uses the just-produced value of `AX` through bypass logic to generate the effective address:
 
-According to Intel's paper, the instruction unit decodes instructions into a **111-bit internal word** with 19 fields. One of those fields is an **early-start flag**. For instructions marked this way, the address-generation operands can be launched to the address hardware before the previous instruction has fully retired.
+```text
+EA = 0x123 + 0x45 = 0x158
+```
 
-That only works if the register file can tolerate one instruction reading operands while another is still writing them back. Intel describes the supporting structure explicitly:
+By the time the `ADD` instruction officially begins in the third cycle, the memory read for the operand at `[AX+45h]` is already underway on the external bus.
 
-- two read ports
-- one write port
-- a register-address comparator
-- a bypass path that effectively shorts the write bus onto a read bus when the same register is being written and read
+Without early start, the `ADD` would have had to wait until cycle 3 just to begin reading `AX` and computing the address. By overlapping these hardwired functions with the final cycle of the `MOV`, the 80386 effectively hides much of the 1.5-to-2-cycle address-generation latency, allowing the microcode to begin processing the fetched data as soon as it arrives.
 
-So early start is not just "microcode begins sooner." It is a whole hardware arrangement: decoded instruction format, register-file ports, comparator logic, and autonomous address-generation hardware.
-
-### Why it matters
-
-The payoff shows up in the common instruction timings from Intel's paper:
+Intel reports that early start improves overall performance by about 9%. The benefit shows up clearly in the timing of common memory instructions with no wait states:
 
 | Instruction class | Typical clocks |
 |---|---:|
@@ -204,9 +200,11 @@ The payoff shows up in the common instruction timings from Intel's paper:
 | Load | 4 |
 | Pop | 4 |
 
-Stores and pushes can hit the theoretical minimum because their addresses are effectively ready when the instruction begins. Loads and pops still need the memory read to come back, so they cost more.
+Unfortunately, early start also introduced some real complexity, and that complexity appears to be behind at least one production 80386 bug: the **POPAD bug**. The bug exists in all Intel 80386DX steppings.
 
-This is one of the clearest examples in the whole 386 of Intel moving work out of the microcode and into hardwired assist logic. The microcode still orchestrates the instruction, but the timing win comes from surrounding it with specialized hardware.
+At the end of `POPAD`, the new value for `EAX` is committed through a mechanism called **IRF** (Indirect access to Register File). If the next instruction immediately uses a complex addressing mode such as `[EAX+4]`, the forwarding logic does not handle this case correctly. In other words, the exact optimization that usually makes the machine faster also creates a corner case where the "peek ahead" machinery sees the wrong value.
+
+That is a useful reminder that optimizations like early start was hard to get right with its inherent corner-case complexities.
 
 ## Bus interface and caching
 
