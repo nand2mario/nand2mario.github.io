@@ -24,7 +24,10 @@ Intel's *80386 Programmer's Reference Manual* describes 386 address translation 
 
 The manual illustrates it like this:
 
-![alt text](address_translation.png)
+<figure>
+<img src="address_translation.png" alt="Address translation overview" class="no-border">
+<figcaption style="text-align: center;">Address Translation Overview (figure 5-1, <i>80386 Programmer's Reference Manual</i>)</figcaption>
+</figure>
 
 Before looking at the hardware, it helps to start from the microcode. Here is the microcode for an ALU instruction that reads memory, modifies it, and writes it back, i.e. an instruction like `ADD [BX+4], 8`:
 
@@ -56,7 +59,10 @@ Intel's answer was to build a dedicated address path that usually adds only abou
 
 Here is the familiar way in which segmentation transforms a logical address into a linear address:
 
-![alt text](segment.png)
+<figure>
+<img src="segment.png" alt="Segment translation" class="no-border">
+<figcaption style="text-align: center;">Segment Translation (figure 5-2, <i>80386 Programmer's Reference Manual</i>)</figcaption>
+</figure>
 
 Segmentation is mandatory and active in both protected and real mode. The above illustration is easy to understand in protected mode: the segment base address is looked up from the in-memory GDT/LDT tables. What may not be obvious from the diagram is that the same segment calculation is also active in real mode, even when the linear address seemingly does not go through lookup tables. We'll talk about that below.
 
@@ -79,6 +85,7 @@ Its microcode in execution order is:
 ; ADD m,i
 039  EFLAGS -> FLAGSB                 FLGSBA          RD   9
 03A                                               DLY
+03B  OPR_R  -> TMPB    WRITE_RESULT   JMP         UNL
 ...
 ```
 
@@ -96,7 +103,11 @@ The first optimization is simply to avoid repeating descriptor lookup on every a
 
 When a selector is loaded into a segment register, the processor also loads the descriptor's base, limit, and attributes into the register's invisible part. The hidden state (called **descriptor caches**) exists so the processor does **not** need to consult the descriptor tables on every memory reference. On the die photo, it actually occupies considerable space.
 
-(Add a die shot that highlights the descriptor cache)
+<figure>
+<img src="80386_labeled_descriptor_cache.jpg" alt="80386 die photo with Descriptor Cache Unit highlighted" style="max-width: 500px;">
+<figcaption style="text-align: center;">The 80386 die. The Descriptor Cache is highlighted in red.<br>
+<small>Base image: <a href="https://commons.wikimedia.org/wiki/File:Intel_80386_DX_die.JPG">Intel 80386 DX die</a>, Wikimedia Commons</small></figcaption>
+</figure>
 
 This is a crucial design choice. Without it, segmentation would either require extra memory accesses on every reference or a much more elaborate descriptor cache hierarchy. With it, ordinary accesses see segmentation as local state, not table-walking.
 
@@ -225,7 +236,7 @@ Seen as a whole, the memory pipeline looks something like this:
 5. the bus interface schedules the access while prefetch competes in the background
 6. the result returns in time for the microcode's `DLY` synchronization point
 
-(Let's draw a SVG diagram illustrating cycle-by-cycle what happens in the pipeline for a RD memory access. The left side is the micro-instructions for 039 and 03A. The right side is the cycles/steps for the memory pipeline operations)
+![Cycle-by-cycle view of an RD memory read through the 80386 memory pipeline](rd_pipeline.svg)
 
 ## Mapping the memory pipeline to an FPGA 386
 
