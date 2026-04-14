@@ -8,11 +8,13 @@ author: nand2mario
 tags: [386]
 ---
 
-I'm building an 80386-compatible core in SystemVerilog and blogging the process. *32-bit Protected Mode* was the defining feature of the 80386. In the [previous post](/posts/2026/80386_protection/), we looked at one side of protected mode: the virtual-memory protection mechanisms. We discussed how the 80386 implements protection with a dedicated PLA, segment caches, and a hardware page walker. This time I want to continue that discussion by covering the actual memory access pipeline itself, how address translation is done efficiently, how microcode drives the process, and what kind of RTL **timing** the design achieves.
+The FPGA 386 core I've been building now boots DOS, runs applications like Norton Commander, and plays games like Doom. On DE10-Nano it currently runs at 75 MHz. With the core now far enough along to run real software, this seems like a good point to step back and look at one of the 80386's performance-critical subsystems: its memory pipeline.
 
-As we discussed last time, x86 virtual memory management looks expensive on paper. Every memory reference seems to require effective address calculation, segment relocation, limit checking, TLB lookup, and on a miss, two page-table reads plus Accessed/Dirty-bit updates. Yet Intel's own 1986 paper *Performance Optimizations of the 80386* describes the common-case address path as completing in about **1.5 clocks**. How did the 386 pull that off?
+*32-bit Protected Mode* was the defining feature of the 80386. In the [previous post](/posts/2026/80386_protection/), I looked at one side of that story: the virtual-memory protection mechanisms. We saw how the 80386 implements protection with a dedicated PLA, segment caches, and a hardware page walker. This time I want to look at the same machinery from a different angle: the microarchitecture of the memory access pipeline, how address translation is made efficient, how microcode drives the process, and what kind of RTL timing the design achieves.
 
-The answer is that the 386 is not organized as a slow serial chain of checks. It contains a carefully designed memory pipeline that takes advantage of pre-calculation, pipelining, and parallelism to achieve as little additional latency as possible for its time.
+On paper, x86 virtual memory management looks expensive. Every memory reference seems to require effective address calculation, segment relocation, limit checking, TLB lookup, and, on a miss, two page-table reads plus Accessed/Dirty-bit updates. Yet Intel's own 1986 IEEE ICCD paper, Jim Slager's *Performance Optimizations of the 80386*, describes the common-case address path as completing in about **1.5 clocks**. How did the 386 pull that off?
+
+The answer is that virtual memory is not really a serial chain of checks, even if the diagrams make it look that way. It is a carefully overlapped memory pipeline that uses pre-calculation, pipelining, and parallelism to keep the common case surprisingly short.
 
 <!--more-->
 
@@ -202,7 +204,7 @@ By the time the `ADD` instruction officially begins in the third cycle, the memo
 
 Without early start, the `ADD` would have had to wait until cycle 3 just to begin reading `AX` and computing the address. By overlapping these hardwired functions with the final cycle of the `MOV`, the 80386 effectively hides much of the 1.5-to-2-cycle address-generation latency, allowing the microcode to begin processing the fetched data as soon as it arrives.
 
-Intel reports that early start improves overall performance by about 9%. The benefit shows up clearly in the timing of common memory instructions with no wait states:
+Slager reports in the same ICCD paper that early start improves overall performance by about 9%. The benefit shows up clearly in the timing of common memory instructions with no wait states:
 
 | Instruction class | Typical clocks |
 |---|---:|
@@ -215,13 +217,23 @@ Unfortunately, early start also introduced some real complexity, and that comple
 
 At the end of `POPAD`, the new value for `EAX` is committed through a mechanism called **IRF** (Indirect access to Register File). If the next instruction immediately uses a complex addressing mode such as `[EAX+4]`, the forwarding logic does not handle this case correctly. In other words, the exact optimization that usually makes the machine faster also creates a corner case where the "peek ahead" machinery sees the wrong value.
 
-That is a useful reminder that optimizations like early start was hard to get right with its inherent corner-case complexities.
+That is a useful reminder that optimizations like early start were hard to get right, precisely because they introduced so many corner cases.
+
+## Paging fast path
+
+Paging is the other obvious place where the 386 could have become slow. Without a TLB, every memory access would need extra table lookups before the real work could even begin.
+
+I covered the paging mechanism itself, including the hardware page walker, in much more detail in the [protection post](/posts/2026/80386_protection/), so I will keep this section short. The important point here is that paging is part of the **fast path**, not just an occasional slow-path feature. On a TLB hit, translation stays cheap enough to fit into the memory pipeline described in the ICCD paper. On a miss, the hardware page walker takes over and does the expensive work without turning it into a large microcode routine.
+
+This matters for more than explicit load/store instructions. Instruction prefetch also goes through paging, so the TLB is part of overall instruction throughput as well as data-access latency.
 
 ## Bus interface and caching
 
 To finish our memory-pipeline discussion, we need to talk about the bus interface unit and caches. The 80386, like the 80286 but unlike the 8086, uses a non-multiplexed address/data bus. That avoids the dead time that a multiplexed bus would need to switch directions between address and data phases. So if the memory subsystem can follow fast enough, a bus cycle is only two clocks: an address phase and a data phase. It also allows **address pipelining** to hide memory latency: while one bus cycle is finishing, the address for the next cycle can already be presented.
 
 This basically means that if the external memory can catch up, the 80386 bus interface does not add much latency to memory accesses. DRAM latency at the time was about 80 ns to 130 ns, which corresponds to two or more CPU cycles. Any cycles beyond 2 are spent as *wait states*, null cycles where no work is done on the bus.
+
+The other important point is arbitration. Prefetch and data cycles ultimately compete for the same external bus, but Intel's design gives priority to real data cycles and lets prefetch fill the gaps. That is one reason the processor can sustain good throughput even though code fetch, data access, and paging all share the same basic memory path.
 
 This is where the cache comes into play. The 386 has no on-chip cache, but it is the first x86 processor designed with cache very much in mind. The Intel 82385 companion chip is a dedicated cache controller designed to sit between the processor, an SRAM cache, and main memory. On a cache hit, it provides the CPU with a no-wait-state, 2-clock bus cycle. On misses, it forwards accesses to main memory and refills the cache lines. The cache, typically 64 KB to 128 KB in higher-end systems, turns out to be very effective: it is common for a 386 with cache to be 30% to 40% faster than one without.
 
@@ -240,11 +252,11 @@ Seen as a whole, the memory pipeline looks something like this:
 
 ## Mapping the memory pipeline to an FPGA 386
 
-We have been mostly focused on the historical 386 in this series so far. Here I want to begin discussing the FPGA 386 core I've been building. A quick status update: the core has been under development since January and, as of now, it is able to boot DOS and run applications like Norton Commander and games like Doom. The memory it uses is SDRAM, the same as the `ao486` core. To reduce memory-access latency, caching is implemented. The core currently runs at 75 MHz on DE10-Nano, with benchmark scores that exceed the 80386 numbers I have found.
+We have been mostly focused on the historical 386 in this series so far. Here I want to begin discussing how that memory-pipeline model maps onto the FPGA 386 core I've been building. The memory it uses is SDRAM, the same as the `ao486` core. To reduce memory-access latency, caching is implemented.
 
 There are a few points worth discussing when mapping the historical 386 memory pipeline to modern FPGAs, mostly around asynchronous vs. synchronous logic and memory. The overall goal is to map the microarchitecture relatively faithfully while still achieving high Fmax and low CPI.
 
-**Latches vs. registers**. The 80386 (and 486) are primarily latch-based designs (see Shirriff's die-level reverse-engineering work; TODO: cite). Latches are level-triggered and their output follows the input as long as the enable signal is high. In contrast, modern flip-flops are edge-triggered and take snapshots of the input at clock edges. Compared with modern flip-flops (registers), latches require fewer transistors and allow "time borrowing" (a slightly slow phase can borrow time from a neighboring faster phase). So dividing work *evenly* matters more in the FPGA design. I experimented quite a bit with where to insert registers, and different decisions led to different Fmax values. In the end I landed on the pipeline design presented in the previous section and it works fine.
+**Latches vs. registers**. The 80386 (and 486) are primarily latch-based designs; see Ken Shirriff's article [Inside the Intel 386 processor die: the clock circuit](https://www.righto.com/2023/11/intel-386-clock-circuit.html) for a die-level view of the 386 clocking scheme. Latches are level-triggered and their output follows the input as long as the enable signal is high. In contrast, modern flip-flops are edge-triggered and take snapshots of the input at clock edges. Compared with modern flip-flops (registers), latches require fewer transistors and allow "time borrowing" (a slightly slow phase can borrow time from a neighboring faster phase). So dividing work *evenly* matters more in the FPGA design. I experimented quite a bit with where to insert registers, and different decisions led to different Fmax values. In the end I landed on the pipeline design presented in the previous section and it works fine.
 
 **Two clock phases**. The 386 also has two clock phases per clock cycle. That is why the address-translation latency is quoted as 1.5 cycles. One way to emulate this in an FPGA would be to double the clock speed and use one FPGA clock cycle as a phase. I did not do that; I simply made address translation 2 cycles. That could mean slightly more latency and some CPI impact here, but I have found no good way to verify it.
 
@@ -252,7 +264,9 @@ There are a few points worth discussing when mapping the historical 386 memory p
 
 ## Conclusion
 
-This concludes our discussion of the virtual-memory system of the 80386, the most complicated subsystem in the processor. There are still some topics to cover, like task switching and interrupts. Now that the core is already running DOS and games, I expect to start talking about those topics, along with the actual implementation, next time.
+The 80386 memory pipeline is impressive not because any single ingredient is new in isolation, but because Intel made all of them work together: microcode, segmentation, the TLB, the bus interface, prefetch, and external caching. The result is a processor where protected virtual memory usually behaves like a short, carefully engineered pipeline instead of a pile of serial penalties.
+
+That, more than paging alone, is what made the 386 a practical foundation for serious PC operating systems. There are still some topics to cover, like task switching and interrupts. Now that the core is already running DOS and games, I expect to start talking about those topics, along with the actual implementation, next time.
 
 Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
