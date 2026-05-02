@@ -263,14 +263,28 @@ main {
 }
 
 .post-nav a {
-    color: #0969da;
+    color: #24292f;
     text-decoration: none;
     font-size: 14px;
-    max-width: 45%;
+    max-width: calc(50% - 12px);
+    min-width: 0;
 }
 
 .post-nav a:hover {
-    text-decoration: underline;
+    color: #0969da;
+}
+
+.post-nav span {
+    display: block;
+    color: #57606a;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.post-nav strong {
+    display: block;
+    font-weight: 600;
+    line-height: 1.35;
 }
 
 .post-nav .prev-post {
@@ -345,6 +359,8 @@ main {
 }
 
 .post-content figure img {
+    max-width: 100% !important;
+    height: auto;
     margin-bottom: 8px;
 }
 
@@ -536,5 +552,19 @@ img.no-border,
 
     .post-preview h2 {
         font-size: 18px;
+    }
+
+    .post-nav {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .post-nav a {
+        max-width: 100%;
+    }
+
+    .post-nav .next-post {
+        text-align: left;
+        margin-left: 0;
     }
 }

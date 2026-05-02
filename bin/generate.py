@@ -268,13 +268,23 @@ def generate_post_page(post, prev_post=None, next_post=None):
     base_template = load_template('base')
     post_template = load_template('post')
 
-    # Generate prev/next navigation
-    prev_link = ""
-    next_link = ""
+    # Generate previous/next post navigation
+    nav_links = []
     if prev_post:
-        prev_link = f'<a href="{BASE_PATH}{prev_post["url"]}" class="prev-post">← {escape(prev_post["title"])}</a>'
+        nav_links.append(
+            f'<a href="{BASE_PATH}{prev_post["url"]}" class="prev-post">'
+            f'<span>Newer post</span>'
+            f'<strong>← {escape(prev_post["title"])}</strong>'
+            f'</a>'
+        )
     if next_post:
-        next_link = f'<a href="{BASE_PATH}{next_post["url"]}" class="next-post">{escape(next_post["title"])} →</a>'
+        nav_links.append(
+            f'<a href="{BASE_PATH}{next_post["url"]}" class="next-post">'
+            f'<span>Older post</span>'
+            f'<strong>{escape(next_post["title"])} →</strong>'
+            f'</a>'
+        )
+    post_nav = f'<nav class="post-nav">{"".join(nav_links)}</nav>' if nav_links else ""
 
     # Generate tags HTML
     tags_html = ""
@@ -291,8 +301,7 @@ def generate_post_page(post, prev_post=None, next_post=None):
         author=post['author'],
         tags=tags_html,
         content=html_content,
-        prev_link=prev_link,
-        next_link=next_link,
+        post_nav=post_nav,
         giscus_repo=GISCUS_REPO,
         giscus_repo_id=GISCUS_REPO_ID,
         giscus_category=GISCUS_CATEGORY,
