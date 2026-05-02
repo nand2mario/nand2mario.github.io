@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 360" role="img" aria-labelledby="title desc">
+  <title id="title">z386 memory and cache path</title>
+  <desc id="desc">Diagram showing segmentation, paging and TLB, VIPT cache preread, tag compare, hit response, write buffer, line fill, and SDRAM.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5563"/>
+    </marker>
+    <style>
+      .box { fill: #f8fafc; stroke: #334155; stroke-width: 2; rx: 8; }
+      .addr { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 8; }
+      .cache { fill: #ecfeff; stroke: #0e7490; stroke-width: 2; rx: 8; }
+      .mem { fill: #fefce8; stroke: #a16207; stroke-width: 2; rx: 8; }
+      .write { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; rx: 8; }
+      .label { font: 700 17px sans-serif; fill: #0f172a; }
+      .note { font: 14px sans-serif; fill: #475569; }
+      .tiny { font: 12px sans-serif; fill: #475569; }
+      .arrow { stroke: #4b5563; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .fast { stroke: #0891b2; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .slow { stroke: #a16207; stroke-width: 2.2; fill: none; stroke-dasharray: 7 5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="35" y="72" width="115" height="76" class="box"/>
+  <text x="92.5" y="103" text-anchor="middle" class="label">CPU</text>
+  <text x="92.5" y="126" text-anchor="middle" class="note">RD / WR</text>
+
+  <rect x="195" y="72" width="135" height="76" class="addr"/>
+  <text x="262.5" y="102" text-anchor="middle" class="label">Segmentation</text>
+  <text x="262.5" y="126" text-anchor="middle" class="note">logical -> linear</text>
+
+  <rect x="375" y="72" width="150" height="76" class="addr"/>
+  <text x="450" y="102" text-anchor="middle" class="label">Paging / TLB</text>
+  <text x="450" y="126" text-anchor="middle" class="note">linear -> physical</text>
+
+  <rect x="570" y="44" width="165" height="104" class="cache"/>
+  <text x="652.5" y="77" text-anchor="middle" class="label">L1 cache</text>
+  <text x="652.5" y="102" text-anchor="middle" class="note">VIPT preread</text>
+  <text x="652.5" y="124" text-anchor="middle" class="note">physical tag compare</text>
+
+  <rect x="785" y="72" width="140" height="76" class="box"/>
+  <text x="855" y="101" text-anchor="middle" class="label">Hit response</text>
+  <text x="855" y="126" text-anchor="middle" class="note">zero-wait DLY</text>
+
+  <rect x="570" y="222" width="150" height="76" class="write"/>
+  <text x="645" y="252" text-anchor="middle" class="label">Write buffer</text>
+  <text x="645" y="276" text-anchor="middle" class="note">2 entries</text>
+
+  <rect x="775" y="222" width="150" height="76" class="mem"/>
+  <text x="850" y="252" text-anchor="middle" class="label">SDRAM</text>
+  <text x="850" y="276" text-anchor="middle" class="note">burst fill / drain</text>
+
+  <path d="M 150 110 H 188" class="arrow"/>
+  <path d="M 330 110 H 368" class="arrow"/>
+  <path d="M 525 110 H 563" class="arrow"/>
+  <path d="M 735 110 H 778" class="fast"/>
+  <path d="M 855 148 C 850 190 780 202 713 233" class="slow"/>
+  <path d="M 720 260 H 768" class="slow"/>
+  <path d="M 770 260 C 735 198 710 171 679 149" class="slow"/>
+  <path d="M 615 149 C 585 185 603 205 625 222" class="arrow"/>
+
+  <text x="518" y="181" text-anchor="middle" class="tiny">page offset starts BRAM preread early</text>
+  <text x="804" y="186" text-anchor="middle" class="tiny">miss: fill line, early restart requested DWORD</text>
+  <text x="645" y="321" text-anchor="middle" class="tiny">stores can retire while SDRAM write drains later</text>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 230" role="img" aria-labelledby="title desc">
+  <title id="title">80386 microcode word layout used by z386</title>
+  <desc id="desc">Diagram of the 37-bit microcode word divided into source, destination, ALU source, ALU or jump, op, sub, and bus fields.</desc>
+  <defs>
+    <style>
+      .field { stroke: #334155; stroke-width: 2; }
+      .bit { font: 13px monospace; fill: #475569; }
+      .name { font: 700 18px sans-serif; fill: #0f172a; }
+      .code { font: 15px monospace; fill: #0f172a; }
+      .note { font: 14px sans-serif; fill: #475569; }
+    </style>
+  </defs>
+  <text x="40" y="32" class="note">37-bit expanded micro-instruction</text>
+  <text x="925" y="32" text-anchor="end" class="note">bit 36 ... bit 0</text>
+
+  <rect x="40" y="62" width="162" height="78" fill="#e0f2fe" class="field"/>
+  <rect x="202" y="62" width="189" height="78" fill="#dcfce7" class="field"/>
+  <rect x="391" y="62" width="162" height="78" fill="#fef3c7" class="field"/>
+  <rect x="553" y="62" width="189" height="78" fill="#fae8ff" class="field"/>
+  <rect x="742" y="62" width="81" height="78" fill="#fee2e2" class="field"/>
+  <rect x="823" y="62" width="54" height="78" fill="#ede9fe" class="field"/>
+  <rect x="877" y="62" width="63" height="78" fill="#f1f5f9" class="field"/>
+
+  <text x="121" y="93" text-anchor="middle" class="name">ALU src</text>
+  <text x="121" y="120" text-anchor="middle" class="code">ABCDEF</text>
+  <text x="296.5" y="93" text-anchor="middle" class="name">dest</text>
+  <text x="296.5" y="120" text-anchor="middle" class="code">GHIJKLM</text>
+  <text x="472" y="93" text-anchor="middle" class="name">source</text>
+  <text x="472" y="120" text-anchor="middle" class="code">NOPQRS</text>
+  <text x="647.5" y="93" text-anchor="middle" class="name">ALU / jump</text>
+  <text x="647.5" y="120" text-anchor="middle" class="code">TUVWXYZ</text>
+  <text x="782.5" y="93" text-anchor="middle" class="name">op</text>
+  <text x="782.5" y="120" text-anchor="middle" class="code">012</text>
+  <text x="850" y="93" text-anchor="middle" class="name">sub</text>
+  <text x="850" y="120" text-anchor="middle" class="code">34</text>
+  <text x="908.5" y="93" text-anchor="middle" class="name">bus</text>
+  <text x="908.5" y="120" text-anchor="middle" class="code">56789&amp;</text>
+
+  <text x="40" y="160" class="bit">36</text>
+  <text x="200" y="160" text-anchor="end" class="bit">31</text>
+  <text x="204" y="160" class="bit">30</text>
+  <text x="389" y="160" text-anchor="end" class="bit">24</text>
+  <text x="393" y="160" class="bit">23</text>
+  <text x="551" y="160" text-anchor="end" class="bit">18</text>
+  <text x="555" y="160" class="bit">17</text>
+  <text x="740" y="160" text-anchor="end" class="bit">11</text>
+  <text x="744" y="160" class="bit">10</text>
+  <text x="821" y="160" text-anchor="end" class="bit">8</text>
+  <text x="825" y="160" class="bit">7</text>
+  <text x="875" y="160" text-anchor="end" class="bit">6</text>
+  <text x="879" y="160" class="bit">5</text>
+  <text x="940" y="160" text-anchor="end" class="bit">0</text>
+
+  <text x="490" y="198" text-anchor="middle" class="note">The disassembly prints this as: source -> dest    alu_src    alu/jump op sub bus</text>
+</svg>
