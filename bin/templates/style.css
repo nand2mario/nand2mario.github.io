@@ -340,6 +340,29 @@ main {
     border: 1px solid #d0d7de;
 }
 
+.post-content figure {
+    margin: 28px 0 32px;
+}
+
+.post-content figure img {
+    margin-bottom: 8px;
+}
+
+.post-content figcaption {
+    max-width: 760px;
+    margin: 0 auto;
+    color: #57606a;
+    font-size: 15px;
+    line-height: 1.45;
+    font-style: italic;
+}
+
+.post-content figcaption small {
+    color: #6e7781;
+    font-size: 14px;
+    font-style: normal;
+}
+
 .post-content ul,
 .post-content ol {
     margin-bottom: 16px;
