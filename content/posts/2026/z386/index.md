@@ -22,7 +22,7 @@ The core is not an instruction-by-instruction emulator in RTL. The goal is to re
 | 3DBench FPS | 34 | 43 |
 | Doom (original) FPS, max details | 16.5 | 21.0 |
 
-In current builds, z386 performs like a fast (~70Mhz) cached 386-class machine, or a low-end 486. It runs at a much higher clock than historical 386 CPUs, but with somewhat worse CPI (cycles per instruction). The current cache is a 16 KB, 4-way set-associative unified L1, chosen partly to keep the clock high. Real high-end 386 systems often used larger external caches, typically in the 32 KB to 128 KB range.
+In current builds, z386 performs like a fast (~70MHz) cached 386-class machine, or a low-end 486. It runs at a much higher clock than historical 386 CPUs, but with somewhat worse CPI (cycles per instruction). The current cache is a 16 KB, 4-way set-associative unified L1, chosen partly to keep the clock high. Real high-end 386 systems often used larger external caches, typically in the 32 KB to 128 KB range.
 
 <figure>
 <img src="z386_doom2_game.jpg" alt="Doom II running on z386" class="no-border" style="max-width: 680px;">
