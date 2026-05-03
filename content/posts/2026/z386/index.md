@@ -24,8 +24,8 @@ The core is not an instruction-by-instruction emulator in RTL. The goal is to re
 
 In current builds, z386 performs like a fast (~70MHz) cached 386-class machine, or a low-end 486. It runs at a much higher clock than historical 386 CPUs, but with somewhat worse CPI (cycles per instruction). The current cache is a 16 KB, 4-way set-associative unified L1, chosen partly to keep the clock high. Real high-end 386 systems often used larger external caches, typically in the 32 KB to 128 KB range.
 
-<figure>
-<img src="z386_doom2_game.jpg" alt="Doom II running on z386" class="no-border" style="max-width: 680px;">
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
+<img src="z386_doom2_game.jpg" alt="Doom II running on z386" class="no-border">
 <figcaption style="text-align: center;">Doom II running on z386.</figcaption>
 </figure>
 
@@ -47,16 +47,16 @@ That puzzle took about four months of evenings and weekends. The result is not a
 
 At a high level, the 386 is organized around eight major units. z386 follows the same division closely enough that the original Intel block diagram is still a useful map.
 
-<figure>
-<img src="80386-blockdiagram.png" alt="80386 block diagram showing bus interface, prefetch, instruction decode, control, data, protection test, segmentation, and paging units" class="no-border" style="max-width: 680px;">
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
+<img src="80386-blockdiagram.png" alt="80386 block diagram showing bus interface, prefetch, instruction decode, control, data, protection test, segmentation, and paging units" class="no-border">
 <figcaption style="text-align: center;">The 80386 as eight cooperating units.<br>
 <small>Source: Intel, <i>The Intel 80386 - Architecture and Implementation</i>, Figure 8.</small></figcaption>
 </figure>
 
 The diagram actually maps quite well to the actual 386 die shot, although the relative positions of the units are different.
 
-<figure>
-<img src="80386-die-labeled-units.jpg" alt="Intel 80386 die shot labeled with the major functional units" class="no-border" style="max-width: 620px;">
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
+<img src="80386-die-labeled-units.jpg" alt="Intel 80386 die shot labeled with the major functional units" class="no-border">
 <figcaption style="text-align: center;">The same eight-unit organization on the 80386 die.<br>
 <small>Base image: <a href="https://commons.wikimedia.org/wiki/File:Intel_80386_DX_die.JPG">Intel 80386 DX die</a>, Wikimedia Commons.</small></figcaption>
 </figure>
@@ -89,7 +89,7 @@ The original 8086 can move one byte at a time from its instruction queue into th
 
 In practice, the prefetcher needs burst bandwidth above that average. It has to smooth over variable-length instructions, taken branches, and data cycles that steal bus slots from prefetch. The external bus can support this: it can read four bytes every two clocks, or two bytes per clock. The 386 prefetch unit therefore fills a 16-byte code queue with 32-bit fetches, taking advantage of the full non-multiplexed 32-bit bus.
 
-<figure>
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
 <img src="z386_frontend_pipeline.svg" alt="z386 front-end pipeline from cache and memory to prefetch, decode, decoded queue, and microcode sequencing" class="no-border">
 <figcaption style="text-align: center;">The z386 front end keeps byte-at-a-time structure decode, but exposes a wider window for displacement and immediate fields.</figcaption>
 </figure>
@@ -129,7 +129,7 @@ z386 uses the original Intel 386 microcode as its main control program. The ROM 
 
 Each micro-instruction is 37 bits wide. Reenigne divided each word into these fields:
 
-<figure>
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
 <img src="microcode_word.svg" alt="37-bit 80386 microcode word split into source, destination, ALU source, ALU jump, op, sub, and bus fields" class="no-border">
 <figcaption style="text-align: center;">The 37-bit microcode word as used by the z386 disassembly.</figcaption>
 </figure>
@@ -163,7 +163,7 @@ Many microcode names are specifically designed to support generic routines. `EIP
 
 The original 386 has no on-chip L1 cache, but it is not a pre-cache design. Intel expected high-performance systems to use external cache controllers such as the 82385 and SRAM caches. Early z386 could run from SDRAM directly, but 3DBench showed high CPI and heavy contention between instruction prefetch and data reads. So I added an L1 cache to make the FPGA memory system behave more like the fast local-memory systems the 386 was designed to work with.
 
-<figure>
+<figure style="width: 100%; max-width: 680px; margin: 28px auto 32px;">
 <img src="cache_path.svg" alt="z386 cache and memory path with segmentation, paging, VIPT preread, tag compare, write buffer, and SDRAM fill" class="no-border">
 <figcaption style="text-align: center;">The z386 memory path starts the cache preread from the linear page offset, then compares physical tags when paging finishes.</figcaption>
 </figure>
