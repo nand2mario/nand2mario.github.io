@@ -1,5 +1,5 @@
 ---
-title: "z386: Rebuilding the 80386 from Original Microcode"
+title: "z386: An Open-Source 80386 Built Around Original Microcode"
 date: 2026-04-30T20:00:00+08:00
 draft: true
 sidebar: false
