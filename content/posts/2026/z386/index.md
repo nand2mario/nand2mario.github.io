@@ -190,7 +190,7 @@ Unified I+D is important because the 386-style prefetch unit and data accesses s
 
 ## Testing
 
-I expected the 386 to be harder than z8086 because protected mode is much more complicated, and that turned out to be true. It took about a month to write most of the first core, then about three more months to make it run Doom. The hard part was not writing a lot of RTL. It was finding the small contracts that BIOSes, memory managers, DOS extenders, and games depend on.
+I expected the 386 to be harder than z8086 because protected mode is much more complicated, and that turned out to be true. It took about two months to write most of the first version, then about two more months to make it run Doom. The hard part was not writing a lot of RTL. It was finding the small contracts that BIOSes, memory managers, DOS extenders, and games depend on.
 
 The most important base test suite is the real-mode [SingleStepTests/80386](https://github.com/SingleStepTests/ProcessorTests), by [gloriouscow](https://github.com/dbalsom). It is a thorough single-instruction fuzz test: run one instruction, compare registers, flags, memory, and exceptions against a reference. This catches a huge number of real-mode mistakes before any BIOS or DOS image is involved.
 
@@ -229,12 +229,14 @@ Roughly, the project timeline has looked like this:
 
 ## Thoughts
 
-There is a reasonable argument that the 386 is [Intel's most important CPU](https://www.xtof.info/intel80386.html). Not the cleanest, not the fastest for its time, and not the most elegant. But it got the durable contract right: a 32-bit x86 with protected mode, paging, virtual 8086 mode, and enough backward compatibility that existing PC software could keep running while operating systems slowly moved toward a modern memory model. [Heise makes a similar point](https://www.heise.de/en/news/40-Years-of-80386-Intel-s-Most-Important-Product-10778053.html): what we now call x86 really starts to look like itself with the 80386.
+There is a reasonable argument that the 386 is [Intel's most important CPU](https://www.xtof.info/intel80386.html). Not the cleanest, not the fastest for its time, and not the most elegant. But it got the hardware-software contract mostly right: a 32-bit x86 with protected mode, paging, and good backward compatibility. [Heise makes a similar point](https://www.heise.de/en/news/40-Years-of-80386-Intel-s-Most-Important-Product-10778053.html): what we now call x86 really starts to look like itself with the 80386.
 
-That is the part I appreciate more after building z386. The 386 is not just "the 286, but wider." It is the point where protected mode became both useful and performant. The segmentation model is still there, but it can support a flat 4GB address space. Real mode is still there, but protected mode is usable enough for serious systems. Compatibility remains, but the machine is no longer trapped inside the original PC programming model. That combination gave software a long runway. DOS extenders, Windows, OS/2, Unix ports, and Linux could all use different pieces of the same hardware foundation.
+That is the part I appreciate more after building z386. The 386 is the point where protected mode became both useful and performant. The segmentation model is still there, but it can support a flat 4GB address space. Protected mode is now usable enough for serious systems. Compatibility is still good, but the machine is much more capable. That combination gave software a long runway. DOS extenders, Windows, OS/2, Unix ports, and Linux could all use different pieces of the same hardware.
 
-The other lesson is how much value there is in recovered microcode. Microcode is not a schematic. It does not tell you every mux, latch, PLA output, or timing path. But it tells you what the hardware was expected to do. It names internal registers, exposes shared routines, reveals delay slots, shows where the sequencer can be redirected, and makes otherwise invisible contracts visible. When a short micro-op name turns out to mean something very specific, implementing it correctly feels like finding another piece of the original machine.
+The other lesson is how much value there is in recovered microcode. Microcode is not a schematic. It does not tell you details about the gates. But it tells you what the hardware was expected to do. It names internal registers, exposes shared routines, and makes otherwise invisible contracts visible. When a short micro-op name turns out to mean something very specific, implementing it correctly feels like finding another piece of the original machine.
 
 That is what makes the project fun. z386 is part CPU implementation, part archaeology, and part logic puzzle. Every time a BIOS, memory manager, or DOS extender gets a little further, it is evidence that another part of the design has been reconstructed.
 
-Credits: The analysis of the 80386 in this post draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com).
+## Credits
+
+The analysis of the 80386 in this post draws on the microcode disassembly and silicon reverse engineering work of [reenigne](https://www.reenigne.org/blog/), [gloriouscow](https://github.com/dbalsom), [smartest blob](https://github.com/a-mcego), and [Ken Shirriff](https://www.righto.com).
