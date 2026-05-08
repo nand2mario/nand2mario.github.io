@@ -37,7 +37,7 @@ In this post, I will fill in the rest of the design: instruction prefetch, decod
 
 ## From z8086 to z386
 
-A little background first. Last year I wrote [z8086](https://github.com/nand2mario/z8086), an original-microcode-driven 8086 based on [reenigne's disassembly work](https://www.reenigne.org/blog/8086-microcode-disassembled/). That project showed that building a working CPU around recovered microcode was possible. Near the end of the year I learned that 80386 microcode had recently been extracted and that reenigne was working on a disassembly. He generously shared that work with me, and z386 started from there.
+A little background first. Last year I wrote [z8086](https://github.com/nand2mario/z8086), an original-microcode-driven 8086, based on [reenigne's disassembly work](https://www.reenigne.org/blog/8086-microcode-disassembled/). That project showed that it was possible to build a working CPU around recovered microcode. Towards the end of the year, I learned that 80386 microcode had recently been extracted, and that reenigne and several others — credited at the end of this post — were working on a disassembly. They generously shared their work with me, and z386 started from there.
 
 The 386 is a very different problem from the 8086. The instruction set is larger, the internal state is much richer, and the machine has to enforce protection, paging, privilege checks, and precise faults. More importantly, the 80386 micro-operations are denser and more contextual. If the 8086 microcode reads like a straightforward C program, the 386 microcode reads more like hand-tuned assembly: short, subtle, and full of assumptions about hidden hardware.
 
