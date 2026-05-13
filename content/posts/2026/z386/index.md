@@ -229,7 +229,7 @@ Roughly, the project timeline has looked like this:
 
 ## Thoughts
 
-There is a reasonable argument that the 386 is [Intel's most important CPU](https://www.xtof.info/intel80386.html). Not the cleanest, not the fastest for its time, and not the most elegant. But it got the hardware-software contract mostly right: a 32-bit x86 with protected mode, paging, and good backward compatibility. [Heise makes a similar point](https://www.heise.de/en/news/40-Years-of-80386-Intel-s-Most-Important-Product-10778053.html): what we now call x86 really starts to look like itself with the 80386.
+There is a reasonable argument that the 386 is [Intel's most important CPU](https://www.xtof.info/intel80386.html). Not the cleanest, not the fastest for its time, and not the most elegant. But it got the hardware-software contract mostly right: a 32-bit x86 with protected mode, paging, and good backward compatibility. [Another perspective](https://www.heise.de/en/news/40-Years-of-80386-Intel-s-Most-Important-Product-10778053.html) makes a similar case: what we now call x86 really starts to look like itself with the 80386.
 
 That is the part I appreciate more after building z386. The 386 is the point where protected mode became both useful and performant. The segmentation model is still there, but it can support a flat 4GB address space. Protected mode is now usable enough for serious systems. Compatibility is still good, but the machine is much more capable. That combination gave software a long runway. DOS extenders, Windows, OS/2, Unix ports, and Linux could all use different pieces of the same hardware.
 
