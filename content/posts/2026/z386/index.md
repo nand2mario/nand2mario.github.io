@@ -233,9 +233,9 @@ There is a reasonable argument that the 386 is [Intel's most important CPU](http
 
 That is the part I appreciate more after building z386. The 386 is the point where protected mode became both useful and performant. The segmentation model is still there, but it can support a flat 4GB address space. Protected mode is now usable enough for serious systems. Compatibility is still good, but the machine is much more capable. That combination gave software a long runway. DOS extenders, Windows, OS/2, Unix ports, and Linux could all use different pieces of the same hardware.
 
-The other lesson is how much value there is in recovered microcode. Microcode is not a schematic. It does not tell you details about the gates. But it tells you what the hardware was expected to do. It names internal registers, exposes shared routines, and makes otherwise invisible contracts visible. When a short micro-op name turns out to mean something very specific, implementing it correctly feels like finding another piece of the original machine.
+The other lesson is how much recovered microcode reveals about the original design. Microcode is not a schematic—it doesn't document gate-level details—but it captures what the hardware was designed to accomplish. It identifies internal registers, exposes reusable subroutines, and makes implicit hardware contracts explicit. When a terse micro-op name maps to a specific behavior, getting the implementation right feels like uncovering another layer of the original architecture.
 
-That is what makes the project fun. z386 is part CPU implementation, part archaeology, and part logic puzzle. Every time a BIOS, memory manager, or DOS extender gets a little further, it is evidence that another part of the design has been reconstructed.
+That makes z386 a fun project. z386 is part CPU implementation, part archaeology, and part logic puzzle. Every time a BIOS, memory manager, or DOS extender gets a little further, it is evidence that another part of the design has been reconstructed.
 
 ## Credits
 
