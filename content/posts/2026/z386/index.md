@@ -1,6 +1,6 @@
 ---
 title: "z386: An Open-Source 80386 Built Around Original Microcode"
-date: 2026-04-30T20:00:00+08:00
+date: 2026-05-12T20:10:50+08:00
 draft: true
 sidebar: false
 comment: true
@@ -206,7 +206,7 @@ There is still much more to test. Windows does not work yet, and protected-mode 
 
 ## z386 and ao486
 
-There is already a mature FPGA x86 core: ao486. The interesting difference is not just 386 versus 486; it is the style of machine being implemented. z386 follows the coarse-grained 386 organization, while ao486 is closer to the finer-stage 486 pipeline.
+There is already a mature FPGA x86 core: ao486. The interesting comparison is not 386 versus 486 per se — ao486 has many differences from a real 486 — but rather the different architectural styles of these implementations. z386 follows the coarse-grained organization with large cooperating units, while ao486 uses a finer-grained pipeline.
 
 | Topic | z386 / 386 style | ao486 / 486 style |
 | --- | --- | --- |
