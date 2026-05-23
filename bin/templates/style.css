@@ -138,6 +138,50 @@ main {
     text-decoration: underline;
 }
 
+.post-excerpt figure {
+    margin: 24px auto 28px;
+}
+
+.post-excerpt figure img,
+.post-excerpt img {
+    max-width: 100%;
+    height: auto;
+    margin: 16px auto 8px;
+    display: block;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+}
+
+.post-excerpt figcaption {
+    color: #57606a;
+    font-size: 14px;
+    line-height: 1.45;
+    font-style: italic;
+}
+
+.post-excerpt .table-wrap {
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+.post-excerpt table {
+    width: auto;
+    margin: 0;
+    border-collapse: collapse;
+    color: #24292f;
+}
+
+.post-excerpt th,
+.post-excerpt td {
+    padding: 8px 16px;
+    border: 1px solid #d0d7de;
+}
+
+.post-excerpt th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+
 .read-more {
     color: #0969da;
     text-decoration: none;

@@ -12,6 +12,7 @@ import markdown
 from datetime import datetime
 from pathlib import Path
 from html import escape
+from urllib.parse import urljoin, urlparse
 
 # Configuration
 SITE_TITLE = "Small Things Retro"
@@ -70,6 +71,21 @@ def get_excerpt(html_content, max_chars=300):
     if len(text) > max_chars:
         text = text[:max_chars].rsplit(' ', 1)[0] + '...'
     return text
+
+
+def rebase_excerpt_urls(html_content, post_url):
+    """Make relative URLs in post excerpts work when rendered on listing pages."""
+    base_url = f"{BASE_PATH}{post_url}"
+
+    def rebase_attr(match):
+        attr = match.group(1)
+        url = match.group(2)
+        parsed = urlparse(url)
+        if parsed.scheme or url.startswith(("/", "#")):
+            return match.group(0)
+        return f'{attr}="{urljoin(base_url, url)}"'
+
+    return re.sub(r'(src|href)="([^"]+)"', rebase_attr, html_content)
 
 
 def collect_posts():
@@ -333,7 +349,7 @@ def generate_home_page(posts, page_num, total_pages):
     post_list_html = ""
     for post in posts:
         html_content = render_markdown(post['body'], post['url'])
-        excerpt = get_excerpt(html_content)
+        excerpt = rebase_excerpt_urls(get_excerpt(html_content), post['url'])
         post_url = f"{BASE_PATH}{post['url']}"
         post_list_html += f'''
         <article class="post-preview">
@@ -418,7 +434,7 @@ def generate_tag_page(tag, posts):
     post_list_html = ""
     for post in posts:
         html_content = render_markdown(post['body'], post['url'])
-        excerpt = get_excerpt(html_content)
+        excerpt = rebase_excerpt_urls(get_excerpt(html_content), post['url'])
         post_url = f"{BASE_PATH}{post['url']}"
         post_list_html += f'''
         <article class="post-preview">
