@@ -1,7 +1,7 @@
 ---
 title: "z386: An Open-Source 80386 Built Around Original Microcode"
-date: 2026-05-12T20:10:50+08:00
-draft: true
+date: 2026-05-23T19:40:50+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
