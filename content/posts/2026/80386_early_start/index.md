@@ -1,5 +1,5 @@
 ---
-title: "Early Start and Making z386 as Fast as ao486"
+title: "80386 Early Start Memory Access"
 date: 2026-06-18T19:50:50+08:00
 draft: true
 sidebar: false
@@ -8,28 +8,28 @@ author: nand2mario
 tags: [386]
 ---
 
-The [z386](https://github.com/nand2mario/z386) FPGA CPU I [released in May](../z386/) was a working 80386 — smaller than existing implementations, fairly fast, and driven by the original Intel microcode. But it was not yet a complete 386. One major missing feature was **Early Start**, where the real 386 begins the next instruction's memory access before the current instruction finishes. Over the following month I added early start and a series of other optimizations, and the result is a machine that now reaches ao486-class performance.
+When Intel designed the 80386, they gave it a trick for hiding memory latency: **Early Start**. Instead of waiting for an instruction to reach its memory micro-op, the 386 begins the next instruction's address work — effective address, segment relocation, the bus cycle — in the last cycle of the current instruction. Intel put it at about 9% of overall performance. It is also the source of the POPAD bug.
+
+The [z386](https://github.com/nand2mario/z386) FPGA core I [released in May](../z386/) ran the original 386 microcode but didn't have early start. Over the last month I added it along with a series of other optimizations, and z386 now reaches ao486-class performance:
 
 | core | Doom (FPS) | 3DBench | Landmark |
 |---|---:|---:|---:|
 | z386 0.1 (May) | 16.6 | 33.7 | 147 |
-| **z386 0.4 (June)** | **22.5** | **43.1** | **164** |
+| **z386 0.4 (June)** | **23.0** | **44.5** | **170** |
 | ao486 | 21.0 | 43.8 | 204 |
 
-Doom (original, max details) went up ~35% (16.6 → 22.5), past ao486's 21.0, and the 16-bit 3DBench is now within a hair of ao486. Almost none of this came from a faster clock — it came from cutting **CPI**, doing more work per clock. Per-instruction, z386 went from well above the 386's cycle counts to at or below them on nearly everything:
+Doom (original, max details) went up ~39% (16.6 → 23.0), past ao486's 21.0, and the 16-bit 3DBench now edges past ao486 too. The board clock is unchanged from v0.1's 85 MHz, so the gains came entirely from cutting **CPI**, doing more work per clock. Per-instruction, z386 went from well above the 386's cycle counts to at or below them on nearly everything:
 
 <figure style="width: 100%; max-width: 400px; margin: 28px auto 32px;">
 <img src="timings.png" alt="Instruction timings: z386 vs 80386" class="no-border">
 <figcaption style="text-align: center;">Instruction timings: z386 0.1 → 0.4 vs the original 80386.</figcaption>
 </figure>
 
-The [memory pipeline post](../80386_memory_pipeline/) earlier in this [series](/tags/386/) introduced Early Start as a concept. This post is how to build it on an FPGA, plus the rest of the CPI work that got z386 to parity, and finally how all of it stayed inside the timing budget.
+The [memory pipeline post](../80386_memory_pipeline/) earlier in this [series](/tags/386/) introduced Early Start as a concept. This post is about building it on an FPGA, plus the rest of the CPI work that got z386 to parity.
 
 ## Early Start
 
-With Early Start, the 386 address path does not wait for the new instruction to begin in the usual microcoded sense. It starts the address work — effective-address computation, segment relocation, the bus cycle — in the **last cycle of the previous instruction**, overlapping it with that instruction's writeback. Intel reports the optimization is worth about **9%** of performance overall.
-
-As for how early-start works, the clue is in the microcode. Here is the entry for an ALU instruction that reads a memory operand (`ADD reg, [mem]`):
+Intel discussed Early Start in Slager's ICCD '86 paper, "Performance Optimizations of the 80386". The clue to how it works is in the microcode. Here is the entry for an ALU instruction that reads a memory operand (`ADD reg, [mem]`):
 
 ```asm
 ; ADD/OR/ADC/SBB/AND/SUB/XOR m,r
@@ -59,6 +59,8 @@ In execution order, the microcode runs as in the table below. Line `023` runs th
 
 This overlap starts the memory access at least one cycle earlier, cutting load/store latency. The subtlety is that the previous instruction's last micro-instruction may write back to a register, creating a data hazard. Here `EAX` is being *written* in that very cycle, so its new value isn't in the register file yet. The fix is the usual one — a forwarding network, so early-start sees the latest value. The 386DX's forwarding network had a corner-case bug that produced the famous **POPAD bug**: when `POPAD` is followed by an instruction using `[EAX+...]`, the early-start machinery forwards the wrong value.
 
+Another way to view early-start is coarse pipelining at the granularity of macro-instructions, where the last cycle of the previous instruction (RNI delay slot) is the write-back stage of that instruction, and it overlaps with the next instruction's first cycle, the early-start cycle.
+
 ## Implementing Early Start
 
 z386 tracks each instruction through a small lifecycle. The two events that matter here are **`i_pop`** — the cycle the instruction is pulled from the prefetch queue, which is the *previous* instruction's `RNI` delay slot — and **`i_first`**, the first cycle of its own microcode. `i_pop` is exactly the 386's early-start window in cycle 2 above.
@@ -85,13 +87,13 @@ With the forwarded GPR and stack pointer ready, the early-start cycle computes t
 
 ## Further speeding up of memory accesses
 
-Early-start's ~9% is significant, but getting past 30% took a lot of other work — most of it shortening the memory-access pipe:
+Early-start's ~9% is significant, but getting past 30% required more work — most of it shortening the memory-access pipe:
 
 **Tightening the store queue**. Stores were 3 cycles where the 386 takes 2. The usual way to cut write latency in a CPU is a *store queue*: instead of writing straight to memory, the CPU buffers the pending write in a small queue. z386 already had a 3-entry store queue, but its interface was too conservative and wasted a cycle. Releasing the delay (the `DLY` micro-op) earlier recovered that cycle.
 
 **Issuing the read/write at i_first**. `i_first` is the first cycle of an instruction, and with early-start most reads and writes naturally issue here. But the old memory pipe sometimes split the TLB lookup and the memory/cache request across two cycles. Folding them both into the `i_first` cycle saves another cycle on top of early-start.
 
-Here's an example of the memory pipe at work, with no stall at all if the cache hits:
+Here's an example of the memory pipe at work, with no stall if the cache hits:
 
 ```asm
 ; ADD/OR/ADC/SBB/AND/SUB/XOR r,m
@@ -107,11 +109,11 @@ i_pop           forward GPR, set IND(early-EA), relocate
 
 ## Early branch redirect
 
-It is *not* a goal for z386 to be 100% 80386 cycle-accurate. Instead, the goal is accurate behavior, and the original microcode does most of that work. When a little extra logic buys a lot of performance — or when an FPGA primitive does the heavy lifting — I take the faster design. The multiplier was one such case, where the FPGA DSP block saved a lot of cycles. Early branch redirect is an example of getting faster than 386 with a bit of area.
+It is *not* a goal for z386 to be 100% 80386 cycle-accurate. Instead, the goal is accurate behavior, and the original microcode does most of that work. When a little extra logic buys a lot of performance or when an FPGA primitive does the heavy lifting, I take the faster design. The multiplier was one such case, where the FPGA DSP block saved a lot of cycles. Early branch redirect is an example of getting faster than 386 with a bit of area.
 
-For a direct relative branch — `jmp rel`, `call rel`, or a taken `jcc` — the target is just `EIP + displacement`, fully known at decode with no register or memory dependency. These are often performance-critical, yet the 386 only redirected the prefetcher *after* the microcode resolved the branch. So z386 now computes the target early at `i_first` and redirects immediately.
+For a direct relative branch like `jmp rel`, `call rel`, or a taken `jcc`, the target is just `EIP + displacement`, fully known at decode with no register or memory dependency. These are often performance-critical, yet the 386 only redirected the prefetcher *after* the microcode resolved the branch. So z386 now computes the target early at `i_first` and redirects immediately.
 
-This is **not** branch prediction. The `jcc` condition is resolved at `i_first` from the settled flags, so the target is *exact* — it just starts the refill earlier. A taken `jnz`/`jmp` is now **6** cycles, well below the 386's 9.25, which helps CPI noticeably.
+This is not branch prediction. The `jcc` condition is resolved at `i_first` from the settled flags, so the target is exact. It just starts the refill earlier. A taken `jnz`/`jmp` is now **6** cycles, well below the 386's 9.25, which helps CPI noticeably.
 
 ## A wider frontend
 
@@ -121,25 +123,29 @@ So I rebuilt the frontend to be wider and shallower. There are two queues betwee
 
 **A 32-byte prefetch queue, refilled a whole line at a time.** The queue is eight 32-bit words (32 bytes) of raw code, and on an instruction-cache hit a full **16-byte line** is written into it in a single cycle — up to four queue words at once. The point is refill *bandwidth*: after a branch flushes the queue, it fills back up in a couple of cycles instead of trickling in a dword at a time.
 
-**A single-cycle structural decoder.** The decoder looks at a 4-byte window at the queue head (`opcode, modrm, sib, …`) and, in the common case, produces a decoded instruction *combinationally* in one cycle. Opcode-only and opcode+ModR/M forms decode together, and the second-level group decode — which of the ALU/shift/group-1..5 operations an opcode like `0x81` or `0xFF` selects — is a **parallel PLA** that resolves alongside the opcode rather than after it. Only the rarer opcode+ModR/M+SIB form spends a second cycle. So the decoded-instruction queue refills as fast as the prefetcher delivers bytes; there is no deep decode pipeline to drain and refill on every branch.
+**A single-cycle structural decoder.** The decoder looks at a 4-byte window at the queue head (`opcode, modrm, sib, …`) and, in the common case, produces a decoded instruction *combinationally* in one cycle. Opcode-only and opcode+ModR/M forms decode together. Only the rarer opcode+ModR/M+SIB form spends a second cycle. So the decoded-instruction queue refills as fast as the prefetcher delivers bytes; there is no deep decode pipeline to drain and refill on every branch.
+
+This is basically moving the prefetcher and decoder towards the 486 frontend design. The 486 decoder (D1) can decode "up to 3 instruction bytes" in a single cycle ([The i486 CPU: Executing Instructions in One Clock Cycle](https://dl.acm.org/doi/abs/10.1109/40.46766)), including the opcode+modrm+sib case. So z386 is still a bit slower.
 
 Together these took decode-queue-empty from ~20% down to under 10% of cycles.
 
 ## Maintaining a high clock speed
 
-Optimizations cost area and, worse, can hurt Fmax — and if the clock drops too far, an optimization defeats its own purpose. z386 nearly held its clock through all of the above: it runs at 80 MHz on the board, down slightly from v0.1's 85 MHz. But CPI improved by far more, so overall 32-bit performance still rose about 30%.
+Optimizations cost area and, worse, can hurt Fmax — and if the clock drops too far, an optimization defeats its own purpose. z386 held its clock through all of the above and runs at 85 MHz on the board, the same as v0.1.
 
-One timing technique is worth calling out: **adder carry-chain fusion**. The original 386 has a special case for the "complex effective address". When all three terms are present — `EA = base + index<<scale + disp` — it has to be computed in two cycles instead of one, because the same combinational path also carries a 32-bit adder for segment relocation, and three 32-bit adders in series are too slow for one clock. The lucky thing on the DE10-Nano is that the Altera ALM (the FPGA logic cell) supports a fast 3-input adder via a "shared arithmetic chain": a 3-input add is only slightly slower than a 2-input add, on a single carry chain. Taking advantage of that, z386 computes the complex EA in a single cycle without losing clock speed.
+One timing technique is worth some discussion: **adder carry-chain fusion**. The original 386 has a special case for the "complex effective address". When all three terms are present — `EA = base + index<<scale + disp` — it has to be computed in two cycles instead of one, because the same combinational path also carries a 32-bit adder for segment relocation, and three 32-bit adders in series are too slow for one clock. The lucky thing on the DE10-Nano is that the Altera ALM (the FPGA logic cell) supports a fast 3-input adder via a "shared arithmetic chain": a 3-input add uses one carry chain and is only slightly slower than a 2-input add. Taking advantage of that, z386 computes the complex EA in a single cycle without losing clock speed.
 
-Beyond those, closing 80 MHz was a steady grind of smaller cleanups, each shaving a path: predecoding the microcode control bits in the ROM's output-register cycle (so they don't decode on the execution path); replicating the live-TLB linear per cache way to break a 329-fanout net; flattening the `stall`/`uc_exec` enable logic from ~5 LUT levels to ~2; and taking the fault and TLB-permission cones off the prefetch-start and cache-capture enables. These don't change logic behavior; they exist purely so the CPI features above could work at clock.
+Beyond those, closing 85 MHz was a steady grind of smaller cleanups, each shaving a path: predecoding the microcode control bits in the ROM's output-register cycle, so they don't decode on the execution path; replicating registers to break large fanouts; flattening the microcode stalling logic from ~5 LUT levels to ~2. These don't change logic behavior but are necessary to maintain the CPI improvements.
 
 ## Conclusion
 
-z386 0.1 finished the basic machinery needed for the 386 microcode to execute (mostly) correctly. My other goal for the project has always been for it to be as fast as — or faster than — the other open-source x86 core, ao486, and I think z386 0.4 gets there. So there are now two fast open-source x86 cores: a pipelined one (ao486) and a non-pipelined one (z386). In theory a pipeline should win, but given x86's complexity, it is hard to get one both correct and well-optimized.
+The 80386 early-start feature is a good example of latency-hiding design. It trades a small amount of forwarding logic for 9% more performance, and could be viewed as a precursor to the 486's 5-stage pipeline design. 
+
+On the implementation side, z386 0.1 finished the basic machinery needed for the 386 microcode to execute (mostly) correctly. My other goal for the project has always been for it to be as fast as — or faster than — the other open-source x86 core, ao486, and I think z386 0.4 gets there. So there are now two fast open-source x86 cores: a pipelined one (ao486) and a non-pipelined one (z386). In theory a pipeline should win, but given x86's complexity, it is hard to get one both correct and well-optimized.
 
 On correctness, z386 does not boot Windows yet — there's no fundamental reason it couldn't, x86 is just complicated. So [help](https://github.com/nand2mario/z386) fixing bugs is very welcome. Please also report game-compatibility issues to [z386_MiSTer](https://github.com/nand2mario/z386_MiSTer), since those help improve the CPU core too.
 
-Thanks for reading and happy hacking. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
+Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
 
 ## Credits
 
