@@ -1,7 +1,7 @@
 ---
 title: "80386 Early Start Memory Access"
-date: 2026-06-18T19:50:50+08:00
-draft: true
+date: 2026-06-23T13:50:50+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
