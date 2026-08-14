@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="title desc">
+  <title id="title">TurboQuake performance during x87 development</title>
+  <desc id="desc">TurboQuake increased from 2.7 frames per second in the first 50 megahertz x87 build to 6.3 frames per second in the z486 release.</desc>
+  <style>.h{font:600 18px system-ui,sans-serif;fill:#0f172a}.t{font:14px system-ui,sans-serif;fill:#334155}.n{font:12px system-ui,sans-serif;fill:#64748b}.grid{stroke:#e2e8f0}.line{stroke:#0e7490;stroke-width:4;fill:none}.dot{fill:#0e7490;stroke:#fff;stroke-width:3}.value{font:600 14px system-ui,sans-serif;fill:#0f172a}</style>
+  <rect width="960" height="480" fill="#fff"/>
+  <text x="480" y="30" text-anchor="middle" class="h">TurboQuake timedemo progress</text>
+  <g class="grid"><path d="M90 390H900M90 300H900M90 210H900M90 120H900"/></g>
+  <g class="n" text-anchor="end"><text x="78" y="395">2 FPS</text><text x="78" y="305">4</text><text x="78" y="215">6</text><text x="78" y="125">8</text></g>
+  <path d="M130 359L300 274L470 247L640 211L810 197" class="line"/>
+  <g class="dot"><circle cx="130" cy="359" r="8"/><circle cx="300" cy="274" r="8"/><circle cx="470" cy="247" r="8"/><circle cx="640" cy="211" r="8"/><circle cx="810" cy="197" r="8"/></g>
+  <g class="value" text-anchor="middle"><text x="130" y="340">2.7</text><text x="300" y="255">4.6</text><text x="470" y="228">5.2</text><text x="640" y="192">6.0</text><text x="810" y="178">6.3 FPS</text></g>
+  <g class="t" text-anchor="middle"><text x="130" y="422">first x87</text><text x="130" y="443">50 MHz</text><text x="300" y="422">first 85 MHz</text><text x="300" y="443">production fit</text><text x="470" y="422">conversion +</text><text x="470" y="443">multiply</text><text x="640" y="422">direct m32</text><text x="640" y="443">overlay</text><text x="810" y="422">shorter</text><text x="810" y="443">arithmetic</text></g>
+</svg>

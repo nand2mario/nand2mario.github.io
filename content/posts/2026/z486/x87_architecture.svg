@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1050 560" role="img" aria-labelledby="title desc">
+  <title id="title">z486 x87 organization</title>
+  <desc id="desc">The CPU memory path and direct single-precision fast path feed x87 control, stack, and a microcoded executor with shared arithmetic resources.</desc>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#475569"/></marker><style>.box{stroke-width:2;rx:7}.h{font:600 17px system-ui,sans-serif;fill:#0f172a}.t{font:14px system-ui,sans-serif;fill:#334155}.n{font:12px system-ui,sans-serif;fill:#64748b}.arrow{stroke:#475569;stroke-width:2.2;fill:none;marker-end:url(#a)}</style></defs>
+  <rect width="1050" height="560" fill="#fff"/>
+  <text x="525" y="30" text-anchor="middle" class="h">A coprocessor interface around an FPGA-oriented numeric engine</text>
+  <g text-anchor="middle">
+    <rect x="45" y="78" width="210" height="82" class="box" fill="#dbeafe" stroke="#2563eb"/><text x="150" y="109" class="h">80386 x87 protocol</text><text x="150" y="134" class="t">command + data ports</text>
+    <rect x="45" y="210" width="210" height="82" class="box" fill="#dcfce7" stroke="#16a34a"/><text x="150" y="241" class="h">Direct m32 overlay</text><text x="150" y="266" class="t">hot game operands</text>
+    <rect x="330" y="78" width="250" height="214" class="box" fill="#fef3c7" stroke="#d97706"/><text x="455" y="109" class="h">x87 control</text><text x="455" y="139" class="t">2K command ROM</text><text x="455" y="165" class="t">transfer FIFO</text><text x="455" y="191" class="t">TOP, tags, status</text><text x="455" y="217" class="t">exceptions + commit</text><rect x="375" y="238" width="160" height="36" rx="5" fill="#fff7ed" stroke="#ea580c"/><text x="455" y="261" class="t">8 x 80-bit stack</text>
+    <rect x="660" y="78" width="330" height="214" class="box" fill="#f3e8ff" stroke="#9333ea"/><text x="825" y="109" class="h">x87 executor</text><text x="825" y="139" class="t">256 x 64 horizontal control store</text><text x="825" y="165" class="t">shared 53-bit significand work lane</text><text x="825" y="191" class="t">add / normalize / round</text><text x="825" y="217" class="t">4-DSP multiply, divide, sqrt</text><text x="825" y="243" class="t">microcoded limb CORDIC</text>
+  </g>
+  <path d="M255 119H323M255 251H300V185H323M580 185H653" class="arrow"/>
+  <rect x="130" y="364" width="790" height="148" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="160" y="398" class="h">Architectural precision and implementation precision are separate</text>
+  <text x="160" y="431" class="t">Stack entry</text><text x="300" y="431" class="t">80 bits: sign + 15-bit exponent + 64-bit explicit significand</text>
+  <text x="160" y="461" class="t">Arithmetic lane</text><text x="300" y="461" class="t">53-bit significand + guard / round / sticky</text>
+  <text x="160" y="491" class="t">Consequence</text><text x="300" y="491" class="t">exact untouched m80 transfers, but not full 80387 arithmetic precision</text>
+  <text x="525" y="543" text-anchor="middle" class="n">The integer CPU may continue while a posted x87 operation is busy.</text>
+</svg>

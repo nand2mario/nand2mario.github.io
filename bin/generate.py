@@ -47,6 +47,24 @@ def parse_frontmatter(content):
     return {}, content
 
 
+def expand_markdown_includes(content, base_dir, seen=None):
+    """Expand local {{< include "file.md" >}} directives recursively."""
+    seen = set() if seen is None else seen
+    pattern = re.compile(r'\{\{<\s*include\s+["\']([^"\']+)["\']\s*>\}\}')
+
+    def include(match):
+        path = (base_dir / match.group(1)).resolve()
+        if path in seen:
+            raise ValueError(f"recursive markdown include: {path}")
+        if not path.is_file():
+            raise FileNotFoundError(f"markdown include not found: {path}")
+        included = path.read_text(encoding='utf-8')
+        _, body = parse_frontmatter(included)
+        return expand_markdown_includes(body, path.parent, seen | {path})
+
+    return pattern.sub(include, content)
+
+
 def get_excerpt(html_content, max_chars=300):
     """Extract excerpt from HTML content. Returns HTML if <!--more--> marker exists."""
     # Check for <!--more--> marker and use content before it
@@ -145,7 +163,7 @@ def collect_posts():
         post['draft'] = frontmatter.get('draft', False)
         post['author'] = frontmatter.get('author', 'nand2mario')
         post['tags'] = [str(t) for t in frontmatter.get('tags', [])]
-        post['body'] = body
+        post['body'] = expand_markdown_includes(body, post['index_file'].parent)
 
         # Parse date (normalize to naive datetime for comparison)
         if isinstance(post['date'], str):

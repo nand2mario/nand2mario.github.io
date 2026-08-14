@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 500" role="img" aria-labelledby="title desc">
+  <title id="title">Hardwired instruction recipe and chaining</title>
+  <desc id="desc">A two-word 386 register move is collapsed into one useful uStep, allowing the following instruction to begin in the reclaimed delay slot.</desc>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#475569"/></marker><style>.h{font:600 18px system-ui,sans-serif;fill:#0f172a}.t{font:14px system-ui,sans-serif;fill:#334155}.m{font:14px ui-monospace,monospace;fill:#172033}.n{font:12px system-ui,sans-serif;fill:#64748b}.arrow{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#a)}.dash{stroke:#94a3b8;stroke-width:2;stroke-dasharray:7 5;fill:none}</style></defs>
+  <rect width="1100" height="500" fill="#fff"/>
+  <text x="550" y="30" text-anchor="middle" class="h">Reclaiming a microcode delay slot</text>
+  <text x="50" y="76" class="h">Original 80386 path</text>
+  <text x="50" y="210" class="h">z486 hardwired recipe</text>
+  <g text-anchor="middle">
+    <rect x="280" y="52" width="200" height="70" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/><text x="380" y="80" class="m">003 PASS + RNI</text><text x="380" y="103" class="n">compute source value</text>
+    <rect x="515" y="52" width="200" height="70" rx="7" fill="#f3e8ff" stroke="#9333ea" stroke-width="2"/><text x="615" y="80" class="m">004 SIGMA -&gt; dst</text><text x="615" y="103" class="n">architectural delay slot</text>
+    <rect x="750" y="52" width="200" height="70" rx="7" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/><text x="850" y="80" class="m">next: first uop</text><text x="850" y="103" class="n">successor starts later</text>
+    <rect x="280" y="186" width="300" height="86" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="430" y="216" class="m">003 PASS + commit + RNI</text><text x="430" y="240" class="n">native datapath, generated commit metadata</text><text x="430" y="259" class="n">one bounded uStep</text>
+    <rect x="615" y="186" width="300" height="86" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="765" y="216" class="m">successor: first uStep</text><text x="765" y="240" class="n">starts in the reclaimed slot</text><text x="765" y="259" class="n">only after hazard checks pass</text>
+  </g>
+  <path d="M480 87H508M715 87H743M580 229H608" class="arrow"/>
+  <path d="M520 300H730" class="dash"/>
+  <text x="625" y="322" text-anchor="middle" class="n">word 004 is still present for the general microcoded fallback</text>
+
+  <rect x="65" y="360" width="970" height="108" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="90" y="391" class="h">The proof before chaining</text>
+  <g class="t"><text x="90" y="421">GPR and byte-register overlap</text><text x="350" y="421">EA base / index / ESP</text><text x="605" y="421">flags producer / consumer</text><text x="850" y="421">faults and interrupts</text><text x="90" y="450">pending load or shift result</text><text x="350" y="450">D2 and ROM residency</text><text x="605" y="450">memory slot still has work</text><text x="850" y="450">throttle / single-step</text></g>
+</svg>
