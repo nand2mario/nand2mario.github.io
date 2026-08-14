@@ -29,15 +29,11 @@ z486 is not a transistor-level clone of Intel's i486. It combines three ideas:
 3. an experimental integrated x87 unit, sufficient to run Quake.
 
 On the same MiSTer system, the current core runs the Doom timedemo at **29.1
-FPS** at maximum detail, compared with **21.0 FPS** on ao486. The more
-interesting result, though, is architectural: a recovered 386 control program
-can be turned into a practical pipelined FPGA CPU without replacing it with a
-large behavioral instruction engine.
-
-<figure style="width: 100%; max-width: 820px; margin: 28px auto 32px;">
-<img src="integer_performance.svg" alt="Doom and 3DBench performance for z386, ao486, and z486" class="no-border">
-<figcaption style="text-align: center;">Board-measured DOS performance on the same MiSTer setup. Higher is better.</figcaption>
-</figure>
+FPS** at maximum detail, compared with **21.0 FPS** on ao486. In Dhrystone it
+reaches **0.330 DMIPS/MHz**, versus **0.225** for z386 and **0.194** for ao486.
+The more interesting result, though, is architectural: a recovered 386 control
+program can be turned into a practical pipelined FPGA CPU without replacing it
+with a large behavioral instruction engine.
 
 <!--more-->
 
@@ -92,17 +88,9 @@ not to every possible x86 instruction.
 <figcaption style="text-align: center;">The i486 pipeline. D2 is both the second decode stage and the address-generation stage.</figcaption>
 </figure>
 
-Intel's own functional block diagram makes the reason for this staging clear.
-The register file, ALU, segmentation, paging, cache, instruction decoder,
-control ROM, prefetch queue, floating-point unit, and bus interface are not
-independent ornaments. They are connected by deliberately placed internal
-buses that let decode, address generation, translation, cache access, and
-execution overlap.
-
-<figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
-<img src="intel_80486_block_diagram.png" alt="Intel 80486 functional block diagram" class="no-border">
-<figcaption style="text-align: center;">Intel i486 functional block diagram.<br><small>Source: Fu, Saini, and Gelsinger, <i>Performance and Microarchitecture of the i486 Processor</i>, Figure 1.</small></figcaption>
-</figure>
+Intel's functional block diagram, reproduced with the
+[references](#further-information-and-references), shows how internal buses
+connect decode, address generation, translation, cache access, and execution.
 
 ### Why D2 matters
 
@@ -367,16 +355,9 @@ The coprocessor can also run in parallel with the integer CPU. The CPU performs
 addressing and memory transfers; the numeric unit owns stack state and
 arithmetic. A later wait or dependent x87 operation synchronizes them.
 
-The original 80387 block diagram is particularly useful because it exposes the
-design's actual boundaries: bus control, a data-interface/control unit, an
-eight-by-80-bit stack, exponent machinery, a 68-bit mantissa datapath, a
-barrel shifter, a microinstruction sequencer, constant ROM, and a CORDIC
-nanomachine.
-
-<figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
-<img src="intel_80387_block_diagram.png" alt="Intel 80387 block diagram showing bus control, data interface and control, stack, mantissa datapath, and CORDIC machine" class="no-border">
-<figcaption style="text-align: center;">Intel 80387 block diagram.<br><small>Source: Perlmutter and Yuen, <i>The 80387 and Its Applications</i>, Figure 2.</small></figcaption>
-</figure>
+The original 80387 block diagram in the
+[references](#further-information-and-references) shows its control, stack,
+mantissa, microcode, and CORDIC boundaries.
 
 ### The z486 x87 implementation
 
@@ -435,19 +416,12 @@ release reaches about 6.3 FPS at the 85 MHz board clock. A deterministic
 arithmetic schedule reduced it from 12,945,407 to 12,452,347 cycles, or 3.81%,
 with an exact final RAM hash.
 
-## Performance and FPGA cost
+## FPGA implementation
 
 The current release configuration uses 34,775 of the Cyclone V's 41,910 ALMs
 (83%), 3.12 Mbits of block memory, and 33 DSP blocks. Separate 8 KB instruction
 and data caches account for part of the block memory; the integer and x87
 control stores also map into M10Ks.
-
-The benchmark graph at the beginning compares complete MiSTer systems, not
-isolated CPUs. z486 improves from the original z386's 16.5 to 29.1 FPS in Doom
-at maximum detail, and from 34.0 to 51.2 in 3DBench. Against ao486, that is
-about 39% higher Doom performance and 17% higher 3DBench performance in these
-tests. The variation is useful: no single synthetic number fully predicts a
-game workload.
 
 The released core runs the CPU domain at 85 MHz using a board-qualified seed.
 The conservative 50 MHz profile closes static timing with positive slack. This
@@ -517,17 +491,39 @@ more general machine. Both are attractive future experiments, but the current
 DE10-Nano is already over 80% full. For now, there is still substantial work in
 making one x86 pipeline better.
 
-## References
+## Further information and references
 
-The main primary sources used for this work are:
+These notes collect the diagrams, historical sources, reverse-engineering work,
+benchmark configurations, and implementations discussed in this article.
 
-* John H. Crawford, [“The i486 CPU: Executing Instructions in One Clock Cycle”](https://doi.org/10.1109/40.46766), *IEEE Micro*, 1990.
-* John H. Crawford, [“The Execution Pipeline of the Intel i486 CPU”](https://ieeexplore.ieee.org/document/63682/), Compcon Spring, 1990.
-* B. Fu, A. Saini, and P. Gelsinger, “Performance and Microarchitecture of the i486 Processor,” ICCD, 1989.
-* David Perlmutter and Alan Kin-Wah Yuen, “The 80387 and Its Applications,” *IEEE Micro*, 1987.
-* John F. Palmer, [“The Intel 8087 Numeric Data Processor”](https://doi.org/10.1109/AFIPS.1980.108), 1980.
-* reenigne, [“80386 microcode disassembled”](https://www.reenigne.org/blog/80386-microcode-disassembled/), for the extraction and disassembly work on which the original z386 control path is based.
+1. **Intel i486 functional block diagram.** This diagram is useful because it
+   shows that the i486 pipeline was more than five abstract stage names. The
+   register file, decoders, control ROM, address units, TLB, cache, execution
+   units, and internal buses were arranged to overlap decode, address
+   generation, translation, and execution. That organization is the main
+   architectural reference for z486's integer pipeline.
 
-Implementation details and current limitations are documented in the
-[z486 repository](https://github.com/nand2mario/z486) and the
-[z486_MiSTer repository](https://github.com/nand2mario/z486_MiSTer).
+    <a href="intel_80486_block_diagram.png" title="Open the full-size Intel i486 block diagram"><img src="intel_80486_block_diagram.png" alt="Thumbnail of the Intel 80486 functional block diagram" class="no-border" style="display: block; width: min(50vw, 520px); max-width: 100%; height: auto; margin: 24px auto 10px;"></a>
+    <small style="display: block; text-align: center; margin: 0 auto 30px;">Intel i486 functional block diagram. Click for the full image. Source: Fu, Saini, and Gelsinger, <i>Performance and Microarchitecture of the i486 Processor</i>, Figure 1; reference 5 below.</small>
+
+2. **Intel 80387 block diagram.** The 80387 drawing exposes the boundaries
+   hidden by the x87 instruction set: bus control, command sequencing, the
+   register stack, exponent logic, mantissa datapath, barrel shifter, and
+   CORDIC engine. z486 preserves the broad control/datapath split while mapping
+   storage and arithmetic onto FPGA block RAM and DSP resources.
+
+    <a href="intel_80387_block_diagram.png" title="Open the full-size Intel 80387 block diagram"><img src="intel_80387_block_diagram.png" alt="Thumbnail of the Intel 80387 block diagram" class="no-border" style="display: block; width: min(50vw, 520px); max-width: 100%; height: auto; margin: 24px auto 10px;"></a>
+    <small style="display: block; text-align: center; margin: 0 auto 30px;">Intel 80387 block diagram. Click for the full image. Source: Perlmutter and Yuen, <i>The 80387 and Its Applications</i>, Figure 2; reference 6 below.</small>
+
+3. John H. Crawford, [“The i486 CPU: Executing Instructions in One Clock Cycle”](https://doi.org/10.1109/40.46766), *IEEE Micro*, 1990. This is the clearest concise account of the five-stage pipeline, hardwired instructions, D1/D2 split, and one-cycle execution target.
+4. John H. Crawford, [“The Execution Pipeline of the Intel i486 CPU”](https://ieeexplore.ieee.org/document/63682/), Compcon Spring, 1990. This gives a complementary description of pipeline timing and interlocks.
+5. B. Fu, A. Saini, and P. Gelsinger, “Performance and Microarchitecture of the i486 Processor,” ICCD, 1989. The i486 block diagram in note 1 is Figure 1 of this paper.
+6. David Perlmutter and Alan Kin-Wah Yuen, “The 80387 and Its Applications,” *IEEE Micro*, 1987. The 80387 block diagram in note 2 is Figure 2 of this paper.
+7. John F. Palmer, [“The Intel 8087 Numeric Data Processor”](https://doi.org/10.1109/AFIPS.1980.108), 1980. This describes the stack architecture and the original numeric-coprocessor organization inherited by later x87 designs.
+8. reenigne, [“80386 microcode disassembled”](https://www.reenigne.org/blog/80386-microcode-disassembled/). Its extraction and disassembly work made the original z386 microcode-driven control path possible.
+9. The [PicoRV32 evaluation notes](https://github.com/YosysHQ/picorv32#evaluation-timing-and-utilization-on-xilinx-7-series-fpgas) document the upstream Dhrystone configurations and published scores cited for comparison.
+10. The [VexRiscv area and frequency results](https://github.com/SpinalHDL/VexRiscv#area-usage-and-maximal-frequency) document its published Dhrystone and implementation configurations.
+11. The [ao486_MiSTer documentation](https://github.com/MiSTer-devel/ao486_MiSTer#core-speed-and-options-and-drivers) records its core clock and system configuration. Its Dhrystone and Doom results in this article were reproduced locally.
+12. The [z386 repository](https://github.com/nand2mario/z386) contains the earlier 80386-oriented core used as the architectural and performance baseline.
+13. The [z486 repository](https://github.com/nand2mario/z486) contains the CPU RTL, tests, design documentation, and reproducible Dhrystone evaluation framework.
+14. The [z486_MiSTer repository](https://github.com/nand2mario/z486_MiSTer) contains the complete MiSTer system, while the [20260813 release](https://github.com/nand2mario/z486_MiSTer/releases/tag/20260813) records the 85 MHz release configuration evaluated here.

@@ -1,9 +1,10 @@
-## Dhrystone evaluation
+## Performance evaluation
 
-Doom is the performance target that matters most for this project, but it is a
-poor tool for separating pipeline efficiency from clock rate and system
-behavior. I therefore also ran Dhrystone 2.1 across z386, ao486, z486,
-PicoRV32, and VexRiscv.
+### Dhrystone: CPU performance
+
+Dhrystone provides a compact view of integer pipeline efficiency, largely
+separate from clock rate and whole-system behavior. I ran Dhrystone 2.1 across
+z386, ao486, z486, PicoRV32, and VexRiscv.
 
 The benchmark uses the conventional VAX 11/780 normalization:
 
@@ -24,13 +25,15 @@ remove fixed marker cost.
 | z386 | 2,526.4 | 4.101 | 0.225 | 15,545 |
 | ao486 | 2,934.0 | 4.556 | 0.194 | 15,190 |
 | **z486** | **1,725.0** | **2.800** | **0.330** | **21,906** |
-| PicoRV32 | 2,336.1 | 4.172 | 0.244 | - |
-| VexRiscv | 780.1 | 1.393 | 0.730 | - |
+| PicoRV32 | 2,336.1 | 4.172 | 0.244 | 1,202 |
+| VexRiscv | 780.1 | 1.393 | 0.730 | 1,029 |
 
-The ALM column is limited to the comparable x86 cores. These are standalone
-seed-1 fits on the DE10-Nano Cyclone V using identical z486_MiSTer production
-settings. The z486 number includes its experimental x87; without x87, the
-integer core uses 16,329 ALMs, only 5.0% more than z386.
+The ALM figures are standalone seed-1 fits on the DE10-Nano Cyclone V using
+identical z486_MiSTer production settings. They are not an apples-to-apples
+feature comparison: the RISC-V configurations omit caches, an MMU, x86
+segmentation and protected mode, legacy I/O and interrupts, and floating point.
+The z486 number includes its experimental x87; without x87, the integer core
+uses 16,329 ALMs, only 5.0% more than z386.
 
 <figure style="width: 100%; max-width: 820px; margin: 28px auto 32px;">
 <img src="dhrystone_dmips_per_mhz.svg" alt="Locally reproduced Dhrystone DMIPS per MHz for z386, ao486, z486, PicoRV32, and VexRiscv" class="no-border">
@@ -41,7 +44,8 @@ z486 needs 31.7% fewer cycles per iteration than z386 and 41.2% fewer than
 ao486. In normalized terms it is 46% faster per MHz than z386 and 70% faster
 per MHz than ao486. At the tested MiSTer clocks, that corresponds to 28.05
 DMIPS for z486 at 85 MHz, 19.15 for z386 at 85 MHz, and 17.46 for ao486 at
-90 MHz. [3] [4] [5]
+90 MHz. Source repositories, release clocks, and upstream benchmark results
+are collected in [Further information and references](#further-information-and-references).
 
 Changing z486's backing-memory model from the earliest legal response to a
 five-cycle first read, one-cycle burst gap, and three-cycle write busy time
@@ -56,7 +60,8 @@ configuration, which also assumes its documented benchmark and memory setup.
 PicoRV32 reaches 0.244 DMIPS/MHz locally. Its project reports 0.516 with the
 look-ahead memory interface and 0.305 without it. These gaps are a useful
 warning that Dhrystone is highly sensitive to compiler and memory-interface
-details, even before comparing different ISAs. [1] [2]
+details, even before comparing different ISAs. The published PicoRV32 and
+VexRiscv configurations are linked in the final reference section.
 
 The ao486 retirement counter is taken at a different pipeline boundary, so its
 CPI should not be compared as precisely as cycles per iteration or DMIPS/MHz.
@@ -69,8 +74,22 @@ machine-readable JSON under `27.dhrystone_eval`. The local numbers should
 therefore be treated as reproducible measurements; upstream frequency numbers
 remain attributed reference data.
 
-[1]: https://github.com/YosysHQ/picorv32#evaluation-timing-and-utilization-on-xilinx-7-series-fpgas
-[2]: https://github.com/SpinalHDL/VexRiscv#area-usage-and-maximal-frequency
-[3]: https://github.com/MiSTer-devel/ao486_MiSTer#core-speed-and-options-and-drivers
-[4]: https://github.com/nand2mario/z386
-[5]: https://github.com/nand2mario/z486_MiSTer/releases/tag/20260813
+### Doom: whole-system performance
+
+Doom is the performance target that matters most for this project. Unlike
+Dhrystone, its timedemo exercises the complete PC system: instruction decode
+and execution, caches, external memory, and video writes. These measurements
+come from the same MiSTer setup at each core's release clock: 85 MHz for z386
+and z486, and 90 MHz for ao486. The corresponding project and release records
+are listed in [Further information and references](#further-information-and-references).
+
+<figure style="width: 100%; max-width: 820px; margin: 28px auto 32px;">
+<img src="integer_performance.svg" alt="Doom and 3DBench performance for z386, ao486, and z486" class="no-border">
+<figcaption style="text-align: center;">Board-measured DOS performance on the same MiSTer setup. Higher is better.</figcaption>
+</figure>
+
+At maximum detail, z486 reaches 29.1 FPS in the Doom timedemo, 39% faster than
+ao486's 21.0 FPS and 76% faster than z386's 16.5 FPS. The independent 3DBench
+result shows the same ordering. This is the more representative measure of the
+performance users see in DOS software, while Dhrystone makes it easier to
+attribute that result to CPU pipeline efficiency.
