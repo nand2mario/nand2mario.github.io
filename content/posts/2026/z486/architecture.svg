@@ -22,7 +22,8 @@
   </g>
   <path d="M702 148V176M617 176H882" class="wire"/>
   <path d="M617 176V193" class="arrow"/><path d="M882 176V193" class="arrow"/>
-  <path d="M730 246H763" class="arrow"/><path d="M937 200V156" class="arrow"/>
+  <path d="M730 246H750V160H850V155" class="arrow"/>
+  <path d="M995 246H1020V160H980V155" class="arrow"/>
 
   <g text-anchor="middle">
     <rect x="55" y="372" width="190" height="96" class="box" fill="#f1f5f9" stroke="#475569"/><text x="150" y="405" class="h">Address Unit</text><text x="150" y="430" class="t">EA, IND, stack</text><text x="150" y="451" class="s">segmentation boundary</text>

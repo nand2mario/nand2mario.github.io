@@ -1,7 +1,7 @@
 ---
-title: "z486: A 486-Class Pipelined x86 CPU for FPGAs"
-date: 2026-08-13T19:30:20+08:00
-draft: true
+title: "z486: A 486-Class Pipelined FPGA CPU with Integrated Floating-Point"
+date: 2026-08-15T11:51:31+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
@@ -463,6 +463,35 @@ Potential work includes:
 * moving x87 arithmetic toward the full 64-bit significand of the 80387;
 * improving 85 MHz timing margin while retaining current CPI and area; and
 * continuing compatibility work driven by DOS and Windows games and applications.
+
+## Conclusion
+
+z486 shows that a microcode-driven 386 foundation can be extended into a
+practical pipelined FPGA CPU without replacing its complex architectural
+behavior with a large behavioral instruction engine. The D1/D2 frontend and
+generated hardwired recipes give common instructions i486-like timing, while
+the original microcode continues to handle protection, faults, task switching,
+and other irregular operations. A compact integrated x87 extends that approach
+to the floating-point subset needed by Quake.
+
+The resulting core reaches 0.330 DMIPS/MHz and runs the maximum-detail Doom
+timedemo at 29.1 FPS on MiSTer, compared with 0.194 DMIPS/MHz and 21.0 FPS for
+ao486. It does so at 85 MHz in 35,686 of the DE10-Nano's 41,910 ALMs. The
+remaining two-cycle load latency, incomplete x87 instruction set, and limited
+timing margin also show where the FPGA implementation still differs from a
+complete i486-class processor.
+
+Thanks for reading. You can follow me on X ([@nand2mario](https://x.com/nand2mario)) for updates, or use [RSS](/feed.xml).
+
+## Credits
+
+z486 builds on the 80386 microcode disassembly and silicon reverse-engineering
+work of [reenigne](https://www.reenigne.org/blog/),
+[gloriouscow](https://github.com/dbalsom),
+[smartest blob](https://github.com/a-mcego), and
+[Ken Shirriff](https://www.righto.com/). The i486 and 80387 analysis also draws
+on the Intel papers listed below. Thanks to the MiSTer community for extensive
+software testing and compatibility reports.
 
 ## Further information and references
 
