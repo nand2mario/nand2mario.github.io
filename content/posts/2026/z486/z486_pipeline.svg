@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 330" role="img" aria-labelledby="title desc">
+  <title id="title">Comparison of i486 and z486 pipeline stages</title>
+  <desc id="desc">The i486 uses FI, D1, D2, EX, and WB. z486 follows the same front-end division but combines ordinary integer execution and commit instead of using a general WB stage.</desc>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#475569"/></marker>
+    <style>.h{font:600 18px system-ui,sans-serif;fill:#0f172a}.t{font:14px system-ui,sans-serif;fill:#334155}.s{font:12px system-ui,sans-serif;fill:#64748b}.box{stroke-width:2;rx:7}.arrow{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#a)}</style>
+  </defs>
+  <rect width="1100" height="330" fill="#fff"/>
+  <text x="550" y="30" text-anchor="middle" class="h">i486 and z486 pipeline organization</text>
+
+  <text x="32" y="105" class="h">i486</text>
+  <g text-anchor="middle">
+    <rect x="120" y="65" width="150" height="76" class="box" fill="#dbeafe" stroke="#2563eb"/><text x="195" y="96" class="h">FI</text><text x="195" y="121" class="t">line fetch</text>
+    <rect x="310" y="65" width="150" height="76" class="box" fill="#fef3c7" stroke="#d97706"/><text x="385" y="96" class="h">D1</text><text x="385" y="121" class="t">structure</text>
+    <rect x="500" y="65" width="150" height="76" class="box" fill="#ffedd5" stroke="#ea580c"/><text x="575" y="96" class="h">D2</text><text x="575" y="121" class="t">literals + EA</text>
+    <rect x="690" y="65" width="150" height="76" class="box" fill="#dcfce7" stroke="#16a34a"/><text x="765" y="96" class="h">EX</text><text x="765" y="121" class="t">execute</text>
+    <rect x="880" y="65" width="150" height="76" class="box" fill="#ede9fe" stroke="#7c3aed"/><text x="955" y="96" class="h">WB</text><text x="955" y="121" class="t">register write</text>
+  </g>
+  <path d="M270 103H303M460 103H493M650 103H683M840 103H873" class="arrow"/>
+
+  <text x="32" y="226" class="h">z486</text>
+  <g text-anchor="middle">
+    <rect x="120" y="186" width="150" height="76" class="box" fill="#dbeafe" stroke="#2563eb"/><text x="195" y="217" class="h">FI</text><text x="195" y="242" class="t">I-cache + queue</text>
+    <rect x="310" y="186" width="150" height="76" class="box" fill="#fef3c7" stroke="#d97706"/><text x="385" y="217" class="h">D1</text><text x="385" y="242" class="t">structure + entry</text>
+    <rect x="500" y="186" width="150" height="76" class="box" fill="#ffedd5" stroke="#ea580c"/><text x="575" y="217" class="h">D2 / ROM</text><text x="575" y="242" class="t">literals + EA</text>
+    <rect x="690" y="186" width="340" height="76" class="box" fill="#dcfce7" stroke="#16a34a"/><text x="860" y="217" class="h">EX + same-cycle commit</text><text x="860" y="242" class="t">no general integer WB stage</text>
+  </g>
+  <path d="M270 224H303M460 224H493M650 224H683" class="arrow"/>
+  <text x="550" y="306" text-anchor="middle" class="s">Narrow deferred paths remain for operations such as loads and shifts.</text>
+</svg>

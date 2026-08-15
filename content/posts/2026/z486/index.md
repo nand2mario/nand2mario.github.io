@@ -1,5 +1,5 @@
 ---
-title: "z486: Building a 486-Class Pipelined x86 CPU on an FPGA"
+title: "z486: A 486-Class Pipelined x86 CPU for FPGAs"
 date: 2026-08-13T19:30:20+08:00
 draft: true
 sidebar: false
@@ -8,163 +8,190 @@ author: nand2mario
 tags: [386, 486, FPGA, x87]
 ---
 
-In June I added the 80386 [**early-start**](../80386_early_start/)
-optimization to [z386](https://github.com/nand2mario/z386). Early start lets the address unit
-begin work on the next memory instruction during the final cycle of the current
-instruction. It was one of the most effective performance features of the 386,
-but while implementing it I realized that it was also a preview of the much more
-systematic pipeline in the 486.
+I released [z386](https://github.com/nand2mario/z386), an open-source 80386 CPU
+core, in May and added the 80386
+[early-start](../80386_early_start/) optimization in June. Early start overlaps
+address generation for one instruction with completion of its predecessor. It
+was an important 386 performance feature, but it also previewed the more
+systematic i486 pipeline. The
+[MiSTer core](https://github.com/nand2mario/z486_MiSTer) needed more
+performance, so I continued in that direction and added further 486-class
+mechanisms.
 
-That led to a larger experiment: how far could I push the same core toward a
-486-style design while keeping the original 80386 microcode as a correctness
-foundation? Two months later, the result is
-[z486](https://github.com/nand2mario/z486), an open-source, 80486-class,
-pipelined x86 CPU written in SystemVerilog.
+The result is [z486](https://github.com/nand2mario/z486), an open-source,
+80486-class pipelined x86 CPU written in SystemVerilog. It combines hardwired,
+pipelined execution for common instructions with microcode for complex
+architectural behavior.
 
-z486 is not a transistor-level clone of Intel's i486. It combines three ideas:
+z486 is not an i486 clone. Its design draws on three i486-inspired elements:
 
-1. a faster D1/D2 frontend inspired by the i486 pipeline;
-2. hardwired execution of common instructions, with the original 386
-   microcode retained for complex instructions; and
-3. an experimental integrated x87 unit, sufficient to run Quake.
+1. a pipelined D1/D2 frontend;
+2. hardwired execution of common instructions, with microcode
+   retained for complex instructions; and
+3. an experimental integrated x87 unit implementing the subset exercised by
+   Quake.
 
 On the same MiSTer system, the current core runs the Doom timedemo at **29.1
-FPS** at maximum detail, compared with **21.0 FPS** on ao486. In Dhrystone it
-reaches **0.330 DMIPS/MHz**, versus **0.225** for z386 and **0.194** for ao486.
-The more interesting result, though, is architectural: a recovered 386 control
-program can be turned into a practical pipelined FPGA CPU without replacing it
-with a large behavioral instruction engine.
+FPS** at maximum detail, compared with **21.0 FPS** on ao486. This is roughly
+486DX2-66-class performance for the measured workload. Dhrystone reaches
+**0.330 DMIPS/MHz**, versus **0.225** for z386 and **0.194** for ao486. These
+results show that a practical pipelined x86 CPU with broad architectural
+support, including x87, can fit on a mid-range FPGA.
 
 <!--more-->
 
-## Why a pipeline?
-
-There are two straightforward ways to build a CPU, and each is incomplete by
-itself.
-
-A small finite-state or microcoded machine can do one piece of an instruction
-per clock: decode, calculate an address, read memory, run the ALU, and finally
-write the result. The clock can be fast because each state contains little
-logic, but even a simple instruction takes several clocks.
-
-At the other extreme, a designer can put all of that work in one clock. The CPI
-looks excellent on paper, but the combinational path becomes long. On an FPGA,
-wide multiplexers and interconnect delay quickly push the maximum clock rate
-down.
-
-Pipelining is the useful middle ground. It divides instruction work into stages
-separated by registers. Each instruction still takes several stages to travel
-through the machine, but different instructions occupy different stages at the
-same time. Once full, the pipeline can finish one instruction per clock even
-though the latency of an individual instruction is longer.
-
-That description sounds like the familiar five-stage RISC pipeline, but x86
-adds a complication: instruction length, operand count, addressing mode, and
-even the presence of later fields are variable. The i486's central design
-achievement was not merely adding pipeline registers. It was finding a useful
-division of work for an instruction set that does not naturally divide into
-fixed fields.
-
 ## The i486 five-stage pipeline
 
-Intel's i486 pipeline has five stages:
+A finite-state or microcoded CPU limits combinational depth by performing
+decode, address generation, memory access, ALU work, and commit in separate
+cycles. This supports a high clock frequency but gives simple instructions a
+high cycles-per-instruction (CPI) count. Combining all work into one cycle
+reduces CPI but creates long paths through wide multiplexers and interconnect.
+Pipelining separates the work with registers and overlaps successive
+instructions.
+
+Variable-length x86 instructions require a different stage division from the
+[classic RISC pipeline](https://en.wikipedia.org/wiki/Classic_RISC_pipeline),
+commonly written as `IF-ID-EX-MEM-WB`. The i486 uses five stages:
 
 | Stage | Main work |
 | --- | --- |
 | **FI** | Fetch a 16-byte line into the instruction queue. |
 | **D1** | Decode prefixes, opcode, ModR/M structure, instruction length, and D2 actions. |
-| **D2** | Capture displacement or immediate data and calculate a memory address. |
+| **D2** | Capture displacement or immediate data and calculate an effective address. |
 | **EX** | Execute ALU or microcode work; access cache and TLB for memory instructions. |
 | **WB** | Write an ALU or load result into the register file. |
 
-The cache-line fetch is amortized across several instructions. Prefixes and a
-`0F` escape add D1 cycles, and complex addressing or two literals can add D2
-cycles. Complex instructions can also spend several clocks in EX under
-microcode control. The ideal one-clock throughput applies to the common case,
-not to every possible x86 instruction.
-
-<figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
-<img src="pipeline.svg" alt="Five overlapping instructions in the i486 FI, D1, D2, EX, and WB stages" class="no-border">
-<figcaption style="text-align: center;">The i486 pipeline. D2 is both the second decode stage and the address-generation stage.</figcaption>
-</figure>
+The two decode stages replace the single RISC ID stage, and cache access occurs
+in EX rather than in a separate MEM stage. Microcoded instructions can use several EX cycles. One-clock throughput is
+therefore the common case, not a property of every instruction.
 
 Intel's functional block diagram, reproduced with the
 [references](#further-information-and-references), shows how internal buses
 connect decode, address generation, translation, cache access, and execution.
 
-### Why D2 matters
+### Decoding variable-length x86 instructions
 
-D1 answers “what is this instruction?” D2 answers “what data and address does
-it need?” This split is particularly well matched to x86.
+By the time the i486 was designed, x86 instructions already had a complex,
+variable-length encoding. Prefixes, two-byte opcodes, ModR/M and SIB bytes,
+displacements, and immediates are all optional, and some fields cannot be
+located until earlier fields have been interpreted. Earlier x86 frontends used
+sequential decode machinery that could take several clocks. The i486 instead
+divides decode into two explicit pipeline stages: D1 determines instruction
+structure and boundaries, while D2 captures literals and generates addresses.
 
-D1 can inspect up to three structural bytes in the ordinary case. It determines
-instruction length and tells the aligner where both the next instruction and
-the current instruction's literal fields begin. D2 then consumes one 1- to
-4-byte displacement or immediate per clock. At the same time, it reads the
-base/index operands and starts effective-address calculation.
+<figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
+<img src="x86_decode_fields.svg" alt="Variable-length x86 instruction fields divided between D1 structural decode and D2 literal decode" class="no-border">
+<figcaption style="text-align: center;">D1 identifies instruction structure and boundaries; D2 consumes literals and computes the effective address.</figcaption>
+</figure>
 
-There are two important escape valves:
+In the common case, D1 decodes the opcode, ModR/M, and SIB together. It also
+determines the instruction length and tells the aligner where both the next
+instruction and the current instruction's literals begin. Prefixes are
+processed one byte per clock, and a `0F` escape consumes another D1 clock.
+
+D2 consumes one 1- to 4-byte displacement or immediate per clock. In parallel,
+it reads the base and index registers and calculates the effective address.
+Separate structural and literal ports in the prefetch queue let D1 work on one
+instruction while D2 works on its predecessor.
+
+Common forms complete D2 in one clock. Two cases extend D2:
 
 * an instruction with both a displacement and an immediate uses two D2 clocks;
 * an address containing base, displacement, and scaled index can use a second
   D2 clock for the second addition.
 
-The worst x86 form therefore does not set the cycle time for every instruction.
-Common forms fit one D2 clock; uncommon forms spend another clock.
-
 This is also the pipelined version of the 386's early-start idea. On the 386,
 the instruction queue presents address operands during the final cycle of the
 previous instruction. On the i486, D2 is an explicit stage where the next
-instruction can perform that work while its predecessor is in EX or WB.
+instruction performs the same work while its predecessors occupy EX and WB.
+
+The extra cycles are a deliberate area and timing tradeoff. Allowing both
+decoders to select every field from every possible byte position in the
+prefetch queue would require large alignment networks. The bounded D1 and D2
+windows keep common instructions fast without making worst-case alignment part
+of the clock-critical datapath.
 
 ### Loads, forwarding, and the pointer-load delay
 
-On a cache hit, the i486 performs TLB lookup and cache lookup in parallel in
-EX. The result is written in WB, but forwarding makes it available to an
-ordinary dependent ALU instruction in the same cycle. This is why the i486 has
-no general data-load delay.
+Overlapping instructions introduce data hazards when a successor needs a
+result that its predecessor has not yet written to the register file. Consider
+a load followed immediately by an ALU operation:
 
-There is one important exception. If the next instruction needs the loaded
-register as an **address base or index**, it needs that value in D2, one stage
-before EX. D2 must stall for a clock and then receive the value from WB. Intel
-called this the pointer-load delay; today it is commonly described as an
+```asm
+mov eax, [esi]
+add ebx, eax
+```
+
+When `ADD` reaches EX, the load result is in WB but may not yet be visible
+through a normal register-file read. Stalling until the write completes would
+create a data-load delay.
+
+On the i486, given a cache hit, forwarding makes the value available to an
+ordinary dependent ALU instruction in the same cycle. Consequently, the i486
+has no general data-load delay.
+
+<figure style="width: 100%; max-width: 940px; margin: 28px auto 32px;">
+<img src="load_dependencies.svg" alt="i486 timing for an ordinary load dependency and a pointer-load dependency" class="no-border">
+<figcaption style="text-align: center;">An ordinary consumer receives load data through WB-to-EX forwarding. An address consumer stalls until WB aligns with D2. Redrawn from Crawford, reference 3, Figures 4 and 5.</figcaption>
+</figure>
+
+The exception is a successor that uses the loaded register as an **address base
+or index**:
+
+```asm
+mov eax, [esi]
+mov ebx, [eax]
+```
+
+The second `MOV` needs `EAX` in D2 to calculate the effective address that its
+memory access will use in EX. This is one stage earlier than an ALU consumer
+needs the value. When the second instruction first reaches D2, the load is
+still in EX and its result is unavailable. D2 must stall for one clock, then
+receive the value when the load advances to WB. Intel called this the
+**pointer-load delay**; today it is commonly described as an
 address-generation interlock, or AGI.
 
-This is a pragmatic trade. Eliminating every possible delay would require a
-larger and earlier bypass network. Intel instead optimized ordinary data use
-and accepted a one-cycle bubble for the narrower pointer dependency.
+Eliminating this delay would require an earlier and larger bypass network. The
+i486 instead accepts a one-cycle bubble for pointer dependencies.
 
-### Branches are another trade
+### Branch timing
 
 The i486 evaluates a conditional branch in EX while speculatively fetching the
 target. A not-taken Jcc costs one clock because the sequential pipeline is
 already present. A taken Jcc, JMP, or near CALL takes three clocks from branch
 EX to target EX.
 
-Intel evaluated a more aggressive two-cycle taken-branch design, but it would
-have made not-taken branches slower and required significantly more cache
-machinery. The published instruction mix showed only about a one-percent
-overall advantage. The implemented three-cycle-taken, one-cycle-not-taken
-policy fit the rest of the pipeline better.
+<figure style="width: 100%; max-width: 940px; margin: 28px auto 32px;">
+<img src="branch_timing.svg" alt="i486 conditional branch timing for taken and not-taken paths" class="no-border">
+<figcaption style="text-align: center;">Branch EX evaluates the condition and starts target FI. The sequential path reaches EX after one clock; the taken target reaches EX after three. Redrawn from Crawford, reference 3, Figure 6.</figcaption>
+</figure>
 
-That kind of decision is central to CPU design. The goal is not to minimize
-every row of an instruction timing table independently; it is to minimize total
-execution time subject to area, frequency, and software behavior.
+[Crawford reports](https://ieeexplore.ieee.org/document/63682/) that Intel
+evaluated a more aggressive two-cycle taken-branch design, but it would have
+made not-taken branches slower and required significantly more cache machinery.
+The published instruction mix showed only about a one-percent overall
+advantage. The implemented three-cycle-taken, one-cycle-not-taken policy fit
+the rest of the pipeline better.
 
 ## The z486 pipeline
 
-z486 uses the i486 pipeline as a guide, not a specification. The current
-macro-instruction flow is:
+Using the i486 pipeline as a guide, z486 retains its FI, D1, D2, and EX stage
+division. The main difference is at the back end: ordinary integer results
+commit on the EX edge rather than passing through a general WB stage.
 
-```text
-I-cache -> prefetch -> D1 -> D2 / ROM -> EX + same-cycle commit
-```
+<figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
+<img src="z486_pipeline.svg" alt="Comparison of the i486 five-stage pipeline with the z486 pipeline and its same-cycle EX commit" class="no-border">
+<figcaption style="text-align: center;">z486 follows the i486 frontend organization but combines ordinary integer execution and commit.</figcaption>
+</figure>
 
-There is one architectural D2 stage. D1 resolves the instruction structure and
-microcode entry. It directly launches that entry into the synchronous control
-store when D2 is free. D2 owns the decoded skeleton, literal capture, the ROM
-word, effective-address work, and issue hazards. `i_issue` is the single
-D2-to-EX transfer event.
+The implementation maps this stage flow onto hardwired and microcoded control
+paths that share the same address, data, memory, protection, and floating-point
+units. The RTL is also more modular than z386. Address generation, integer
+execution, memory, hardwired control, and microsequencing were extracted into
+separate modules, leaving `z486.sv` primarily as pipeline integration and
+cross-unit glue. The resulting top-level module is about one-third shorter than
+z386's: 2.6K lines versus 3.9K.
 
 <figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
 <img src="architecture.svg" alt="z486 frontend, hardwired and microcoded control paths, and shared functional units" class="no-border">
@@ -172,11 +199,18 @@ D2-to-EX transfer event.
 </figure>
 
 The frontend uses a 32-byte prefetch queue filled one 16-byte instruction-cache
-line at a time. It exposes a registered 64-bit D1 window and a separate 32-bit
-literal window. Prefixes and `0F` consume extra structural cycles; opcode plus
-optional ModR/M normally completes in one D1 cycle, while SIB parsing may use a
-retained sub-cycle. There is one registered skid successor rather than a deep
-decoded-instruction queue.
+line at a time. Like the i486 queue, it provides separate ports for structural
+and literal decode: a registered 64-bit D1 window and a 32-bit literal window.
+Prefixes and `0F` consume extra structural cycles. An opcode and optional
+ModR/M normally complete in one D1 clock, while SIB parsing can use a retained
+sub-cycle. A one-entry registered skid buffer lets D1 run ahead when D2 is
+occupied without requiring a deep decoded-instruction queue.
+
+D1 resolves the microcode entry and launches it into the synchronous control
+store. The first control word is therefore available in D2 alongside the
+decoded instruction and its literals. D2 performs effective-address work and
+hazard checks; `i_issue` is the single event that transfers the completed D2
+instruction into EX.
 
 This organization keeps two expensive operations out of the same cycle:
 
@@ -186,75 +220,71 @@ This organization keeps two expensive operations out of the same cycle:
 
 The release MiSTer configuration has separate 8 KB instruction and 8 KB data
 caches, both four-way set associative with 16-byte lines. The data cache is
-write-through with a three-entry store queue. This PIPT organization is simpler
-and has proven much easier to make correct than the VIPT experiments, but it
-also explains the largest remaining timing difference from the i486: a best
-case integer load takes two clocks rather than one.
+write-through with a three-entry store queue. The i486 instead has one unified
+8 KB cache and completes a cache-hit load in one clock by overlapping virtual
+indexing with translation. z486 has twice the total L1 capacity, but its simpler
+physically indexed, physically tagged organization serializes translation and
+cache access. A best-case integer load therefore takes two clocks rather than
+the i486's one. Getting VIPT to work is future work.
 
-### Why z486 has no general WB stage
+### Write-back organization
 
-The integer core also differs from the i486 at the back end. Ordinary GPR,
-EIP, ESP, EFLAGS, and internal-register results commit on the same edge as EX.
-There is no general architectural WB stage.
+z486 differs from the i486 at the back end. Ordinary GPR, EIP, ESP, EFLAGS, and
+internal-register results commit on the EX clock edge; there is no general WB
+stage.
 
-That choice is specific to the FPGA. A full WB stage needs either a second GPR
-write port or arbitration between EX and WB, plus forwarding from WB back to
-EX and D2. In earlier experiments that network cost more routing and mux delay
-than it saved. z486 keeps narrow deferred state only for operations that
-actually need it, such as a shifter result or a pending memory-load commit.
-
-The result is not a textbook i486 clone. It is a pipeline shaped by the same
-workload, but mapped to Cyclone V block RAMs, DSPs, LUTs, and routing.
+This is an FPGA-specific tradeoff. Preserving dependency timing with a full WB
+stage requires a broad bypass network: younger instructions need pending WB
+values in EX and, for address dependencies, one stage earlier in D2. In earlier
+experiments, the additional routing and operand-mux delay cost more than moving
+commit out of the EX critical paths saved. z486 therefore retains only narrow,
+operation-specific deferred state, such as a shifter result or a pending load
+commit.
 
 ## Hardwiring common instructions
 
-Pipelining the frontend and memory path is not sufficient. The original 386
-microcode still uses at least two microinstructions for simple operations. For
-example, register `MOV` is:
+Pipelining does not automatically remove the original 386 microcode's
+two-cycle minimum for simple operations. Register `MOV`, for example, is:
 
 ```asm
 003  SRCREG                           PASS    RNI
 004  SIGMA  -> DSTREG
 ```
 
-The first word passes the source through the ALU and announces run-next-
-instruction. Because the 386 sequencer has an architectural delay slot, the
-second word still executes and writes the result. If z486 simply ran this
-unchanged, its frontend could deliver instructions quickly but EX would still
-retire them at the old two-cycle rate.
+The first word passes the source through the ALU and announces
+run-next-instruction (RNI). Because the sequencer has an architectural delay
+slot, the second word still executes and writes the result. Running this
+sequence unchanged would retain a two-cycle EX retirement rate despite the
+faster frontend.
 
-Intel's solution in the i486 was to control the most frequent instructions
-directly with hardwired logic while retaining microcode for complex cases.
-z486 follows the same division, but does so without building a second integer
-engine.
+The i486 controls frequent instructions with hardwired logic while retaining
+microcode for complex cases. z486 follows the same division: hardwired and
+microcoded control both drive the shared integer datapath.
 
 ### Recipes and uSteps
 
-`scripts/ucode_optimize.py` generates metadata for **34 hardwired instruction
-recipes**. A recipe describes one to three useful **uSteps**, selected mainly
-by the decoded microcode entry. It also records the D2 work, commit class,
-delay-slot policy, and hazards.
+The generation script `scripts/ucode_optimize.py` produces metadata for **34
+hardwired instruction recipes**. Each recipe contains one to three active
+**uSteps**. A uStep combines a native microcode word with generated fields for
+D2 work, architectural commit, delay-slot handling, and hazards.
 
 For `MOV r,r`, the optimized word still uses the original PASS datapath, but a
 generated destination encoding commits the ALU result on the same edge. The
-old word `004` remains present for the general fallback; hardwired execution
-knows that its work has already happened and can reclaim the slot.
+hardwired recipe therefore completes the same work in one active slot.
 
 <figure style="width: 100%; max-width: 900px; margin: 28px auto 32px;">
-<img src="hardwired_recipes.svg" alt="Original two-word MOV microcode compared with a one-uStep z486 recipe and chained successor" class="no-border">
-<figcaption style="text-align: center;">A recipe folds the useful delay-slot effect into the RNI word. Chaining uses the reclaimed slot only after dependency checks.</figcaption>
+<img src="hardwired_recipes.svg" alt="Original two-word MOV microcode compared with a one-uStep z486 recipe and its reclaimed execution slot" class="no-border">
+<figcaption style="text-align: center;">A recipe folds the delay-slot effect into the RNI word, reclaiming one execution slot.</figcaption>
 </figure>
-
-This is deliberately different from replacing `MOV` with a large behavioral
-SystemVerilog case. The native microcode word still selects operands and ALU
-work. The normal Data Unit performs the commit. The generated recipe provides
-only the missing pipeline policy.
 
 ### Chaining
 
 Once a delay slot is proven redundant, z486 may start the next hardwired
-instruction in it. This is called **chaining**. It is the mechanism that turns
-one-uStep recipes into sustained one-instruction-per-clock execution.
+instruction in it. This is called **chaining**. It applies to both one- and
+multi-uStep recipes: a one-uStep recipe can launch its registered successor at
+issue, while a multi-uStep recipe can launch the queue head when its final RNI
+word is approaching. Repeated one-uStep chains provide sustained
+one-instruction-per-clock execution.
 
 Before chaining, the control unit checks:
 
@@ -265,10 +295,6 @@ Before chaining, the control unit checks:
 * D2 and control-store residency;
 * whether a memory or stack slot still contains real work; and
 * faults, interrupts, traps, single-step, and CPU throttling.
-
-This is not general out-of-order scheduling. It is a bounded proof that one
-known successor can occupy a slot whose original operation has been removed.
-If any check fails, the instruction uses the normal sequencer.
 
 ### Memory, stack, and branches
 
@@ -283,8 +309,7 @@ Recipes are not limited to register operations:
   uStep; and
 * near CALL combines redirect, posted return-address store, and ESP commit.
 
-The current best-case instruction timing shows both the success and the
-remaining gaps:
+The current best-case instruction timing is:
 
 | Instruction class | 80386 | i486 | z486 |
 | --- | ---: | ---: | ---: |
@@ -298,70 +323,24 @@ remaining gaps:
 | near CALL | about 9 | 3 | **4** |
 | `XCHG [m],r` | 5 | 5 | **5** |
 
-These are controlled cache-hit microbenchmarks measured from instruction
-execution boundary to instruction execution boundary. They are not whole-
-program CPI. Loads and CALL remain obvious targets, while register ALU,
-stores, LEA, Jcc, and JMP already reach the i486 best case.
+The main remaining gap is memory latency: z486's PIPT data cache takes two
+clocks for a load hit. A timing-safe VIPT design is one possible route to the
+i486's one-clock load.
 
-### Microcode remains the compatibility engine
+Instructions without a hardwired recipe continue through the general
+microsequencer. Task switching, call gates, privilege transitions, descriptor
+updates, nested faults, unusual prefixes, and other complex behavior therefore
+retain the original microcode routines and their delay-slot assumptions.
 
-Hardwired execution is an optimization layer, not a new definition of x86.
-Task switching, call gates, privilege transitions, descriptor updates, nested
-faults, unusual prefixes, and other complex behavior still use the recovered
-80386 routines and their original delay-slot assumptions.
+## Integrated x87 floating-point unit
 
-This hybrid is important. A fully hardwired implementation tends to duplicate
-subtle architectural rules in many instruction handlers. A purely microcoded
-implementation is compact and understandable, but leaves common instructions
-slow. Generated recipes improve the measured hot paths while preserving one
-general mechanism for the difficult parts of the architecture.
-
-There is a historical line from this approach to later x86 processors. The
-original Pentium put two related integer pipelines side by side and paired
-instructions under restrictions. P6 went further: it translated x86
-instructions into internal micro-operations, renamed registers, scheduled the
-operations out of order, and retired them in order. z486's recipes are much
-smaller and strictly in order, but they address the same underlying problem:
-the architectural instruction is too irregular to be the most convenient unit
-of execution.
-
-## Adding a math coprocessor
-
-The integer pipeline made z486 fast at DOS software, but a 486DX-class machine
-also needs floating point.
-
-The x87 lineage began with the 8087. It let the integer CPU recognize ESC
-instructions and cooperate with an external numeric processor. The original
-market was scientific, engineering, and computer-aided-design software; a
-decade later, the same floating-point machinery became important to real-time
-3D games. The 80287 and 80387 extended the model, and the i486DX finally
-integrated the floating-point unit on the CPU die.
-
-The encoding reserves the eight primary opcodes `D8` through `DF` as ESC
-instructions. The opcode and ModR/M fields jointly select the numeric
-operation and either a stack-register operand or a memory format. This gives
-x87 a large instruction space without disturbing the integer encoding, but it
-also leaves the integer CPU responsible for decoding addresses and moving
-memory operands.
-
-The interface is unusual by modern standards but elegant for the time. The
-programmer sees an eight-entry stack, `ST(0)` through `ST(7)`. Memory values are
-loaded into an 80-bit temporary-real format, arithmetic works on the stack, and
-results may be stored back as integer, single, double, extended, or packed BCD
-formats. Memory arithmetic instructions combine a load and arithmetic
-operation, reducing code size and stack traffic.
-
-The coprocessor can also run in parallel with the integer CPU. The CPU performs
-addressing and memory transfers; the numeric unit owns stack state and
-arithmetic. A later wait or dependent x87 operation synchronizes them.
-
-The original 80387 block diagram in the
-[references](#further-information-and-references) shows its control, stack,
-mantissa, microcode, and CORDIC boundaries.
-
-### The z486 x87 implementation
-
-z486 keeps those ownership boundaries but maps them to FPGA resources:
+z486 includes an experimental integrated x87 floating-point unit. It is not yet
+a complete x87 implementation, but it implements enough of the instruction
+set to run Quake and TurboQuake. Its organization follows
+the major boundaries of the original 80387, whose block diagram appears in the
+[references](#further-information-and-references): command and stack control,
+a microcoded numeric executor, shared significand arithmetic, and a separate
+CORDIC engine for transcendental functions.
 
 * `x87_bridge` converts the 80386 command/data-port protocol into registered
   ready/valid transfers;
@@ -378,32 +357,51 @@ z486 keeps those ownership boundaries but maps them to FPGA resources:
 <figcaption style="text-align: center;">The current z486 x87. It follows the 80387's control/FPU division, but uses FPGA block RAMs and DSPs.</figcaption>
 </figure>
 
-The architectural stack stores raw 80-bit values, so untouched `FLD m80` and
-`FSTP m80` round trips retain all bits. Arithmetic currently uses a 53-bit
-significand plus guard, round, and sticky bits. That matches double-precision
-significand width but not the full 64-bit temporary-real arithmetic of a real
-80387. Full gradual underflow behavior and some instruction families are also
-still missing.
+The integer-only z386 core already occupied about 15,000 ALMs, while a complete
+PC configuration with caches, memory control, and peripherals exceeded 25,000.
+The Cyclone V on the DE10-Nano provides 41,910 ALMs, so a conventional FPU
+could easily exhaust the remaining capacity or make the design impractical to
+place and route. Three implementation choices keep the unit within this limited
+area budget:
 
-This is why the feature is described as **experimental x87 support**, not full
-80387 compatibility. The design target was enough numerics to run real 3D game
-code within the remaining Cyclone V area.
+1. **Horizontal microcode and shared arithmetic.** A synchronous 256-word by
+   64-bit control store sequences the numeric executor. Each horizontal word
+   independently controls flow, operand preparation, classification, the
+   add/subtract and shift routes, iterative engines, rounding state, result
+   packing, commit, and CORDIC scratch accesses. This replaces a large decoded
+   operation selector with direct control of the state updated by each step.
+   Addition, normalization, conversion, and rounding share a 68-bit work
+   register and adder. Division and square root reuse iterative datapaths, while
+   the infrequent transcendental instructions use a microcoded, limb-oriented
+   CORDIC engine.
 
-The horizontal control store is important for that area target. Instead of a
-single large operation selector feeding a giant case statement, each control
-word directly enables the state owners needed by that step. Add/normalize/
-round share a work lane. A 53-by-53 multiply is divided into four 27-by-27 DSP
-products. Divide and square root are iterative. Transcendentals use a
-microcoded limb-oriented CORDIC engine because those operations are rare in
-the measured Quake workload.
+2. **Reduced internal precision.** The architectural stack and transfer paths
+   retain raw 80-bit temporary-real values, preserving untouched `FLD m80` to
+   `FSTP m80` round trips and save/restore data. Arithmetic decodes an operand
+   into a 15-bit exponent and a 53-bit significand, with separate guard, round,
+   and sticky state. The add/subtract path carries those 53 retained bits plus
+   overflow and rounding positions in a 57-bit active slice of the shared work
+   register. This keeps the 80387 exponent range but provides binary64-class
+   precision rather than the 80387's full 64-bit significand. Results produced
+   by arithmetic therefore have reduced precision even when stored as m80.
 
-The performance work illustrates why application traces matter. In one
-TurboQuake render window, x87 instructions were about 23% of retired
-instructions but about 61% of instruction-attributed cycles. At first it
-looked as if the arithmetic unit must be the entire problem. More detailed
-profiling showed that protocol sequencing and operand transfer consumed more
-idle time than the arithmetic executor itself. This led to the direct m32 path
-and shorter command scheduling, not merely a faster multiplier.
+3. **DSP-based multiplication.** The two 53-bit significands are split into
+   27- and 26-bit limbs. Four 27-by-27 products map onto Cyclone V DSP blocks
+   and are assembled into an exact 106-bit intermediate product. This avoids a
+   large LUT multiplier while retaining all bits needed by the common rounder.
+
+With these measures, the FPU hierarchy uses about 5,100 ALMs in the 85 MHz
+release fit. The complete z486 PC build, including the FPU and peripherals,
+uses 35,686 of the DE10-Nano's 41,910 ALMs.
+
+Performance was optimized iteratively as well. In an early TurboQuake
+render-window profile, x87 instructions accounted for about 23% of retired
+instructions but 61% of instruction-attributed cycles. The numeric executor
+was active during only about 40% of those x87 cycles; command dispatch, operand
+transfer, stack access, launch, and retirement consumed the rest. Performance
+work therefore addressed both sides of the CPU/FPU boundary: faster conversion
+and arithmetic schedules, a direct m32 path for common memory operands, and
+shorter command sequencing.
 
 <figure style="width: 100%; max-width: 800px; margin: 28px auto 32px;">
 <img src="x87_progress.svg" alt="TurboQuake performance improving from 2.7 to 6.3 frames per second during x87 development" class="no-border">
@@ -411,33 +409,19 @@ and shorter command scheduling, not merely a faster multiplier.
 </figure>
 
 The first complete x87 build ran TurboQuake at 2.7 FPS at 50 MHz. The current
-release reaches about 6.3 FPS at the 85 MHz board clock. A deterministic
-`R_RenderView` snapshot also provides a faster optimization target: the latest
-arithmetic schedule reduced it from 12,945,407 to 12,452,347 cycles, or 3.81%,
-with an exact final RAM hash.
+release reaches about 6.3 FPS at the 85 MHz board clock.
 
-## FPGA implementation
-
-The current release configuration uses 34,775 of the Cyclone V's 41,910 ALMs
-(83%), 3.12 Mbits of block memory, and 33 DSP blocks. Separate 8 KB instruction
-and data caches account for part of the block memory; the integer and x87
-control stores also map into M10Ks.
-
-The released core runs the CPU domain at 85 MHz using a board-qualified seed.
-The conservative 50 MHz profile closes static timing with positive slack. This
-distinction matters: FPGA place-and-route varies by seed, and a bitstream that
-works on one board above the reported timing limit is an engineering result,
-not a portable timing guarantee.
+<!-- Performance Evaluation -->
 
 {{< include "eval.md" >}}
 
 ## Verification
 
-Pipelining turns old bugs into timing-dependent bugs. A value can be correct
-but belong to the wrong instruction; a fault can cancel EX but leave a younger
-hardwired commit alive; a cache line can be correct until a simultaneous store
-or DMA snoop arrives. For that reason, the optimization loop has been as
-important as the datapath design.
+Verification for a pipelining CPU is harder than a sequential one as there is
+more parallelism. A value may belong to the wrong instruction, a fault may
+cancel EX while leaving a younger commit active, or a cache operation may race
+with a store or DMA snoop. Validation therefore covers both instruction
+semantics and inter-stage ordering.
 
 The current validation stack includes:
 
@@ -451,53 +435,42 @@ The current validation stack includes:
 * full-system DOS, Windows 3.1, Doom, Quake, demos, and game simulations; and
 * five-seed Quartus comparisons followed by physical MiSTer testing.
 
-The most difficult failures have rarely been isolated arithmetic errors. They
-have been ordering errors: a younger hardwired instruction committing during a
-fault, an interrupt replaying an x87 command, a cache tag alias above 32 MB, or
-a CPU throttle splitting what had to remain an atomic recipe pair. Those are
-exactly the problems a pipeline creates, and exactly why a microcode-compatible
-fallback and long-running software tests remain necessary.
+## Related work and future work
 
-## Related work and what comes next
+[ao486](https://github.com/alfikpl/ao486) is the closest related open-source
+design and the CPU behind the established ao486 MiSTer core. It implements a
+486SX-class integer processor with broad software compatibility, but no
+integrated x87. ao486 implements the 486 architecture directly; z486 instead
+evolved from a microcoded 386 core, adding a pipelined frontend, generated
+hardwired recipes for common instructions, and an application-focused x87.
+Because both run the same PC software on the same FPGA platform, their
+whole-system Doom results are more informative than area alone.
 
-[ao486](https://github.com/alfikpl/ao486) remains the main mature open-source
-486-class FPGA core and the reference PC core used by MiSTer. It implements a
-486SX-class CPU and has broad software compatibility, but no integrated x87.
-z486 takes a different route: recovered 386 microcode for complex architectural
-behavior, generated hardwired recipes for hot instructions, and an
-application-focused x87.
-
-Open RISC-V cores offer a much larger design space, from tiny multi-cycle
+Open RISC-V cores cover a larger design space, from multi-cycle
 [PicoRV32](https://github.com/YosysHQ/picorv32) to configurable pipelined
-[VexRiscv](https://github.com/SpinalHDL/VexRiscv) and wider out-of-order cores.
-The interesting difference is not that x86 cannot be pipelined; the i486
-settled that question in 1989. It is that variable-length decode, architectural
-edge cases, and decades of binary compatibility make the control problem much
-larger.
+[VexRiscv](https://github.com/SpinalHDL/VexRiscv). They provide useful
+Dhrystone and FPGA-efficiency reference points, but are not area-equivalent
+alternatives: the x86 cores also implement variable-length decode, segmented
+and paged protection, legacy execution modes, and a much larger compatibility
+surface.
 
-The next useful z486 work is less dramatic than adding another pipeline:
+Potential work includes:
 
-* improve sustained load throughput without returning to the buggy VIPT
-  experiments;
-* reduce the remaining CALL, PUSH/POP, string, and load timing gaps;
-* complete missing x87 instructions and improve arithmetic precision;
-* recover more static-timing margin at the 85 MHz target; and
-* continue compatibility work driven by real DOS and Windows software.
-
-The Pentium-era direction would be superscalar issue. P5 can be viewed, at a
-high level, as two related i486-style integer pipelines with pairing rules;
-P6 translates x86 instructions into internal uops and schedules them in a much
-more general machine. Both are attractive future experiments, but the current
-DE10-Nano is already over 80% full. For now, there is still substantial work in
-making one x86 pipeline better.
+* improving sustained cache-hit load throughput;
+* reclaiming more redundant instruction-boundary slots through measured,
+  timing-safe chaining;
+* completing the remaining 486 and x87 instructions;
+* moving x87 arithmetic toward the full 64-bit significand of the 80387;
+* improving 85 MHz timing margin while retaining current CPI and area; and
+* continuing compatibility work driven by DOS and Windows games and applications.
 
 ## Further information and references
 
 These notes collect the diagrams, historical sources, reverse-engineering work,
 benchmark configurations, and implementations discussed in this article.
 
-1. **Intel i486 functional block diagram.** This diagram is useful because it
-   shows that the i486 pipeline was more than five abstract stage names. The
+1. **Intel i486 functional block diagram.** The diagram shows that the i486
+   pipeline comprises more than five abstract stage names. The
    register file, decoders, control ROM, address units, TLB, cache, execution
    units, and internal buses were arranged to overlap decode, address
    generation, translation, and execution. That organization is the main
@@ -515,7 +488,7 @@ benchmark configurations, and implementations discussed in this article.
     <a href="intel_80387_block_diagram.png" title="Open the full-size Intel 80387 block diagram"><img src="intel_80387_block_diagram.png" alt="Thumbnail of the Intel 80387 block diagram" class="no-border" style="display: block; width: min(50vw, 520px); max-width: 100%; height: auto; margin: 24px auto 10px;"></a>
     <small style="display: block; text-align: center; margin: 0 auto 30px;">Intel 80387 block diagram. Click for the full image. Source: Perlmutter and Yuen, <i>The 80387 and Its Applications</i>, Figure 2; reference 6 below.</small>
 
-3. John H. Crawford, [“The i486 CPU: Executing Instructions in One Clock Cycle”](https://doi.org/10.1109/40.46766), *IEEE Micro*, 1990. This is the clearest concise account of the five-stage pipeline, hardwired instructions, D1/D2 split, and one-cycle execution target.
+3. John H. Crawford, [“The i486 CPU: Executing Instructions in One Clock Cycle”](https://doi.org/10.1109/40.46766), *IEEE Micro*, 1990. This describes the five-stage pipeline, hardwired instructions, D1/D2 split, and one-cycle execution target.
 4. John H. Crawford, [“The Execution Pipeline of the Intel i486 CPU”](https://ieeexplore.ieee.org/document/63682/), Compcon Spring, 1990. This gives a complementary description of pipeline timing and interlocks.
 5. B. Fu, A. Saini, and P. Gelsinger, “Performance and Microarchitecture of the i486 Processor,” ICCD, 1989. The i486 block diagram in note 1 is Figure 1 of this paper.
 6. David Perlmutter and Alan Kin-Wah Yuen, “The 80387 and Its Applications,” *IEEE Micro*, 1987. The 80387 block diagram in note 2 is Figure 2 of this paper.

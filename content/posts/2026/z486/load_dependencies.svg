@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 650" role="img" aria-labelledby="title desc">
+  <title id="title">i486 load forwarding and pointer-load delay</title>
+  <desc id="desc">An ordinary dependent ALU instruction receives load data from WB in its EX cycle without a stall. An instruction using the loaded register as an address base stalls one cycle until load WB aligns with its D2 stage.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#475569"/></marker>
+    <style>
+      .head{font:600 18px system-ui,sans-serif;fill:#0f172a}.sub{font:600 16px system-ui,sans-serif;fill:#0f172a}.label{font:600 13px system-ui,sans-serif;fill:#0f172a}.small{font:12px system-ui,sans-serif;fill:#475569}.cycle{font:12px ui-monospace,monospace;fill:#64748b}.grid{stroke:#e2e8f0;stroke-width:1}.arrow{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1100" height="650" fill="#fff"/>
+  <text x="550" y="30" text-anchor="middle" class="head">Load dependencies in the i486 pipeline</text>
+
+  <g transform="translate(0 54)">
+    <rect x="30" y="0" width="1040" height="260" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="54" y="31" class="sub">A. Data dependency: no load delay</text>
+    <g class="cycle" text-anchor="middle">
+      <text x="310" y="61">N</text><text x="430" y="61">N+1</text><text x="550" y="61">N+2</text><text x="670" y="61">N+3</text><text x="790" y="61">N+4</text><text x="910" y="61">N+5</text>
+    </g>
+    <g class="grid"><path d="M250 70H970M250 130H970M250 196H970"/><path d="M370 70V220M490 70V220M610 70V220M730 70V220M850 70V220"/></g>
+    <g class="label" text-anchor="end"><text x="230" y="111">MOV r1,[mem]</text><text x="230" y="177">ADD r1,r2</text></g>
+    <g class="label" text-anchor="middle">
+      <g transform="translate(260 78)"><rect width="100" height="42" rx="5" fill="#dbeafe" stroke="#2563eb"/><text x="50" y="26">FI</text></g>
+      <g transform="translate(380 78)"><rect width="100" height="42" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="26">D1</text></g>
+      <g transform="translate(500 78)"><rect width="100" height="42" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="26">D2</text></g>
+      <g transform="translate(620 78)"><rect width="100" height="42" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="50" y="26">EX</text></g>
+      <g transform="translate(740 78)"><rect width="100" height="42" rx="5" fill="#f3e8ff" stroke="#9333ea"/><text x="50" y="26">WB</text></g>
+      <g transform="translate(500 144)"><rect width="100" height="42" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="26">D1</text></g>
+      <g transform="translate(620 144)"><rect width="100" height="42" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="26">D2</text></g>
+      <g transform="translate(740 144)"><rect width="100" height="42" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="50" y="26">EX</text></g>
+      <g transform="translate(860 144)"><rect width="100" height="42" rx="5" fill="#f3e8ff" stroke="#9333ea"/><text x="50" y="26">WB</text></g>
+    </g>
+    <path d="M790 122V139" class="arrow"/>
+    <text x="814" y="136" class="small">WB to EX bypass</text>
+    <text x="550" y="242" text-anchor="middle" class="small">The consumer executes in the next EX slot; no bubble is inserted.</text>
+  </g>
+
+  <g transform="translate(0 334)">
+    <rect x="30" y="0" width="1040" height="286" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="54" y="31" class="sub">B. Address dependency: one pointer-load bubble</text>
+    <g class="cycle" text-anchor="middle">
+      <text x="310" y="61">N</text><text x="430" y="61">N+1</text><text x="550" y="61">N+2</text><text x="670" y="61">N+3</text><text x="790" y="61">N+4</text><text x="910" y="61">N+5</text>
+    </g>
+    <g class="grid"><path d="M250 70H970M250 130H970M250 196H970"/><path d="M370 70V220M490 70V220M610 70V220M730 70V220M850 70V220"/></g>
+    <g class="label" text-anchor="end"><text x="230" y="111">MOV r1,[mem]</text><text x="230" y="177">MOV r2,[r1]</text></g>
+    <g class="label" text-anchor="middle">
+      <g transform="translate(260 78)"><rect width="100" height="42" rx="5" fill="#dbeafe" stroke="#2563eb"/><text x="50" y="26">FI</text></g>
+      <g transform="translate(380 78)"><rect width="100" height="42" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="26">D1</text></g>
+      <g transform="translate(500 78)"><rect width="100" height="42" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="26">D2</text></g>
+      <g transform="translate(620 78)"><rect width="100" height="42" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="50" y="26">EX</text></g>
+      <g transform="translate(740 78)"><rect width="100" height="42" rx="5" fill="#f3e8ff" stroke="#9333ea"/><text x="50" y="26">WB</text></g>
+      <g transform="translate(500 144)"><rect width="100" height="42" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="26">D1</text></g>
+      <g transform="translate(620 144)"><rect width="100" height="42" rx="5" fill="#e2e8f0" stroke="#64748b" stroke-dasharray="5 4"/><text x="50" y="26">stall</text></g>
+      <g transform="translate(740 144)"><rect width="100" height="42" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="26">D2</text></g>
+      <g transform="translate(860 144)"><rect width="100" height="42" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="50" y="26">EX</text></g>
+    </g>
+    <path d="M790 122V139" class="arrow"/>
+    <text x="814" y="136" class="small">WB to D2 bypass</text>
+    <text x="550" y="242" text-anchor="middle" class="small">Address generation waits until the loaded pointer is available in WB.</text>
+    <text x="550" y="264" text-anchor="middle" class="small">The load result is forwarded correctly, but one cycle of throughput is lost.</text>
+  </g>
+</svg>

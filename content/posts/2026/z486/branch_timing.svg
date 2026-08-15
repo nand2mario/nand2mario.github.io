@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">i486 conditional branch timing</title>
+  <desc id="desc">A compare forwards flags from WB to branch EX. In branch EX the target fetch begins speculatively. A not-taken sequential instruction reaches EX after one clock, while a taken target reaches EX after three clocks.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#475569"/></marker>
+    <style>
+      .head{font:600 18px system-ui,sans-serif;fill:#0f172a}.label{font:600 13px system-ui,sans-serif;fill:#0f172a}.small{font:12px system-ui,sans-serif;fill:#475569}.cycle{font:12px ui-monospace,monospace;fill:#64748b}.grid{stroke:#e2e8f0;stroke-width:1}.arrow{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#arrow)}.taken{stroke:#ea580c}.notTaken{stroke:#16a34a}
+    </style>
+  </defs>
+  <rect width="1100" height="560" fill="#fff"/>
+  <text x="550" y="31" text-anchor="middle" class="head">Conditional branch resolution and pipeline refill</text>
+
+  <g class="cycle" text-anchor="middle">
+    <text x="330" y="72">N-2</text><text x="450" y="72">N-1</text><text x="570" y="72">N</text><text x="690" y="72">N+1</text><text x="810" y="72">N+2</text><text x="930" y="72">N+3</text>
+  </g>
+  <g class="grid"><path d="M270 82H990M270 142H990M270 218H990M270 294H990M270 370H990"/><path d="M390 82V394M510 82V394M630 82V394M750 82V394M870 82V394"/></g>
+  <g class="label" text-anchor="end">
+    <text x="248" y="126">CMP r1,imm</text>
+    <text x="248" y="202">Jcc target</text>
+    <text x="248" y="278">sequential instruction</text>
+    <text x="248" y="354">target instruction</text>
+  </g>
+
+  <g class="label" text-anchor="middle">
+    <g transform="translate(280 94)"><rect width="100" height="40" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="25">D2</text></g>
+    <g transform="translate(400 94)"><rect width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="50" y="25">EX</text></g>
+    <g transform="translate(520 94)"><rect width="100" height="40" rx="5" fill="#f3e8ff" stroke="#9333ea"/><text x="50" y="25">WB</text></g>
+
+    <g transform="translate(280 170)"><rect width="100" height="40" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="25">D1</text></g>
+    <g transform="translate(400 170)"><rect width="100" height="40" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="25">D2</text></g>
+    <g transform="translate(520 170)"><rect width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="50" y="25">EX</text></g>
+
+    <g transform="translate(400 246)"><rect width="100" height="40" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="25">D1</text></g>
+    <g transform="translate(520 246)"><rect width="100" height="40" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="25">D2</text></g>
+    <g transform="translate(640 246)"><rect width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="50" y="25">EX</text></g>
+
+    <g transform="translate(520 322)"><rect width="100" height="40" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="50" y="25">FI</text></g>
+    <g transform="translate(640 322)"><rect width="100" height="40" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="50" y="25">D1</text></g>
+    <g transform="translate(760 322)"><rect width="100" height="40" rx="5" fill="#ffedd5" stroke="#ea580c"/><text x="50" y="25">D2</text></g>
+    <g transform="translate(880 322)"><rect width="100" height="40" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="50" y="25">EX</text></g>
+  </g>
+
+  <path d="M570 136V165" class="arrow"/>
+  <text x="592" y="151" class="small">flags bypass</text>
+  <path d="M620 190H654V234" class="arrow notTaken"/>
+  <text x="675" y="223" class="small">not taken: keep sequential path</text>
+  <path d="M520 190H505V342H515" class="arrow taken"/>
+  <text x="490" y="315" text-anchor="end" class="small">taken: use speculative target fetch</text>
+
+  <rect x="170" y="430" width="760" height="92" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="205" y="462" class="label">Branch EX is cycle N</text>
+  <text x="205" y="490" class="small">Not taken: sequential successor EX at N+1 (1 clock)</text>
+  <text x="600" y="490" class="small">Taken: target EX at N+3 (3 clocks)</text>
+</svg>
