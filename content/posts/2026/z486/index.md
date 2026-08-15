@@ -23,6 +23,8 @@ The result is [z486](https://github.com/nand2mario/z486), an open-source,
 pipelined execution for common instructions with microcode for complex
 architectural behavior.
 
+<!--more-->
+
 z486 is not an i486 clone. Its design draws on three i486-inspired elements:
 
 1. a pipelined D1/D2 frontend;
@@ -37,8 +39,6 @@ FPS** at maximum detail, compared with **21.0 FPS** on ao486. This is roughly
 **0.330 DMIPS/MHz**, versus **0.225** for z386 and **0.194** for ao486. These
 results show that a practical pipelined x86 CPU with broad architectural
 support, including x87, can fit on a mid-range FPGA.
-
-<!--more-->
 
 ## The i486 five-stage pipeline
 
