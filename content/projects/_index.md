@@ -20,7 +20,8 @@ Complete console implementations for Sipeed Tang FPGA boards.
 
 FPGA implementations of classic Intel processors.
 
-* [z386](https://github.com/nand2mario/z386) and [z386_MiSTer](https://github.com/nand2mario/z386_MiSTer) - 80386 FPGA core running the original Intel microcode, plus the MiSTer port.
+* [z486](https://github.com/nand2mario/z486) and [z486_MiSTer](https://github.com/nand2mario/z486_MiSTer) ([forum discussion](https://misterfpga.org/viewtopic.php?p=111976)) - 486-class pipelined FPGA CPU with hardwired common instructions, microcoded complex behavior, experimental integrated x87, and its MiSTer PC implementation.
+* [z386](https://github.com/nand2mario/z386) ([forum discussion](https://misterfpga.org/viewtopic.php?t=10400)) - 80386-compatible FPGA CPU reconstructed around the original Intel microcode.
 * [486Tang](https://github.com/nand2mario/486tang) - 80486 on the Sipeed Tang Console 138K. First ao486 port to non-Altera FPGA.
 * [z8086](https://github.com/nand2mario/z8086) - 8086 FPGA core running the original Intel microcode.
 * [z86](https://github.com/nand2mario/z86) - A pipelined 80286-class FPGA softcore CPU. *(Incomplete)*
