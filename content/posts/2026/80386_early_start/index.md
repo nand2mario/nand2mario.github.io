@@ -18,6 +18,8 @@ The [z386](https://github.com/nand2mario/z386) FPGA core I [released in May](../
 | **z386 0.4 (June)** | **23.0** | **44.5** | **170** |
 | ao486 | 21.0 | 43.8 | 204 |
 
+<!--more-->
+
 Doom (original, max details) went up ~39% (16.6 → 23.0), past ao486's 21.0, and the 16-bit 3DBench now edges past ao486 too. The board clock is unchanged from v0.1's 85 MHz, so the gains came entirely from cutting **CPI**, doing more work per clock. Per-instruction, z386 went from well above the 386's cycle counts to at or below them on nearly everything:
 
 <figure style="width: 100%; max-width: 400px; margin: 28px auto 32px;">
