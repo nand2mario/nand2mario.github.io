@@ -24,6 +24,7 @@
   </g>
 
   <!-- D2 selects one of the two control paths. -->
+  <path d="M700 137V172" class="wire"/>
   <path d="M700 172H555V198" class="arrow"/>
   <path d="M700 172H845V198" class="arrow"/>
 
