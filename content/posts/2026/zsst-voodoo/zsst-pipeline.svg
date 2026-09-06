@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">zSST architecture: the rendering pipeline and memory system</title>
+  <desc id="desc">Prepared triangles become raster candidates. Texture and framebuffer work proceed in parallel, join by tag, pass through pixel tests and combining stages, and retire in order through a write combiner.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#40536d"/></marker>
+    <style>
+      .h { font: 700 30px system-ui, sans-serif; fill: #172033; }
+      .sh { font: 700 17px system-ui, sans-serif; fill: #172033; }
+      .t { font: 14px system-ui, sans-serif; fill: #334155; }
+      .small { font: 12px system-ui, sans-serif; fill: #526174; }
+      .box { stroke: #40536d; stroke-width: 2; rx: 12; }
+      .arrow { stroke: #40536d; stroke-width: 2.3; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1400" height="760" fill="#fff"/>
+  <text x="55" y="52" class="h">zSST architecture: rendering pipeline and memory system</text>
+
+  <rect x="50" y="120" width="165" height="90" class="box" fill="#e8f1ff"/>
+  <text x="132" y="154" text-anchor="middle" class="sh">Command state</text>
+  <text x="132" y="180" text-anchor="middle" class="t">prepared triangle</text>
+  <path d="M215 165H260" class="arrow"/>
+  <rect x="265" y="120" width="170" height="90" class="box" fill="#e8f1ff"/>
+  <text x="350" y="154" text-anchor="middle" class="sh">Raster walk</text>
+  <text x="350" y="180" text-anchor="middle" class="t">candidate + tag</text>
+
+  <path d="M435 165H490V280H535" class="arrow"/>
+  <path d="M435 165H490V500H535" class="arrow"/>
+  <text x="466" y="145" class="small">fork</text>
+
+  <rect x="535" y="235" width="185" height="90" class="box" fill="#f6e6ff"/>
+  <text x="627" y="268" text-anchor="middle" class="sh">TMU front end</text>
+  <text x="627" y="294" text-anchor="middle" class="small">4-stage perspective + LOD</text>
+  <path d="M720 280H755" class="arrow"/>
+  <rect x="760" y="225" width="205" height="110" class="box" fill="#f6e6ff"/>
+  <text x="862" y="258" text-anchor="middle" class="sh">Texture cache</text>
+  <text x="862" y="284" text-anchor="middle" class="t">4 taps · 8 miss slots</text>
+  <text x="862" y="308" text-anchor="middle" class="small">prefetch + 64-entry replay</text>
+  <path d="M965 280H1000" class="arrow"/>
+  <rect x="1005" y="235" width="160" height="90" class="box" fill="#f6e6ff"/>
+  <text x="1085" y="268" text-anchor="middle" class="sh">Decode + filter</text>
+  <text x="1085" y="294" text-anchor="middle" class="t">point / bilinear</text>
+
+  <rect x="535" y="450" width="185" height="100" class="box" fill="#e7f7ed"/>
+  <text x="627" y="483" text-anchor="middle" class="sh">FBI addresses</text>
+  <text x="627" y="509" text-anchor="middle" class="t">color + AUX requests</text>
+  <text x="627" y="532" text-anchor="middle" class="small">destination reads as needed</text>
+  <path d="M720 500H785" class="arrow"/>
+  <rect x="790" y="450" width="175" height="100" class="box" fill="#e7f7ed"/>
+  <text x="877" y="483" text-anchor="middle" class="sh">Color + AUX</text>
+  <text x="877" y="509" text-anchor="middle" class="t">2 × 4 KiB + replay</text>
+  <text x="877" y="532" text-anchor="middle" class="small">8 miss slots each</text>
+
+  <path d="M1165 280H1200V390H1235" class="arrow"/>
+  <path d="M965 500H1200V410H1235" class="arrow"/>
+  <rect x="1235" y="355" width="125" height="100" class="box" fill="#fff2cc"/>
+  <text x="1297" y="390" text-anchor="middle" class="sh">Tagged join</text>
+  <text x="1297" y="416" text-anchor="middle" class="t">reunite texture</text>
+  <text x="1297" y="438" text-anchor="middle" class="t">and FBI work</text>
+
+  <path d="M1297 455V600H1165" class="arrow"/>
+  <g transform="translate(475 580)">
+    <rect x="690" y="-25" width="170" height="90" class="box" fill="#ffe8e4"/>
+    <text x="775" y="7" text-anchor="middle" class="sh">F0 · F1</text><text x="775" y="34" text-anchor="middle" class="small">sources + color combine</text>
+    <path d="M690 20H655" class="arrow"/>
+    <rect x="485" y="-25" width="170" height="90" class="box" fill="#ffe8e4"/>
+    <text x="570" y="7" text-anchor="middle" class="sh">F2a · F2b</text><text x="570" y="34" text-anchor="middle" class="small">alpha/depth tests + fog</text>
+    <path d="M485 20H450" class="arrow"/>
+    <rect x="280" y="-25" width="170" height="90" class="box" fill="#ffe8e4"/>
+    <text x="365" y="7" text-anchor="middle" class="sh">F3 · F4</text><text x="365" y="34" text-anchor="middle" class="t">blend + dither + pack</text>
+    <path d="M280 20H245" class="arrow"/>
+    <rect x="65" y="-25" width="180" height="90" class="box" fill="#fff2cc"/>
+    <text x="155" y="7" text-anchor="middle" class="sh">Ordered retire</text><text x="155" y="34" text-anchor="middle" class="t">64-entry stream</text>
+    <path d="M65 20H30" class="arrow"/>
+    <rect x="-145" y="-25" width="175" height="90" class="box" fill="#e7f7ed"/>
+    <text x="-57" y="7" text-anchor="middle" class="sh">Write combine</text><text x="-57" y="34" text-anchor="middle" class="t">8 × 16-bit updates</text>
+  </g>
+  <path d="M330 600H260" class="arrow"/>
+  <rect x="65" y="555" width="195" height="90" class="box" fill="#dff3ff"/>
+  <text x="162" y="588" text-anchor="middle" class="sh">Framebuffer</text>
+  <text x="162" y="614" text-anchor="middle" class="t">swap → scanout</text>
+
+  <rect x="535" y="355" width="430" height="55" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="750" y="389" text-anchor="middle" class="small">FBI and TMU share a tagged 128-bit DDR renderer port</text>
+  <path d="M750 355V335" class="arrow"/>
+  <path d="M750 410V450" class="arrow"/>
+
+  <text x="700" y="714" text-anchor="middle" class="t">The stage count is a zSST FPGA timing choice, not a claim about the physical SST-1 ASIC pipeline.</text>
+</svg>

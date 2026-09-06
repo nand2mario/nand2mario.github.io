@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+  <title id="title">Triangle rasterization at one new pixel per clock</title>
+  <desc id="desc">The host prepares a triangle. The rasterizer walks covered pixel centers in scanline order and feeds one candidate per clock into a pipelined texture and framebuffer path.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#40536d"/></marker>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#d8dee9" stroke-width="1"/></pattern>
+    <style>
+      .h { font: 700 30px system-ui, sans-serif; fill: #172033; }
+      .sh { font: 700 19px system-ui, sans-serif; fill: #172033; }
+      .t { font: 15px system-ui, sans-serif; fill: #334155; }
+      .small { font: 13px system-ui, sans-serif; fill: #526174; }
+      .action { font: 700 20px system-ui, sans-serif; fill: #172033; }
+      .box { stroke: #40536d; stroke-width: 2; rx: 14; }
+      .arrow { stroke: #40536d; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="650" fill="#ffffff"/>
+  <text x="55" y="55" class="h">A deep pipeline can still start one pixel every clock</text>
+
+  <rect x="55" y="95" width="255" height="155" class="box" fill="#e8f1ff"/>
+  <text x="182" y="132" text-anchor="middle" class="sh">Host CPU</text>
+  <text x="72" y="165" class="small">• transform and light vertices</text>
+  <text x="72" y="193" class="small">• clip and project to the screen</text>
+  <text x="72" y="221" class="small">• prepare slopes and gradients</text>
+
+  <path d="M310 172H380" class="arrow"/>
+  <text x="345" y="141" text-anchor="middle" class="small">prepared</text>
+  <text x="345" y="154" text-anchor="middle" class="small">triangle</text>
+
+  <rect x="385" y="95" width="380" height="360" class="box" fill="#fbfcfe"/>
+  <text x="575" y="132" text-anchor="middle" class="sh">Rasterizer: pixel-center coverage</text>
+  <rect x="425" y="160" width="288" height="256" fill="url(#grid)" stroke="#94a3b8"/>
+  <path d="M462 379 L558 185 L690 379 Z" fill="#89c7f5" fill-opacity="0.45" stroke="#2563a6" stroke-width="4"/>
+  <g fill="#1769aa">
+    <circle cx="553" cy="208" r="6"/><circle cx="553" cy="240" r="6"/><circle cx="585" cy="240" r="6"/>
+    <circle cx="521" cy="272" r="6"/><circle cx="553" cy="272" r="6"/><circle cx="585" cy="272" r="6"/>
+    <circle cx="521" cy="304" r="6"/><circle cx="553" cy="304" r="6"/><circle cx="585" cy="304" r="6"/><circle cx="617" cy="304" r="6"/>
+    <circle cx="489" cy="336" r="6"/><circle cx="521" cy="336" r="6"/><circle cx="553" cy="336" r="6"/><circle cx="585" cy="336" r="6"/><circle cx="617" cy="336" r="6"/><circle cx="649" cy="336" r="6"/>
+    <circle cx="489" cy="368" r="6"/><circle cx="521" cy="368" r="6"/><circle cx="553" cy="368" r="6"/><circle cx="585" cy="368" r="6"/><circle cx="617" cy="368" r="6"/><circle cx="649" cy="368" r="6"/>
+  </g>
+  <path d="M545 215 C620 220 625 248 594 263 C550 286 490 269 485 302 C478 338 650 308 650 354" stroke="#e45a35" stroke-width="3" stroke-dasharray="7 6" fill="none" marker-end="url(#arrow)"/>
+  <text x="575" y="440" text-anchor="middle" class="small">one covered pixel candidate enters on each clock</text>
+
+  <path d="M765 276H825" class="arrow"/>
+
+  <g transform="translate(830 96)">
+    <rect x="0" y="0" width="310" height="74" class="box" fill="#fff2cc"/>
+    <text x="155" y="25" text-anchor="middle" class="t">Pixel Pₙ</text><text x="155" y="54" text-anchor="middle" class="action">Entering the stream</text>
+    <path d="M155 74V90" class="arrow"/>
+    <rect x="0" y="94" width="310" height="74" class="box" fill="#f6e6ff"/>
+    <text x="155" y="119" text-anchor="middle" class="t">An earlier pixel · TMU</text><text x="155" y="148" text-anchor="middle" class="action">Fetch and filter texels</text>
+    <path d="M155 168V184" class="arrow"/>
+    <rect x="0" y="188" width="310" height="74" class="box" fill="#e7f7ed"/>
+    <text x="155" y="213" text-anchor="middle" class="t">An older pixel · FBI</text><text x="155" y="242" text-anchor="middle" class="action">Test, fog, blend, dither</text>
+    <path d="M155 262V278" class="arrow"/>
+    <rect x="0" y="282" width="310" height="74" class="box" fill="#ffe8e4"/>
+    <text x="155" y="307" text-anchor="middle" class="t">Oldest pixel · in-order write</text><text x="155" y="336" text-anchor="middle" class="action">Update the framebuffer</text>
+  </g>
+
+  <rect x="55" y="510" width="1085" height="90" rx="16" fill="#eef7f1" stroke="#5a9271" stroke-width="2"/>
+  <text x="598" y="548" text-anchor="middle" class="sh">All these pixels are in flight at the same instant</text>
+  <text x="598" y="578" text-anchor="middle" class="t">Many pixels occupy different stages at once; after filling, the ideal initiation interval is one clock.</text>
+</svg>

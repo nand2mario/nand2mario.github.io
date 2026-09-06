@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="493" viewBox="0 0 720 493" role="img" aria-labelledby="title desc">
+<title id="title">Voodoo Graphics chip roles and connections</title>
+<desc id="desc">The upper TMU connects to four texture EDO chips. The lower FBI connects to four color and depth EDO chips. Both memory paths are 64 bits wide. FBI and TMU exchange texture work and filtered color. The host submits commands over PCI, while FBI sends display pixels through the RAMDAC to VGA output. Layout corresponds to the adjacent Diamond Monster 3D photograph; connections are schematic.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#526174"/></marker>
+  <style>
+    text {font-family: DejaVu Sans, sans-serif; fill:#243246; text-anchor:middle;}
+    .chip {font-size:32px; font-weight:700;}
+    .label {font-size:22px; font-weight:600;}
+    .role {font-size:19px;}
+    .link {stroke:#526174; stroke-width:3; fill:none; marker-end:url(#arrow);}
+    .both {marker-start:url(#arrow);}
+  </style>
+</defs>
+<rect width="720" height="493" fill="white"/>
+<rect x="8" y="24" width="704" height="433" rx="14" fill="#fafcfa" stroke="#d3ded5" stroke-width="2"/>
+
+<rect x="250" y="67" width="180" height="125" rx="10" fill="#e7f2ff" stroke="#4386bd" stroke-width="2"/>
+<text x="340" y="115" class="chip">TMU</text>
+<text x="340" y="148" class="role">Texture lookup</text>
+<text x="340" y="173" class="role">+ filtering</text>
+
+<rect x="250" y="282" width="180" height="125" rx="10" fill="#f1eafa" stroke="#906cb6" stroke-width="2"/>
+<text x="340" y="330" class="chip">FBI</text>
+<text x="340" y="363" class="role">Rasterization</text>
+<text x="340" y="388" class="role">Pixel operations</text>
+
+<rect x="516" y="54" width="181" height="151" rx="10" fill="#f1f7ff" stroke="#4386bd" stroke-width="2"/>
+<text x="606" y="86" class="label">Texture RAM</text>
+<g fill="#b6d7f3" stroke="#4386bd" stroke-width="1.5">
+  <rect x="531" y="101" width="29" height="62" rx="3"/>
+  <rect x="571" y="101" width="29" height="62" rx="3"/>
+  <rect x="611" y="101" width="29" height="62" rx="3"/>
+  <rect x="651" y="101" width="29" height="62" rx="3"/>
+</g>
+<text x="606" y="188" class="role">4 EDO chips</text>
+
+<rect x="516" y="269" width="181" height="151" rx="10" fill="#f7f3fc" stroke="#906cb6" stroke-width="2"/>
+<text x="606" y="301" class="label">Color / depth</text>
+<g fill="#d9c7eb" stroke="#906cb6" stroke-width="1.5">
+  <rect x="531" y="316" width="29" height="62" rx="3"/>
+  <rect x="571" y="316" width="29" height="62" rx="3"/>
+  <rect x="611" y="316" width="29" height="62" rx="3"/>
+  <rect x="651" y="316" width="29" height="62" rx="3"/>
+</g>
+<text x="606" y="403" class="role">4 EDO chips</text>
+
+<path d="M438 134H508" class="link both"/>
+<text x="474" y="115" class="role">64-bit</text>
+<path d="M438 349H508" class="link both"/>
+<text x="474" y="330" class="role">64-bit</text>
+
+<path d="M287 274V200" class="link"/>
+<path d="M399 200V274" class="link"/>
+<text x="218" y="232" class="role">Texture</text>
+<text x="218" y="255" class="role">work</text>
+<text x="462" y="232" class="role">Filtered</text>
+<text x="462" y="255" class="role">color</text>
+
+<rect x="93" y="130" width="136" height="87" rx="10" fill="#fff0dc" stroke="#bc8949" stroke-width="2"/>
+<text x="161" y="164" class="label">RAMDAC</text>
+<text x="161" y="193" class="role">D/A conversion</text>
+<path d="M242 344H161V225" class="link"/>
+<text x="90" y="284" class="role">Display</text>
+<text x="90" y="309" class="role">pixels</text>
+
+<path d="M87 177H38" class="link"/>
+<text x="49" y="134" class="label">VGA</text>
+<text x="49" y="156" class="role">out</text>
+
+<path d="M340 448V415" class="link"/>
+<text x="340" y="479" class="label">Host / PCI commands</text>
+</svg>

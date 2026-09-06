@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">Any 2×2 texel neighborhood reaches all four banks</title>
+<desc id="desc">A six-column, four-row texture alternates banks A B and C D. An aligned window contains A B above C D. A second window starts at column 3, row 1 and crosses both repeating-block boundaries, containing D C above B A. Its four texels still require exactly one read from each bank. This illustrates parity interleaving, not SST-1's physical chip numbering.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0 0L0 6L7 3z" fill="#475569"/></marker>
+<style>
+.h { font:700 30px system-ui,sans-serif; fill:#172033; }
+.sh { font:700 23px system-ui,sans-serif; fill:#172033; }
+.bank { font:700 30px system-ui,sans-serif; fill:#172033; }
+.t { font:21px system-ui,sans-serif; fill:#334155; }
+.small { font:18px system-ui,sans-serif; fill:#526174; }
+.arrow { stroke:#475569; stroke-width:2.5; fill:none; marker-end:url(#arrow); }
+</style></defs>
+<rect width="1200" height="720" fill="white"/>
+<text x="55" y="55" class="h">Any 2×2 neighborhood reaches all four banks</text>
+<text x="286" y="111" text-anchor="middle" class="sh">Bank assignment across a texture</text>
+<rect x="70" y="150" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="106" y="195" text-anchor="middle" class="bank">A</text>
+<rect x="142" y="150" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="178" y="195" text-anchor="middle" class="bank">B</text>
+<rect x="214" y="150" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="250" y="195" text-anchor="middle" class="bank">A</text>
+<rect x="286" y="150" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="322" y="195" text-anchor="middle" class="bank">B</text>
+<rect x="358" y="150" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="394" y="195" text-anchor="middle" class="bank">A</text>
+<rect x="430" y="150" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="466" y="195" text-anchor="middle" class="bank">B</text>
+<rect x="70" y="222" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="106" y="267" text-anchor="middle" class="bank">C</text>
+<rect x="142" y="222" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="178" y="267" text-anchor="middle" class="bank">D</text>
+<rect x="214" y="222" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="250" y="267" text-anchor="middle" class="bank">C</text>
+<rect x="286" y="222" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="322" y="267" text-anchor="middle" class="bank">D</text>
+<rect x="358" y="222" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="394" y="267" text-anchor="middle" class="bank">C</text>
+<rect x="430" y="222" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="466" y="267" text-anchor="middle" class="bank">D</text>
+<rect x="70" y="294" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="106" y="339" text-anchor="middle" class="bank">A</text>
+<rect x="142" y="294" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="178" y="339" text-anchor="middle" class="bank">B</text>
+<rect x="214" y="294" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="250" y="339" text-anchor="middle" class="bank">A</text>
+<rect x="286" y="294" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="322" y="339" text-anchor="middle" class="bank">B</text>
+<rect x="358" y="294" width="72" height="72" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="394" y="339" text-anchor="middle" class="bank">A</text>
+<rect x="430" y="294" width="72" height="72" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="466" y="339" text-anchor="middle" class="bank">B</text>
+<rect x="70" y="366" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="106" y="411" text-anchor="middle" class="bank">C</text>
+<rect x="142" y="366" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="178" y="411" text-anchor="middle" class="bank">D</text>
+<rect x="214" y="366" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="250" y="411" text-anchor="middle" class="bank">C</text>
+<rect x="286" y="366" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="322" y="411" text-anchor="middle" class="bank">D</text>
+<rect x="358" y="366" width="72" height="72" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="394" y="411" text-anchor="middle" class="bank">C</text>
+<rect x="430" y="366" width="72" height="72" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="466" y="411" text-anchor="middle" class="bank">D</text>
+<text x="106" y="141" text-anchor="middle" class="small">0</text>
+<text x="178" y="141" text-anchor="middle" class="small">1</text>
+<text x="250" y="141" text-anchor="middle" class="small">2</text>
+<text x="322" y="141" text-anchor="middle" class="small">3</text>
+<text x="394" y="141" text-anchor="middle" class="small">4</text>
+<text x="466" y="141" text-anchor="middle" class="small">5</text>
+<text x="53" y="195" text-anchor="middle" class="small">0</text>
+<text x="53" y="267" text-anchor="middle" class="small">1</text>
+<text x="53" y="339" text-anchor="middle" class="small">2</text>
+<text x="53" y="411" text-anchor="middle" class="small">3</text>
+<rect x="72" y="152" width="140" height="140" fill="none" stroke="#475569" stroke-width="3" stroke-dasharray="8 5" rx="3"/>
+<rect x="286" y="222" width="144" height="144" fill="none" stroke="white" stroke-width="9" rx="4"/>
+<rect x="286" y="222" width="144" height="144" fill="none" stroke="#b74713" stroke-width="5" rx="4"/>
+<text x="286" y="474" text-anchor="middle" class="t">Dashed: aligned. Orange: crosses blocks.</text>
+<path d="M508 294H642" class="arrow"/>
+<text x="575" y="273" text-anchor="middle" class="small">selected 2×2</text>
+<text x="750" y="131" text-anchor="middle" class="sh">Same four banks</text>
+<rect x="660" y="160" width="90" height="90" fill="#e1cbed" stroke="#ffffff" stroke-width="2"/><text x="705" y="214" text-anchor="middle" class="bank">D</text>
+<rect x="750" y="160" width="90" height="90" fill="#bfe5cc" stroke="#ffffff" stroke-width="2"/><text x="795" y="214" text-anchor="middle" class="bank">C</text>
+<rect x="660" y="250" width="90" height="90" fill="#f9dfa0" stroke="#ffffff" stroke-width="2"/><text x="705" y="304" text-anchor="middle" class="bank">B</text>
+<rect x="750" y="250" width="90" height="90" fill="#c8dff6" stroke="#ffffff" stroke-width="2"/><text x="795" y="304" text-anchor="middle" class="bank">A</text>
+<rect x="660" y="160" width="180" height="180" fill="none" stroke="#b74713" stroke-width="4" rx="3"/>
+<text x="888" y="214" class="t">Shift the window:</text>
+<text x="888" y="248" class="sh">positions change,</text>
+<text x="888" y="282" class="sh">banks never collide.</text>
+<text x="900" y="392" text-anchor="middle" class="t">One even and one odd column,</text>
+<text x="900" y="424" text-anchor="middle" class="t">one even and one odd row.</text>
+<path d="M750 449V488H180M750 488H1020" stroke="#475569" stroke-width="2.5" fill="none"/>
+<path d="M180 488V514" class="arrow"/><path d="M460 488V514" class="arrow"/><path d="M740 488V514" class="arrow"/><path d="M1020 488V514" class="arrow"/>
+<rect x="60" y="520" width="240" height="100" rx="12" fill="#c8dff6" stroke="#475569" stroke-width="2"/><text x="180" y="555" text-anchor="middle" class="sh">Bank A</text><text x="180" y="591" text-anchor="middle" class="t">Read texel (4, 2)</text>
+<rect x="340" y="520" width="240" height="100" rx="12" fill="#f9dfa0" stroke="#475569" stroke-width="2"/><text x="460" y="555" text-anchor="middle" class="sh">Bank B</text><text x="460" y="591" text-anchor="middle" class="t">Read texel (3, 2)</text>
+<rect x="620" y="520" width="240" height="100" rx="12" fill="#bfe5cc" stroke="#475569" stroke-width="2"/><text x="740" y="555" text-anchor="middle" class="sh">Bank C</text><text x="740" y="591" text-anchor="middle" class="t">Read texel (4, 1)</text>
+<rect x="900" y="520" width="240" height="100" rx="12" fill="#e1cbed" stroke="#475569" stroke-width="2"/><text x="1020" y="555" text-anchor="middle" class="sh">Bank D</text><text x="1020" y="591" text-anchor="middle" class="t">Read texel (3, 1)</text>
+<text x="600" y="661" text-anchor="middle" class="sh">Four independent addresses → four texels read in parallel</text>
+<text x="600" y="699" text-anchor="middle" class="small">Illustrative within-level interleaving; letters are not physical SST-1 chip numbers.</text>
+</svg>

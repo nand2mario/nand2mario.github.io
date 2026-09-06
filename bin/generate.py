@@ -487,12 +487,17 @@ def generate_tag_page(tag, posts):
 
 
 def copy_post_assets(post, output_dir):
-    """Copy images and other assets from post directory."""
-    # For directory-based posts (with index.md), copy all non-md files
+    """Copy post assets, preserving nested directories and relative URLs."""
+    # For directory-based posts (with index.md), copy all non-md files recursively
     # For standalone .md posts, only copy files with matching stem (e.g., post.jpg for post.md)
     is_standalone = post['index_file'].name != 'index.md'
 
-    for file in post['path'].iterdir():
+    files = post['path'].iterdir() if is_standalone else post['path'].rglob('*')
+    for file in files:
+        relative_path = file.relative_to(post['path'])
+        if any(part.startswith('.') or part == '__pycache__'
+               for part in relative_path.parts):
+            continue
         if not file.is_file():
             continue
         if file.suffix == '.md':
@@ -500,7 +505,9 @@ def copy_post_assets(post, output_dir):
         # For standalone posts, only copy assets with matching stem
         if is_standalone and not file.stem.startswith(post['slug']):
             continue
-        shutil.copy2(file, output_dir / file.name)
+        destination = output_dir / relative_path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file, destination)
 
 
 def generate_rss(posts, max_items=20):
