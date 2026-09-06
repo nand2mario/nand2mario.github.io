@@ -1,7 +1,7 @@
 ---
 title: "Recreating Voodoo Graphics and a Late-1990s Gaming PC on an FPGA"
-date: 2026-09-06T20:00:00+08:00
-draft: true
+date: 2026-09-07T01:04:55+08:00
+draft: false
 sidebar: false
 comment: true
 author: nand2mario
