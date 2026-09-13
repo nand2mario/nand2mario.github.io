@@ -44,7 +44,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Python dependencies
-        run: pip install markdown pyyaml
+        run: pip install -r requirements.txt
+      - name: Test generator
+        run: python3 -m unittest discover -s bin -p 'test_*.py'
       - name: Build site
         run: python3 bin/generate.py
       - name: Upload artifact

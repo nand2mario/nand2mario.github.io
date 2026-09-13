@@ -9,10 +9,13 @@ import re
 import shutil
 import yaml
 import markdown
+import posixpath
+from markdown.extensions import Extension
+from markdown.treeprocessors import Treeprocessor
 from datetime import datetime
 from pathlib import Path
 from html import escape
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit, unquote, quote
 
 # Configuration
 SITE_TITLE = "Small Things Retro"
@@ -31,6 +34,7 @@ GISCUS_CATEGORY_ID = "DIC_kwDOMuaEes4C1UwO"  # Fill in from giscus.app
 ROOT_DIR = Path(__file__).parent.parent
 CONTENT_ROOT = ROOT_DIR / "content"
 CONTENT_DIR = CONTENT_ROOT / "posts"
+WIKI_DIR = CONTENT_ROOT / "wiki"
 STATIC_DIR = ROOT_DIR / "static"
 OUTPUT_DIR = ROOT_DIR / "public"
 TEMPLATES_DIR = ROOT_DIR / "bin" / "templates"
@@ -41,7 +45,7 @@ def parse_frontmatter(content):
     if content.startswith("---"):
         parts = content.split("---", 2)
         if len(parts) >= 3:
-            frontmatter = yaml.safe_load(parts[1])
+            frontmatter = yaml.safe_load(parts[1]) or {}
             body = parts[2].strip()
             return frontmatter, body
     return {}, content
@@ -205,7 +209,7 @@ def collect_pages():
     pages = []
 
     for item in CONTENT_ROOT.iterdir():
-        if not item.is_dir() or item.name == 'posts':
+        if not item.is_dir() or item.name in ('posts', 'wiki'):
             continue
 
         # Check for _index.md (section index)
@@ -243,7 +247,7 @@ def collect_pages():
     return pages
 
 
-def render_markdown(content, post_url=""):
+def render_markdown(content, post_url="", link_resolver=None):
     """Convert markdown to HTML."""
     # Handle image references with optional attributes like {width="800"}
     # Convert to HTML img tags with attributes
@@ -259,7 +263,21 @@ def render_markdown(content, post_url=""):
     content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)\s*\{([^}]*)\}', fix_image_with_attrs, content)
 
     # Convert markdown to HTML
-    md = markdown.Markdown(extensions=['fenced_code', 'tables', 'toc', 'md_in_html'])
+    extensions = ['fenced_code', 'tables', 'toc', 'md_in_html']
+    if link_resolver:
+        class ResolveLinks(Treeprocessor):
+            def run(self, root):
+                for element in root.iter():
+                    attr = {'a': 'href', 'img': 'src'}.get(element.tag)
+                    if attr and element.get(attr):
+                        element.set(attr, link_resolver(element.get(attr)))
+
+        class WikiLinks(Extension):
+            def extendMarkdown(self, md):
+                md.treeprocessors.register(ResolveLinks(md), 'wiki_links', 1)
+
+        extensions.append(WikiLinks())
+    md = markdown.Markdown(extensions=extensions)
     html = md.convert(content)
 
     # Wrap markdown-generated tables so small tables can stay compact while
@@ -273,7 +291,7 @@ def render_markdown(content, post_url=""):
 
     # Prefix absolute paths with BASE_PATH (for images and links)
     # e.g., src="/2025/img.webp" -> src="/neo/2025/img.webp"
-    html = re.sub(r'(src|href)="/([^"]+)"', rf'\1="{BASE_PATH}/\2"', html)
+    html = re.sub(r'(src|href)="/(?!/)([^"]+)"', rf'\1="{BASE_PATH}/\2"', html)
 
     return html
 
@@ -287,10 +305,120 @@ def load_template(name):
 
 def render_template(template, **kwargs):
     """Simple template rendering with {{variable}} syntax."""
+    kwargs.setdefault('nav_wiki', '')
     result = template
     for key, value in kwargs.items():
         result = result.replace(f"{{{{{key}}}}}", str(value))
     return result
+
+
+def wiki_url(relative_path):
+    """Map source files to directory URLs: p6/roms.md -> /wiki/p6/roms/."""
+    path = Path(relative_path)
+    slug = path.parent if path.name == 'index.md' else path.with_suffix('')
+    return '/wiki/' + (quote(slug.as_posix()) + '/' if slug != Path('.') else '')
+
+
+def collect_wiki_pages():
+    """Collect recursive, Git-edited wiki pages independently of blog posts."""
+    pages = {}
+    urls = set()
+    if not WIKI_DIR.exists():
+        return pages
+    for source in sorted(WIKI_DIR.rglob('*.md')):
+        relative = source.relative_to(WIKI_DIR)
+        if any(part.startswith('.') for part in relative.parts):
+            continue
+        meta, body = parse_frontmatter(source.read_text(encoding='utf-8'))
+        if meta.get('draft', False):
+            continue
+        url = wiki_url(relative)
+        if url in urls:
+            raise ValueError(f'Duplicate wiki URL: {url}')
+        urls.add(url)
+        pages[relative.as_posix()] = {
+            'title': str(meta.get('title', relative.stem.replace('_', ' ').title())),
+            'updated': str(meta.get('updated', '')),
+            'body': body, 'url': url,
+        }
+    if 'index.md' not in pages:
+        raise ValueError('Wiki requires a published content/wiki/index.md')
+    return pages
+
+
+def resolve_wiki_link(url, source, pages):
+    """Resolve Markdown file links and assets relative to their source file."""
+    parts = urlsplit(url)
+    if parts.scheme or parts.netloc or not parts.path:
+        return url
+    path = unquote(parts.path)
+    if path.startswith('/'):
+        if not path.startswith('/wiki/'):
+            return url
+        relative = posixpath.normpath(path[len('/wiki/'):])
+    else:
+        relative = posixpath.normpath(posixpath.join(posixpath.dirname(source), path))
+    if relative == '..' or relative.startswith('../'):
+        raise ValueError(f'Wiki link escapes wiki: {source}: {url}')
+    if relative.endswith('.md'):
+        if relative not in pages:
+            raise ValueError(f'Missing or draft wiki page: {source}: {url}')
+        target = pages[relative]['url']
+    else:
+        # Support directory links as well as explicit .md links.
+        index = posixpath.join(relative, 'index.md').removeprefix('./')
+        clean_url = '/wiki/' + quote(relative).rstrip('/') + '/'
+        if index in pages:
+            target = pages[index]['url']
+        elif any(page['url'] == clean_url for page in pages.values()):
+            target = clean_url
+        else:
+            asset = WIKI_DIR / relative
+            if not asset.is_file() or any(p.startswith('.') for p in Path(relative).parts):
+                raise ValueError(f'Missing wiki asset: {source}: {url}')
+            target = '/wiki/' + quote(relative)
+    return urlunsplit(('', '', target, parts.query, parts.fragment))
+
+
+def generate_wiki(pages):
+    for source, page in pages.items():
+        body = render_markdown(page['body'], link_resolver=lambda url:
+                               resolve_wiki_link(url, source, pages))
+        crumbs = [f'<a href="{BASE_PATH}/wiki/">Wiki</a>']
+        parent = Path(source).parent
+        for depth, name in enumerate(parent.parts, 1):
+            index = (Path(*parent.parts[:depth]) / 'index.md').as_posix()
+            label = escape(name.upper() if name == 'p6' else name.replace('_', ' ').title())
+            if index in pages and index != source:
+                crumbs.append(f'<a href="{BASE_PATH}{pages[index]["url"]}">{label}</a>')
+            else:
+                crumbs.append(f'<span>{label}</span>')
+        content = render_template(load_template('wiki'),
+            page_class='wiki-index' if source == 'index.md' else '',
+            title=escape(page['title']), content=body,
+            breadcrumbs=' <span aria-hidden="true">/</span> '.join(crumbs),
+            updated=(f'<p class="wiki-updated">Updated {escape(page["updated"])}</p>'
+                     if page['updated'] else ''))
+        html = render_template(load_template('base'),
+            title=f'{escape(page["title"])} - Wiki - {SITE_TITLE}',
+            site_title=SITE_TITLE, site_byline=SITE_BYLINE, base_path=BASE_PATH,
+            content=content, nav_home='', nav_projects='', nav_wiki='class="active"')
+        destination = OUTPUT_DIR / unquote(page['url']).strip('/') / 'index.html'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(html, encoding='utf-8')
+        print(f'  Generated: {page["url"]}')
+    if not pages:
+        return
+    for asset in WIKI_DIR.rglob('*'):
+        relative = asset.relative_to(WIKI_DIR)
+        if (not asset.is_file() or asset.suffix == '.md' or
+                any(p.startswith('.') or p == '__pycache__' for p in relative.parts)):
+            continue
+        destination = OUTPUT_DIR / 'wiki' / relative
+        if destination.exists():
+            raise ValueError(f'Wiki asset conflicts with generated page: {relative}')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(asset, destination)
 
 
 def generate_post_page(post, prev_post=None, next_post=None):
@@ -558,6 +686,8 @@ def build_site():
     published_posts = [p for p in all_posts if not p['draft']]
     draft_posts = [p for p in all_posts if p['draft']]
     print(f"Found {len(published_posts)} published posts, {len(draft_posts)} drafts")
+
+    generate_wiki(collect_wiki_pages())
 
     # Generate post pages (for all posts, including drafts)
     for post in all_posts:
