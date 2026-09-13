@@ -1,5 +1,5 @@
 ---
-title: ROMs and PLAs on a Pentium II die
+title: P6 ROMs and PLAs
 updated: 2026-09-13
 ---
 
