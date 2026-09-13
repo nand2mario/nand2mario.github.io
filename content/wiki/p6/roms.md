@@ -21,9 +21,17 @@ P6 has one full decoder and two simple decoders (Shen and Lipasti, §7.3.3). The
 
 The XLATs generate micro-op templates and alias controls; extracted instruction fields supply register and immediate details.
 
-## Entry-point and immediate-constant ROMs
+## Entry-point PLA and alias circuitry
 
-I labeled the two smaller boxed arrays below the four XLATs **Entry or CROM**. The entry-point PLA maps an instruction to a starting address in the microcode sequencer. CROM provides constants used as micro-op operands. Their regular structure and proximity to the decoder/sequencer make them possible candidates.
+The narrow structure immediately **right of the four XLATs** is my leading **entry-point PLA** candidate. In [US5559974, Figure 5](https://patents.google.com/patent/US5559974A/en), the four XLATs and entry-point PLA receive the same opcode inputs; the latter supplies a starting address to the microcode sequencer. A neighboring array fits that connectivity, although the patent drawing is not a physical floorplan.
+
+The two smaller boxed arrays **below the XLATs** now look more likely to be **alias or decoder-control circuitry**. Figure 5 includes macro-alias and micro-alias registers, micro-op registers and selection multiplexers. These provide plausible roles for the arrays, without identifying either one individually or establishing that they are PLAs. Decoder aliasing substitutes instruction-specific fields into micro-op templates; it is separate from register renaming in RAT.
+
+## CROM: location still open
+
+CROM supplies constants used as micro-op operands. I no longer assign it to either lower ID array. MSROM and the leading FROM candidate both look darker than the XLAT structures, suggesting that CROM might also be a **small dark array or band**, possibly outside ID. Near MSROM would suit access to microcode-derived constant indices; near IEU would suit delivery of integer operands. These are search hypotheses, not established placement or read-stage information.
+
+Our Pentium Pro 619 dump returns 512 constants with zero upper 32-bit halves. A direct 512 × 32 implementation would be only 16 Kbits, but that does not establish Deschutes's physical organization. Color alone cannot distinguish ROM from PLA, and a fixed constant lookup can also be implemented as logic. We need array structure or wiring evidence to locate CROM.
 
 ## FROM: floating-point constants
 
