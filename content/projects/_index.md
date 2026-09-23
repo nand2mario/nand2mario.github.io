@@ -28,6 +28,11 @@ FPGA implementations of classic Intel processors.
 * [ao486-sim](https://github.com/nand2mario/ao486-sim) - Educational whole-system simulation of the ao486 CPU core and PC architecture.
 * [8086 Microcode Browser](/8086_microcode.html) - Interactive Intel 8086 microcode viewer.
 
+## Graphics
+
+* [zSST](https://github.com/nand2mario/zSST) and [z486_XL](https://github.com/nand2mario/z486_XL) - FPGA implementation of 3dfx Voodoo Graphics (SST-1), integrated with the z486 CPU into a DOS PC on KV260.
+* [3dfx Voodoo Demos](https://github.com/nand2mario/3dfx_voodoo_demos) - Self-contained 3dfx Voodoo 1 (SST-1) demos on Mac/Linux.
+
 ## USB & Interfaces
 
 * [usb_hid_host](https://github.com/nand2mario/usb_hid_host) - Compact USB HID host FPGA core supporting keyboards, mice and gamepads. Pure Verilog, no CPU needed.
@@ -41,5 +46,4 @@ FPGA implementations of classic Intel processors.
 
 ## Other
 
-* [3dfx Voodoo Demos](https://github.com/nand2mario/3dfx_voodoo_demos) - Self-contained 3dfx Voodoo 1 (SST-1) demos on Mac/Linux.
 * [Dieshots](https://github.com/nand2mario/dieshots) - High-resolution processor die photographs.
