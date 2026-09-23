@@ -23,7 +23,7 @@ commits results in program order. Queues and result buses connect these paths.
 
 [TOC]
 
-Figure 7.4 groups **1x** stages around fetch/decode, **2x** around
+The stage numbers group **1x** work around fetch/decode, **2x** around
 rename/allocation and **3x** around dispatch/execution.
 
 For a quick visual tour of the P6 chip, and its various blocks (RS, ROB, RAT, and ...), see
@@ -67,15 +67,21 @@ branch reaches an execution unit. Other names appear with their diagrams below.
 | 81–83 | result-bus scheduling and writeback | Arbitrate result buses (`81–82`); broadcast PDst, data, flags or events (`83`) |
 | 91–93 | in-order retirement | Feed back the pointer (`91`), read/qualify oldest entries (`92`), then handle events/IP and write RRF (`93`) |
 
-## Figure 7.4 — the whole pipeline
+## The whole pipeline
 
-[![Figure 7.4 P6 pipelining](img/ch7-fig7.4.png)](img/ch7-fig7.4.png)
+<figure markdown="1">
 
-In-order row: 11 Next-IP, 12 ICache1, 13 IC2/ILD, 14 IC3/rot, 15 Dec1, 16 Dec2,
-17 Br Dec. Overlapping 2x row: 20 exit ID queue, 21 RAT / RS PSrc write, 22 RS
-write. The lower rows show independent simple/multicycle execution, memory,
-writeback and retirement paths. The ellipses are variable waiting times, not
-omitted fixed pipeline stages.
+[![Original overview of the P6 pipeline](img/p6-pipeline-overview.svg)](img/p6-pipeline-overview.svg)
+
+<figcaption>Original diagram by nand2mario, based on the stage descriptions and block diagrams in <a href="https://patents.google.com/patent/US5721855A/en">US 5,721,855</a> and Shen and Lipasti, Chapter 7. Arrows show data flow, not fixed elapsed cycles.</figcaption>
+
+</figure>
+
+Fetch, decode and rename proceed in order. The reservation station can hold a
+µop while its operands or execution port are unavailable; memory operations
+may also wait or retry. Writeback supplies the ROB, while retirement commits
+completed work in program order. These paths overlap rather than following a
+single fixed-length sequence.
 
 ## 11 NextIP
 
@@ -133,8 +139,6 @@ linear address to the BTB and update a TOS pointer
 decoded CALL/RET is 16; the RSB **write** is 17. 14 is not the full return-stack
 lookup.
 
-[![Figure 7.6 Front-end pipe staging](img/ch7-fig7.6.png)](img/ch7-fig7.6.png)
-
 <figure markdown="1">
 
 [![US5721855 Fig. 4 IFU](img/us5721855-fig4.png)](img/us5721855-fig4.png)
@@ -185,8 +189,6 @@ entry-point PLA.
 
 BAC in 15 only latches the current instruction buffer and the BTB’s predicted
 target (Fig. 11a).
-
-[![Figure 7.10 ID block](img/ch7-fig7.10.png)](img/ch7-fig7.10.png)
 
 <figure markdown="1">
 
@@ -364,8 +366,6 @@ ready bits and a priority pointer to select entries. Fig. 15 above locates
 source installation and schedule/dispatch half-stages. See the
 [patent description](https://patents.google.com/patent/US5721855A/en).
 
-[![Chapter 7 Fig. 7.14 RS ports and result paths](img/ch7-fig7.14.png)](img/ch7-fig7.14.png)
-
 <figure markdown="1">
 
 [![US5721855 Fig. 14 RS buffer, source CAMs, ready bits and scheduler](img/us5721855-fig14.png)](img/us5721855-fig14.png)
@@ -540,7 +540,7 @@ and [US5721855 ROB description](https://patents.google.com/patent/US5721855A/en)
 
 ## References and figure credits
 
-- John Paul Shen and Mikko H. Lipasti, [*Modern Processor Design*](https://www.waveland.com/browse.php?t=624), Chapter 7, especially Figures 7.4, 7.6, 7.10 and 7.14.
+- John Paul Shen and Mikko H. Lipasti, [*Modern Processor Design*](https://www.waveland.com/browse.php?t=624), Chapter 7, especially Figures 7.4, 7.6, 7.10 and 7.14 (cited for technical detail; book figures are not reproduced here).
 - [US5721855](https://patents.google.com/patent/US5721855A/en), pipeline, execution, memory and ROB figures.
 - [US5559974](https://patents.google.com/patent/US5559974A/en), decoder aliases and microcode sequencing, Figure 5.
 - [US5630083](https://patents.google.com/patent/US5630083A/en), parallel instruction decoding.

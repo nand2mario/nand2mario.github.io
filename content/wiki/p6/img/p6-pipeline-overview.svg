@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1620 1190" role="img" aria-labelledby="title desc">
+  <title id="title">P6 pipeline paths from instruction fetch to retirement</title>
+  <desc id="desc">A stage timeline shows the in-order fetch and rename path, then separate lanes for one-cycle execution, multicycle execution, cache hits, and memory operations that wait in the MOB before retrying. All completed operations reach in-order retirement.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#50627a"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font: 700 29px system-ui, sans-serif; fill: #17243a; }
+    .subtitle { font: 16px system-ui, sans-serif; fill: #516177; }
+    .group { font: 700 14px system-ui, sans-serif; letter-spacing: 1.3px; fill: #52627a; }
+    .lane-name { font: 700 21px system-ui, sans-serif; fill: #17243a; }
+    .lane-detail { font: 15px system-ui, sans-serif; fill: #52627a; }
+    .number { font: 700 24px system-ui, sans-serif; fill: #17243a; }
+    .function { font: 15px system-ui, sans-serif; fill: #33435b; }
+    .small { font: 700 16px system-ui, sans-serif; fill: #33435b; }
+    .mini-number { font: 700 19px system-ui, sans-serif; fill: #17243a; }
+    .mini-label { font: 12px system-ui, sans-serif; fill: #33435b; }
+    .card rect { stroke-width: 1.5; rx: 8; }
+    .front rect { fill: #eaf1ff; stroke: #93add8; }
+    .rename rect { fill: #eaf6ed; stroke: #86b494; }
+    .execute rect { fill: #f3ebff; stroke: #b6a0d4; }
+    .memory rect { fill: #e7f5f4; stroke: #8bbdb7; }
+    .writeback rect { fill: #fff0dc; stroke: #d9b483; }
+    .retire rect { fill: #ffebef; stroke: #d8a4af; }
+    .flow { fill: none; stroke: #50627a; stroke-width: 2.4; marker-end: url(#arrow); }
+    .result { fill: none; stroke: #71849c; stroke-width: 2; stroke-dasharray: 6 6; }
+    .rule { stroke: #d5dce6; stroke-width: 1.5; }
+  </style>
+
+  <rect width="1620" height="1190" fill="#fff"/>
+  <text class="title" x="38" y="47">P6 pipeline: one front end, several execution paths</text>
+  <text class="subtitle" x="38" y="77">Each lane shows a possible path. Writeback stages beneath execution can overlap it in time; queues can add variable waits.</text>
+
+  <rect x="288" y="108" width="1282" height="190" rx="14" fill="#f8fafc"/>
+  <text class="group" x="310" y="131">FETCH AND DECODE</text>
+  <text class="group" x="1138" y="131">QUEUE AND RENAME</text>
+  <text class="lane-name" x="38" y="176">In order</text>
+  <text class="lane-detail" x="38" y="199">instruction stream</text>
+
+  <g class="card front" transform="translate(310 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">11</text><text class="function" x="12" y="57">Next IP</text></g>
+  <g class="card front" transform="translate(448 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">12</text><text class="function" x="12" y="57">I-cache</text></g>
+  <g class="card front" transform="translate(586 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">13</text><text class="function" x="12" y="57">ILD / BTB</text></g>
+  <g class="card front" transform="translate(724 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">14</text><text class="function" x="12" y="57">Rotate</text></g>
+  <g class="card front" transform="translate(862 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">15</text><text class="function" x="12" y="57">Decode 1</text></g>
+  <g class="card front" transform="translate(1000 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">16</text><text class="function" x="12" y="57">Decode 2</text></g>
+  <g class="card rename" transform="translate(1138 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">20</text><text class="function" x="12" y="57">Exit IDQ</text></g>
+  <g class="card rename" transform="translate(1276 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">21</text><text class="function" x="12" y="57">RAT / alloc</text></g>
+  <g class="card rename" transform="translate(1414 145)"><rect width="126" height="74"/><text class="number" x="12" y="30">22</text><text class="function" x="12" y="57">RS operands</text></g>
+  <path class="flow" d="M1063 219V240"/>
+  <g class="card front" transform="translate(1000 244)"><rect width="126" height="40"/><text class="small" x="12" y="26">17 · BAC</text></g>
+  <text class="subtitle" x="1142" y="270">Branch side path overlaps rename.</text>
+
+  <line class="rule" x1="38" y1="320" x2="1570" y2="320"/>
+  <text class="group" x="310" y="341">READY µOPS LEAVE THE RS THROUGH DIFFERENT PORTS</text>
+
+  <text class="lane-name" x="38" y="393">Simple integer</text>
+  <text class="lane-detail" x="38" y="416">one-cycle execution</text>
+  <g class="card execute" transform="translate(310 352)"><rect width="106" height="70"/><text class="number" x="12" y="30">31</text><text class="function" x="12" y="56">Select</text></g>
+  <g class="card execute" transform="translate(425 352)"><rect width="106" height="70"/><text class="number" x="12" y="30">32</text><text class="function" x="12" y="56">Dispatch</text></g>
+  <g class="card execute" transform="translate(540 352)"><rect width="106" height="70"/><text class="number" x="12" y="30">33</text><text class="function" x="12" y="56">Execute</text></g>
+  <g class="card writeback" transform="translate(425 424)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">82</text><text class="mini-label" x="10" y="39">WB select</text></g>
+  <g class="card writeback" transform="translate(540 424)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">83</text><text class="mini-label" x="10" y="39">WB data</text></g>
+  <path class="result" d="M646 447H1564"/>
+
+  <line class="rule" x1="38" y1="484" x2="1570" y2="484"/>
+  <text class="lane-name" x="38" y="538">Multicycle</text>
+  <text class="lane-detail" x="38" y="561">multiply / FP</text>
+  <g class="card execute" transform="translate(310 497)"><rect width="106" height="70"/><text class="number" x="12" y="30">31</text><text class="function" x="12" y="56">Select</text></g>
+  <g class="card execute" transform="translate(425 497)"><rect width="106" height="70"/><text class="number" x="12" y="30">32</text><text class="function" x="12" y="56">Dispatch</text></g>
+  <g class="card execute" transform="translate(540 497)"><rect width="106" height="70"/><text class="number" x="12" y="30">33</text><text class="function" x="12" y="56">Start</text></g>
+  <g class="card execute" transform="translate(655 497)"><rect width="215" height="70"/><text class="small" x="14" y="30">Further execution</text><text class="function" x="14" y="55">unit-dependent latency</text></g>
+  <g class="card writeback" transform="translate(655 569)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">81</text><text class="mini-label" x="10" y="39">WB entry</text></g>
+  <g class="card writeback" transform="translate(770 569)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">82</text><text class="mini-label" x="10" y="39">WB select</text></g>
+  <g class="card writeback" transform="translate(885 569)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">83</text><text class="mini-label" x="10" y="39">WB data</text></g>
+  <path class="result" d="M991 592H1564"/>
+
+  <line class="rule" x1="38" y1="629" x2="1570" y2="629"/>
+  <text class="lane-name" x="38" y="683">Cache hit</text>
+  <text class="lane-detail" x="38" y="706">nonblocking load</text>
+  <g class="card execute" transform="translate(310 642)"><rect width="106" height="70"/><text class="number" x="12" y="30">31</text><text class="function" x="12" y="56">Select</text></g>
+  <g class="card execute" transform="translate(425 642)"><rect width="106" height="70"/><text class="number" x="12" y="30">32</text><text class="function" x="12" y="56">Dispatch</text></g>
+  <g class="card memory" transform="translate(540 642)"><rect width="106" height="70"/><text class="number" x="12" y="30">33</text><text class="function" x="12" y="56">AGU</text></g>
+  <g class="card memory" transform="translate(655 642)"><rect width="106" height="70"/><text class="number" x="12" y="30">42</text><text class="function" x="12" y="56">DTLB</text></g>
+  <g class="card memory" transform="translate(770 642)"><rect width="106" height="70"/><text class="number" x="12" y="30">43</text><text class="function" x="12" y="56">DCU</text></g>
+  <g class="card writeback" transform="translate(540 714)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">81</text><text class="mini-label" x="10" y="39">WB entry</text></g>
+  <g class="card writeback" transform="translate(655 714)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">82</text><text class="mini-label" x="10" y="39">WB select</text></g>
+  <g class="card writeback" transform="translate(770 714)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">83</text><text class="mini-label" x="10" y="39">WB data</text></g>
+  <path class="result" d="M876 737H1564"/>
+
+  <line class="rule" x1="38" y1="774" x2="1570" y2="774"/>
+  <text class="lane-name" x="38" y="830">Memory retry</text>
+  <text class="lane-detail" x="38" y="853">blocked in MOB</text>
+  <g class="card execute" transform="translate(310 787)"><rect width="106" height="70"/><text class="number" x="12" y="30">31</text><text class="function" x="12" y="56">Select</text></g>
+  <g class="card execute" transform="translate(425 787)"><rect width="106" height="70"/><text class="number" x="12" y="30">32</text><text class="function" x="12" y="56">Dispatch</text></g>
+  <g class="card memory" transform="translate(540 787)"><rect width="106" height="70"/><text class="number" x="12" y="30">33</text><text class="function" x="12" y="56">AGU</text></g>
+  <g class="card memory" transform="translate(655 787)"><rect width="106" height="70"/><text class="number" x="12" y="30">42</text><text class="function" x="12" y="56">DTLB</text></g>
+  <g class="card memory" transform="translate(770 787)"><rect width="106" height="70"/><text class="number" x="12" y="30">43</text><text class="function" x="12" y="56">DCU</text></g>
+  <g class="card memory" transform="translate(920 797)"><rect width="220" height="54"/><text class="small" x="15" y="34">Wait in MOB · variable</text></g>
+  <path class="flow" d="M1140 824H1190V876H294V924H309"/>
+
+  <text class="lane-detail" x="38" y="928">MOB wake + dispatch</text>
+  <g class="card memory" transform="translate(310 887)"><rect width="106" height="70"/><text class="number" x="12" y="30">40</text><text class="function" x="12" y="56">Wake</text></g>
+  <g class="card memory" transform="translate(425 887)"><rect width="106" height="70"/><text class="number" x="12" y="30">41</text><text class="function" x="12" y="56">Reissue</text></g>
+  <g class="card memory" transform="translate(540 887)"><rect width="106" height="70"/><text class="number" x="12" y="30">42</text><text class="function" x="12" y="56">DTLB</text></g>
+  <g class="card memory" transform="translate(655 887)"><rect width="106" height="70"/><text class="number" x="12" y="30">43</text><text class="function" x="12" y="56">DCU</text></g>
+  <g class="card writeback" transform="translate(425 959)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">81</text><text class="mini-label" x="10" y="39">WB entry</text></g>
+  <g class="card writeback" transform="translate(540 959)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">82</text><text class="mini-label" x="10" y="39">WB select</text></g>
+  <g class="card writeback" transform="translate(655 959)"><rect width="106" height="46"/><text class="mini-number" x="10" y="22">83</text><text class="mini-label" x="10" y="39">WB data</text></g>
+  <path class="result" d="M761 982H1564"/>
+
+  <path class="result" d="M1564 447V1044"/>
+  <text class="group" x="1340" y="1038">RESULTS IN ROB</text>
+  <path class="flow" d="M1564 1044H1140V1107H1159"/>
+  <line class="rule" x1="38" y1="1050" x2="1118" y2="1050"/>
+  <text class="lane-name" x="38" y="1110">In-order retirement</text>
+  <text class="lane-detail" x="38" y="1133">oldest completed µops commit</text>
+  <g class="card retire" transform="translate(1160 1070)"><rect width="106" height="74"/><text class="number" x="12" y="30">91</text><text class="function" x="12" y="57">ROB ptr</text></g>
+  <g class="card retire" transform="translate(1275 1070)"><rect width="106" height="74"/><text class="number" x="12" y="30">92</text><text class="function" x="12" y="57">ROB read</text></g>
+  <g class="card retire" transform="translate(1390 1070)"><rect width="106" height="74"/><text class="number" x="12" y="30">93</text><text class="function" x="12" y="57">RRF write</text></g>
+  <text class="subtitle" x="310" y="1172">Stage numbers name work in different pipelines; a µop does not visit every stage.</text>
+</svg>
