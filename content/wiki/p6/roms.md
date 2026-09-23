@@ -43,6 +43,8 @@ These constants support floating-point functions such as logarithms and trigonom
 
 The large dark array at the **bottom-right, I10–J12**, is the established MSROM location. It supplies longer microcode sequences rather than an entry for every instruction: fast-path instructions are handled by the XLAT-based decoders. Both paths produce the same micro-op format and feed the shared rename, scheduling and execution machinery.
 
+Microcode routines can share helpers using [TRANSPORTUIP and a return-address register](transportuip.md).
+
 ## A quick tour of instruction execution
 
 The broad path is **fetch → decode → rename and allocate → wait and execute → retire**, with different instructions in flight at once. **IFU** fetches **16 bytes at a time** from the instruction cache into a wide instruction buffer; boundary detection and alignment prepare the variable-length x86 instructions for **ID**. The **BTB** predicts branch targets to guide fetching before branches execute. ID's full decoder produces up to four micro-ops, while its two simple decoders produce one each; longer sequences come from MSROM. The subsequent rename/allocation path accepts **three micro-ops per clock**.

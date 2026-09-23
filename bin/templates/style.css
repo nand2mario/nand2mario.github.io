@@ -413,6 +413,10 @@ main {
     margin-bottom: 8px;
 }
 
+.wiki-content figure > p {
+    margin-bottom: 0;
+}
+
 .post-content figcaption {
     max-width: 760px;
     margin: 0 auto;
