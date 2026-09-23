@@ -71,9 +71,9 @@ branch reaches an execution unit. Other names appear with their diagrams below.
 
 <figure markdown="1">
 
-[![Original overview of the P6 pipeline](img/p6-pipeline-overview.svg)](img/p6-pipeline-overview.svg)
+[![Overview of the P6 pipeline](img/p6-pipeline-overview.svg)](img/p6-pipeline-overview.svg)
 
-<figcaption>Original diagram by nand2mario, based on the stage descriptions and block diagrams in <a href="https://patents.google.com/patent/US5721855A/en">US 5,721,855</a> and Shen and Lipasti, Chapter 7. Arrows show data flow, not fixed elapsed cycles.</figcaption>
+<figcaption>P6 pipeline overview. Aligned boxes share a cycle within each segment; RS and MOB waits have variable length.</figcaption>
 
 </figure>
 
