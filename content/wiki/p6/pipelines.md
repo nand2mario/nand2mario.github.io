@@ -49,28 +49,23 @@ The main blocks are the instruction fetch unit (IFU), instruction decoder
 target buffer (BTB) and branch address calculator (BAC) steer fetch before a
 branch reaches an execution unit. Other names appear with their diagrams below.
 
-| Stage | Alias | Work |
+| Stage | Name | Work |
 | --- | --- | --- |
-| 11 | IF1 | Next-IP: pick the linear fetch address from sequential, BTB, BAC, JEU |
-| 12 | IF2 / BTB0 | Start I-cache, ISB, IVC, ITLB, and **start** the two-cycle BTB |
-| 13 | IFU1 / BTB1 | Continue cache read; ILD marks; BTB prediction marks arrive |
-| 14 | IFU2 | Complete the fetch and rotate a 16-byte marked window into the ID input buffer |
-| 15 | ID0 | Steer marked bytes; XLAT PLA + field extract into MAR; **start MSROM** |
-| 16 | ID1 | Alias MUX → Auops; write the ID output queue |
-| 17 | ID/BAC | BAC validate / static predict / RSB write; aligns with 21 |
-| 20 | ID queue | Dequeue up to three µops toward RAT/ALLOC (Chapter 7 Fig. 7.4 only) |
+| 11 | NextIP | Pick the linear fetch address from sequential, BTB, BAC, JEU |
+| 12 | ICache1 (and BTB start) | Start I-cache, ISB, IVC, ITLB, and the two-cycle BTB |
+| 13 | ICache2/ILD (and BTB complete) | Continue cache read; mark instruction boundaries; receive BTB prediction |
+| 14 | ICache3/Rotate (and write the IFBR) | Rotate a 16-byte marked window into the ID input buffer |
+| 15 | ID0 — steer, XLAT, start MSROM | Steer bytes; XLAT PLA emits Cuops; field extractor supplies MAR fields |
+| 16 | ID1 — alias mux and ID output queue | Resolve aliases into Auops and enqueue them |
+| 17 | Branch decode | BAC validation, static prediction and RSB write; aligns with 21 |
+| 20 | Exit ID queue | Dequeue up to three µops toward RAT/ALLOC (Chapter 7 Fig. 7.4 only) |
 | 21 | RAT / ALLOC / RS1 / ROB1 | Rename, allocate ROB/RS/MOB, write RS PSrc/control (`21L`) |
 | 22 | ROB read / RS2 | Read ROB/RRF sources; write RS data (`22L`); in-order → OoO |
-| 31 | RS ready/schedule | Test data and resource readiness; choose dispatch candidates (`31H/31L`) |
-| 32 | RS dispatch | Read selected RS entries, bypass late operands and hand µops to execution interfaces (`32H/32L`) |
-| 33 | Simple execution / AGU | One-cycle integer work and address generation; longer operations begin here |
-| 40–41 | MOB retry | Wake a blocked load, then re-dispatch it to the DCU; bypass on an unblocked first access |
-| 42–43 | DCU hit path | Parallel DTLB/tag work and cache access; return load data or complete a cache write |
-| 81–82 | Writeback preparation | Class-dependent result/bus scheduling and arbitration; these labels overlap execution/memory stages |
-| 83 | Result writeback | Broadcast result, flags or event and PDst to RS/ROB; `83` coincides with `33` for a simple integer µop |
-| 91 | Retirement pointer feedback | Fig. 7.4's pointer-write label, not an extra required clock before every retirement |
-| 92 | ROB retirement read | Read oldest candidates and determine their readiness (`92H/92L`) |
-| 93 | Event/IP and architectural write | Detect events, calculate IP, and transfer eligible results to RRF (`93H/93L`) |
+| 31–32 | reservation-station schedule and dispatch | Select ready µops (`31H/31L`), then read/bypass operands and dispatch (`32H/32L`) |
+| 33 and later | execution | Execute simple integer and AGU work; multicycle operations continue |
+| 40–43 | memory and blocked-load retry | Wake and re-dispatch blocked loads (`40–41`); access DTLB and DCU (`42–43`) |
+| 81–83 | result-bus scheduling and writeback | Arbitrate result buses (`81–82`); broadcast PDst, data, flags or events (`83`) |
+| 91–93 | in-order retirement | Feed back the pointer (`91`), read/qualify oldest entries (`92`), then handle events/IP and write RRF (`93`) |
 
 ## Figure 7.4 — the whole pipeline
 
