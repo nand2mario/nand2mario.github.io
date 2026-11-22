@@ -210,10 +210,10 @@ What about `ADC EAX, EBX` (Add with Carry), which needs to **read** the architec
 ```asm
 ; Authored 2-uop XLAT flow in p6.c (matching AP-526 & MSROM @ 2518-2519): ADC @REG_ddd, @REG_sss
 [BOM] TMP0     := MOVEMERGEFLGS(ArithFLAGS, @REG_ddd, U2.21)        ; attach EFLAGS.CF onto @REG_ddd's value
-[EOM] @REG_ddd := ALU.MGRP0(TMP0, @REG_sss, OA_OP_DSZ, FLAGS_ALL)   ; ADC consumes TMP0's CF & updates EFLAGS
+[EOM] @REG_ddd := ALU.@MGRP0.@DSZ(TMP0, @REG_sss, FLAGS_ALL)        ; ADC consumes TMP0's CF & updates EFLAGS
 ```
 
-*(Don't worry yet about template names like `@REG_ddd`, `@REG_sss`, `EAX_OPSZ`, or `OA_DSZ` in these listings—for now just read them as the instruction's decoded registers and operand size; Section 4 explains them.)*
+*(Don't worry yet about template markers like `@REG_ddd`, `@REG_sss`, `EAX_OPSZ`, or `.@DSZ` in these listings—for now just read `@` as "substituted from the decoded x86 instruction"; Section 4 explains them.)*
 
 ### 2.3 Branchless Microcode Idioms: `CMPXCHG` Without a Jump
 
@@ -226,7 +226,7 @@ In C or assembly, you might reach for an `if`/`else` jump. In P6's `MSROM` (<cod
 ```asm
 ; MSROM disassembly for CMPXCHG @REG_sss, @REG_ddd (MSROM @ 2651)
 macro_cmpxchg_reg:
-2651: TMP1     := SUB.DSZ?(EAX_OPSZ, @REG_sss, OA_DSZ, FLAGS_ALL) ; Compare EAX - dest; publish EFLAGS & set TMP1's ZF
+2651: TMP1     := SUB.@DSZ?(EAX_OPSZ, @REG_sss, FLAGS_ALL)        ; Compare EAX - dest; publish EFLAGS & set TMP1's ZF
 2652: TMP0     := MERGE(TMP1, @REG_ddd)                           ; Pair TMP1's flags (ZF) with replacement value @REG_ddd
 2654: @REG_sss := CMOV.Z(TMP0, @REG_sss)                          ; If ZF=1, dest := @REG_ddd; else keep old @REG_sss!
 2655: TMP2     := MERGE(TMP1, EAX_OPSZ)                           ; Pair TMP1's ZF with current EAX (handles dest == EAX!)
@@ -321,7 +321,7 @@ sub_33E5:                                       ; Shared by 0F08, 1850, 18C8, 21
 ...
 @macro_in_permission_return:
 0F09: STRD.DSZ32(#0, #0)                        ; Dummy store-data companion paired with PORTIN in the MOB
-0F0A: [EOM] EAX_OPSZ := PORTIN.ASZ16.SC1.DSZ?(ZERO_OFFSET, TMP1, SEG.1, OA_DSZ)
+0F0A: [EOM] EAX_OPSZ := PORTIN.ASZ16.SC1.@DSZ?(ZERO_OFFSET, TMP1, SEG.1)
 ```
 
 Need a nested subroutine call inside another subroutine? An outer routine simply saves its return `µIP` in `TMPE` while the inner call uses `TMP8`—renamed independently in the `ROB` with zero hardware stack-depth limits.
@@ -330,11 +330,11 @@ Need a nested subroutine call inside another subroutine? An outer routine simply
 
 ## 4. Generic Programming with Micro-Ops: Macro Aliasing
 
-Look back at the microcode excerpts we just read (`CMPXCHG` at <code class="ua">2651</code> and `IN` at <code class="ua">0F0A</code>), and notice the strange operand and width names:
+Look back at the microcode excerpts we just read (`CMPXCHG` at <code class="ua">2651</code> and `IN` at <code class="ua">0F0A</code>), and notice the `@`-marked operands and opcode modifiers:
 
 * `@REG_sss` and `@REG_ddd` instead of `EBX` or `ECX`
 * `EAX_OPSZ` instead of `AL`, `AX`, or `EAX`
-* `SUB.DSZ?(..., OA_DSZ)` instead of `SUB.DSZ8`, `SUB.DSZ16`, or `SUB.DSZ32`
+* `SUB.@DSZ?(...)` and `PORTIN.ASZ16.SC1.@DSZ?(...)` instead of fixed `DSZ8`, `DSZ16`, or `DSZ32`
 
 If you have ever written a generic function in C++ (`template <typename T>`) or Rust (`fn cmpxchg<T>(...)`) so you don't have to copy-paste the same algorithm for `u8`, `u16`, and `u32`, you already understand what P6's microcode engineers built in silicon.
 
@@ -389,7 +389,7 @@ x86 actually has three independent width settings. Suppose a 32-bit protected-mo
 
 Now remove `67h` (`66 FF 33`, `PUSH WORD PTR [EBX]`): `OPSZ` is 16-bit, `ASZ` is **32-bit** (`[EBX]`), and `SASZ` is still **16-bit** (`SP`).
 
-P6 keeps `OPSZ`, `ASZ`, and `SASZ` as **three completely independent width wires** in `MAR` (verified across all eight raw data-size codes on `0619h` hardware). Setting the `OpAlias` data-size bit (<code class="cf">OA[2]</code> `= 1`, written `OA_DSZ`) or address-size bit (<code class="cf">OA[3]</code> `= 1`, `OA_ASZ`) lets each individual `Cuop` pick *which* of the three contexts (`OPSZ`, `ASZ`, or `SASZ`) governs its data width and address width.
+P6 keeps `OPSZ`, `ASZ`, and `SASZ` as **three completely independent width wires** in `MAR` (verified across all eight raw data-size codes on `0619h` hardware). Setting the `OpAlias` data-size bit (<code class="cf">OA[2]</code> `= 1`, marked with `@` directly on the size modifier such as `.@DSZ?` / `.@DSZ16`, or trailing `.@DSZ`) or address-size bit (<code class="cf">OA[3]</code> `= 1`, marked `.@ASZ32` / `.@ASZ16` or `.@ASZ`) lets each individual `Cuop` pick *which* of the three contexts (`OPSZ`, `ASZ`, or `SASZ`) governs its data width and address width while keeping the raw template bits visible.
 
 ### 4.3 Dimension 2: Logical Register Aliases (<code class="cf">Selector[7:6]</code>)
 
@@ -408,15 +408,15 @@ Look how much work `ESP_SASZ` and `EAX_OPSZ` save: `PUSH` templates simply addre
 
 P6 doesn't just alias registers and widths—it can **alias the opcode itself**:
 
-* **`OA_OP` (<code class="cf">OA[1]</code> `= 1`):** Written `ALU.MGRP0` in the disassembly, this replaces base opcode [`MOVE`](https://martin.hinner.info/p6microcode/wiki/MOVE) with the macroinstruction's decoded arithmetic operation (`ADD`, `OR`, `ADC`, `SBB`, `AND`, `SUB`, `XOR`, `INC`, `DEC`, or `BTS`/`BTR`/`BTC`). That means `ADD r, [m]`, `SUB r, [m]`, `AND r, [m]`, `OR r, [m]`, and `XOR r, [m]` across 8-, 16-, and 32-bit sizes all share **one** 2-`Cuop` `XLAT` template (shown here from `p6.c`'s authored `XLAT` table, matching AP-526's 2-`µop` count):
+* **`OA_OP` (<code class="cf">OA[1]</code> `= 1`, `.@MGRP0` / `.@OP`):** Written `ALU.@MGRP0.@DSZ` in the disassembly (combining <code class="cf">OA[1]</code> + <code class="cf">OA[2]</code>, raw <code class="cf">OA</code> `= 6`), this replaces base opcode [`MOVE`](https://martin.hinner.info/p6microcode/wiki/MOVE) with the macroinstruction's decoded arithmetic operation (`ADD`, `OR`, `ADC`, `SBB`, `AND`, `SUB`, `XOR`, `INC`, `DEC`, or `BTS`/`BTR`/`BTC`). That means `ADD r, [m]`, `SUB r, [m]`, `AND r, [m]`, `OR r, [m]`, and `XOR r, [m]` across 8-, 16-, and 32-bit sizes all share **one** 2-`Cuop` `XLAT` template (shown here from `p6.c`'s authored `XLAT` table, matching AP-526's 2-`µop` count):
 
 ```asm
 ; Authored XLAT Group 002 in p6.c — one 2-Cuop template for 8/16/32-bit ADD/SUB/AND/OR/XOR reg, [mem]
-[BOM] TMP0     := LOAD(@REG_mem, M_DISP, OA_SCALE_DSZ_ASZ, U1.1)
-[EOM] @REG_ddd := ALU.MGRP0(@REG_ddd, TMP0, OA_OP_DSZ, FLAGS_ALL)
+[BOM] TMP0     := LOAD.@ASZ32.@SC1.@DSZ?.0(@REG_mem, M_DISP, U1.1)
+[EOM] @REG_ddd := ALU.@MGRP0.@DSZ(@REG_ddd, TMP0, FLAGS_ALL)
 ```
 
-* **`OA_SCALE` (<code class="cf">OA[0]</code> `= 1`):** Substitutes address scale factors—scaling offsets by operand byte count (`×2` or `×4` in measured `SC2`/`SC8` forms) and pairing with decoded SIB index addressing (`×1, ×2, ×4, ×8`) on memory/`LEA` templates (often combined with `OA_DSZ` + `OA_ASZ` as `OA_SCALE_DSZ_ASZ`, raw <code class="cf">OA</code> `= 0Dh`).
+* **`OA_SCALE` (<code class="cf">OA[0]</code> `= 1`, `.@SC1`..`.@SC8` / `.@SC`):** Substitutes address scale factors—scaling offsets by operand byte count (`×2` or `×4` in measured `@SC2`/`@SC8` forms) and pairing with decoded SIB index addressing (`×1, ×2, ×4, ×8`) on memory/`LEA` templates (often combined with <code class="cf">OA[3:2]</code> as `.@ASZ32.@SC1.@DSZ?` or `.@ASZ.@SC.@DSZ`, raw <code class="cf">OA</code> `= 0Dh`).
 * **<code class="cf">U1</code> `= 1` (`SEG_ALIAS`):** Replaces <code class="cf">LSeg</code> with the instruction's effective segment—automatically selecting `SS` for `[EBP]`/`[ESP]` base addressing, `DS` otherwise, or `ES`/`CS`/`SS`/`DS`/`FS`/`GS` when a segment-override prefix is present.
 
 ### 4.5 Dimension 4: Immediates and the 64-Bit Constant ROM (`CROM`)
@@ -452,21 +452,21 @@ macro_lock_inc_dec:
 12A5: [BOM] MS_ENTRY(INST.014, INST.014)                             ; MSROM entry marker starting macroinstruction
 12A6: STRD.DSZ32(ZERO_VAL, ZERO_VAL)                                 ; Dummy store-data companion for MOB_FENCE
 12A8: MOB_FENCE(ZERO_OFFSET, ZERO_OFFSET)                            ; Drain prior stores before bus/cache lock
-12A9: TMP0 := XLOAD.LOCK(@REG_mem, M_DISP, OA_SCALE_DSZ_ASZ, U1.1)   ; Locked load into TMP0
-12AA: TMP0 := ALU.MGRP0(TMP0, #1, OA_OP_DSZ, U2.1B)                  ; INC or DEC by 1; update PF..OF, keep CF
+12A9: TMP0 := XLOAD.LOCK.@ASZ.@SC.@DSZ(@REG_mem, M_DISP, U1.1)       ; Locked load into TMP0
+12AA: TMP0 := ALU.@MGRP0.@DSZ(TMP0, #1, U2.1B)                       ; INC or DEC by 1; update PF..OF, keep CF
 12AC: U_JMP.NT(2510)                                                 ; Jump to shared LOCK store tail (note: 12AB doesn't exist)
 ...
 helper_lock_rmw_store_tail:                                          ; Shared by 6 different LOCK instruction families
 2510: STRD.DSZ32(ZERO_VAL, TMP0)
-2511: [EOM] STA.LOCK(@REG_mem, M_DISP, OA_SCALE_DSZ_ASZ, U1.1)       ; Write back & release lock at [EOM]
+2511: [EOM] STA.LOCK.@ASZ.@SC.@DSZ(@REG_mem, M_DISP, U1.1)           ; Write back & release lock at [EOM]
 ```
 
 Feed two completely different x86 byte sequences into those **exact same eight `Cuop` words**:
 
 1. **32-bit mode (`CS.D = 1`): `F0 FE 44 B3 10` → `lock inc byte ptr [ebx + esi*4 + 0x10]`**
-    * At <code class="ua">12A9</code>, `@REG_mem` + `OA_SCALE_DSZ_ASZ` + <code class="cf">U1.1</code> + `M_DISP` expands to an **8-bit** locked load from **`DS:[EBX + ESI*4 + 0x10]`**.
-    * At <code class="ua">12AA</code>, `ALU.MGRP0` with `OA_OP_DSZ` becomes **`ADD.DSZ8(TMP0, 1)`**, and <code class="cf">U2.1B</code> updates `PF, AF, ZF, SF, OF` from that 8-bit sum while leaving **`EFLAGS.CF` untouched**.
-    * After <code class="ua">12AC</code> jumps to <code class="ua">2510</code> (skipping non-existent triad slot <code class="ua">12AB</code>), `STRD` + `[EOM] STA.LOCK` writes the updated byte back to `DS:[EBX + ESI*4 + 0x10]`.
+    * At <code class="ua">12A9</code>, `.@ASZ.@SC.@DSZ` + `@REG_mem` + <code class="cf">U1.1</code> + `M_DISP` expands to an **8-bit** locked load from **`DS:[EBX + ESI*4 + 0x10]`**.
+    * At <code class="ua">12AA</code>, `ALU.@MGRP0.@DSZ` becomes **`ADD.DSZ8(TMP0, 1)`**, and <code class="cf">U2.1B</code> updates `PF, AF, ZF, SF, OF` from that 8-bit sum while leaving **`EFLAGS.CF` untouched**.
+    * After <code class="ua">12AC</code> jumps to <code class="ua">2510</code> (skipping non-existent triad slot <code class="ua">12AB</code>), `STRD` + `[EOM] STA.LOCK.@ASZ.@SC.@DSZ` writes the updated byte back to `DS:[EBX + ESI*4 + 0x10]`.
 2. **16-bit mode (`CS.D = 0`) with `ES:` and `66h` prefixes: `26 66 F0 FF 0F` → `lock dec dword ptr es:[bx]`**
     * Without changing a single bit in `MSROM`, <code class="ua">12A9</code> now expands to a **32-bit** locked load (`CS.D ^ 66h = 1`) using a **16-bit** `[BX + 0]` effective address (`CS.D ^ 67h = 0`) in segment **`ES:`** (<code class="cf">U1.1</code>).
     * <code class="ua">12AA</code> becomes **`SUB.DSZ32(TMP0, 1)`**, again preserving `CF` via <code class="cf">U2.1B</code>, and <code class="ua">2511</code> writes all 4 bytes back to `ES:[BX]`.
@@ -480,7 +480,7 @@ Stepping back, we can see why P6's front end was such a clean break from the 386
 * **Uniform internal operations:** Variable-length x86 instructions crack into fixed-format `µop`s via fast 4-1-1 `XLAT` decoders (`1–4 µop`s) or 3-slot `MSROM` triads, bracketed by `[BOM]` and `[EOM]`.
 * **Two-tier flags (patents `US5574942` & `US6047369`):** Storing per-register flags alongside every register's value lets microcode compute, branch (`U_JCC`), and conditionally move (`MERGE`/`CMOV`) without touching architectural `EFLAGS`, while <code class="cf">U2</code> masks publish exact x86 flag subsets (`INC`/`DEC` vs. `ADD`/`SUB`) on demand.
 * **Clean control-flow separation:** Macro-branches move `EIP` between x86 instructions, while `U_JMP`, `U_JCC`, and register-linked `TRANSPORTUIP` / `U_JMP_INDIR` subroutines navigate `MSROM` without a hardware microcode return stack.
-* **Macro Aliasing (`MAR`):** Parameterizing registers (`@REG_ddd`, `@REG_mem`, `ESP_SASZ`), orthogonal widths (`OPSZ`, `ASZ`, `SASZ`), operations (`ALU.MGRP0`), segments (<code class="cf">U1</code>), and `CROM` constants lets compact `Cuop` templates cover the entire IA-32 encoding matrix.
+* **Macro Aliasing (`MAR`):** Parameterizing registers (`@REG_ddd`, `@REG_mem`, `ESP_SASZ`), orthogonal widths (`OPSZ`, `ASZ`, `SASZ`), operations (`ALU.@MGRP0.@DSZ`), segments (<code class="cf">U1</code>), and `CROM` constants lets compact `Cuop` templates cover the entire IA-32 encoding matrix.
 
 This long post only covers the basics of P6's `µop` layer—we haven't yet touched deeper topics like protected-mode segmentation, paging, events, or the out-of-order backend itself. All of that front-end complexity paid off handsomely in performance. Where an i486 averaged roughly 0.5 instructions per clock on typical integer code (~2 CPI) and the dual-pipe in-order Pentium stalled whenever instructions failed to pair or missed in L1, P6's 3-wide out-of-order engine delivered roughly **40% more integer work per clock than Pentium** (~1.5 vs. ~1.1 SPECint92/MHz). Even better, decoupling x86 decode into a deeper 14-stage `µop` pipeline scaled remarkably well in clock frequency: fabricated on the **exact same 0.6 µm BiCMOS process** where Pentium (`P54C`) topped out at **100 MHz**, the first production Pentium Pro shipped at **150 MHz** (6.08 SPECint95, nearly double a Pentium-100) and immediately reached **200 MHz** on 0.35 µm. Over the next decade, direct P6 cores scaled past **1.4 GHz** in Pentium III (*Tualatin*) and **2.26 GHz** in Pentium M (*Dothan*).
 
