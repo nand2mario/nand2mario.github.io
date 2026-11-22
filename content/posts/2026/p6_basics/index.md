@@ -484,6 +484,8 @@ Stepping back, we can see why P6's front end was such a clean break from the 386
 
 This long post only covers the basics of P6's `µop` layer—we haven't yet touched deeper topics like protected-mode segmentation, paging, events, or the out-of-order backend itself. All of that front-end complexity paid off handsomely in performance. Where an i486 averaged roughly 0.5 instructions per clock on typical integer code (~2 CPI) and the dual-pipe in-order Pentium stalled whenever instructions failed to pair or missed in L1, P6's 3-wide out-of-order engine delivered roughly **40% more integer work per clock than Pentium** (~1.5 vs. ~1.1 SPECint92/MHz). Even better, decoupling x86 decode into a deeper 14-stage `µop` pipeline scaled remarkably well in clock frequency: fabricated on the **exact same 0.6 µm BiCMOS process** where Pentium (`P54C`) topped out at **100 MHz**, the first production Pentium Pro shipped at **150 MHz** (6.08 SPECint95, nearly double a Pentium-100) and immediately reached **200 MHz** on 0.35 µm. Over the next decade, direct P6 cores scaled past **1.4 GHz** in Pentium III (*Tualatin*) and **2.26 GHz** in Pentium M (*Dothan*).
 
+*Special thanks to Rudolf Marek (`ruik`) and Martin Hinner for reviewing this post, sharing their P6 microcode tools and research, and inspiring the inline `@`-modifier syntax used in the listings above.*
+
 ---
 
 ## References
