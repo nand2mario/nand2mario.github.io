@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="365" viewBox="0 0 900 365">
+  <rect x="0" y="0" width="900" height="365" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2C7A7B"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2B6CB0"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#B7791F"/>
+    </marker>
+  </defs>
+
+  <!-- Panel A -->
+  <rect x="20" y="18" width="424" height="330" rx="7" fill="#FAFBFD" stroke="#2B6CB0" stroke-width="1.3"/>
+  <text x="232" y="40" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="12" font-weight="bold" fill="#1B4965" text-anchor="middle">A. Macro Control Flow (EIP) vs. Micro Control Flow (uIP)</text>
+
+  <rect x="42" y="64" width="380" height="114" rx="5" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.4"/>
+  <text x="232" y="85" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">1. Macro-Branches (Between x86 Instructions)</text>
+  <text x="232" y="104" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.6" fill="#1E242B" text-anchor="middle">JMP, Jcc, LOOP, CALL, RET</text>
+  <text x="232" y="123" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">Evaluate architectural EFLAGS (or ECX) and</text>
+  <text x="232" y="139" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">redirect architectural EIP to a new x86 address</text>
+  <text x="232" y="159" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.6" font-weight="bold" fill="#2B6CB0" text-anchor="middle">Ends at [EOM] -&gt; fetches next x86 instruction at target EIP</text>
+
+  <rect x="42" y="204" width="380" height="126" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.4"/>
+  <text x="232" y="225" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">2. Micro-Branches (Inside One x86 Instruction)</text>
+  <text x="232" y="244" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.6" fill="#1E242B" text-anchor="middle">U_JMP, U_JCC.&lt;cc&gt;(TMPx), U_JMP_INDIR, MISJMP</text>
+  <text x="232" y="263" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">Test per-register flags on TMPx (or MS loop counter)</text>
+  <text x="232" y="279" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">and steer the 14-bit MSROM uIP (0C00..37FE)</text>
+  <text x="232" y="299" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.6" font-weight="bold" fill="#B7791F" text-anchor="middle">Architectural EIP &amp; EFLAGS stay completely unchanged!</text>
+  <text x="232" y="316" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.2" fill="#52606D" text-anchor="middle">Target packed in Cuop: uIP = (LSrc2 &lt;&lt; 9) | Immediate</text>
+
+  <!-- Panel B -->
+  <rect x="464" y="18" width="416" height="330" rx="7" fill="#FFFCF7" stroke="#B7791F" stroke-width="1.3"/>
+  <text x="672" y="40" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="12" font-weight="bold" fill="#B7791F" text-anchor="middle">B. Stackless Micro-Subroutines (TRANSPORTUIP)</text>
+
+  <rect x="486" y="62" width="372" height="78" rx="5" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="672" y="84" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Caller: macro_in (MSROM @ 0F06)</text>
+  <text x="672" y="104" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">0F06: TMP0 := TRANSPORTUIP(0F09) ; link uIP</text>
+  <text x="672" y="121" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">0F08: U_JMP.NT(33E5)             ; call sub</text>
+
+  <rect x="486" y="168" width="372" height="82" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="672" y="190" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Shared Helper: sub_33E5 (I/O Permission Check)</text>
+  <text x="672" y="209" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.4" fill="#52606D" text-anchor="middle">33E5..3401: check CPL, IOPL &amp; TSS bitmap</text>
+  <text x="672" y="227" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">3402: U_JMP_INDIR.NT(ZERO_VAL, TMP0)</text>
+  <text x="672" y="242" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.1" fill="#B7791F" text-anchor="middle">(Shared by IN, OUT, INS, OUTS — 6 callers!)</text>
+
+  <rect x="486" y="276" width="372" height="56" rx="5" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.5"/>
+  <text x="672" y="297" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Caller Resumption (@ 0F09)</text>
+  <text x="672" y="316" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">0F09: STRD(0,0) ; 0F0A: [EOM] EAX_OPSZ := PORTIN</text>
+
+  <line x1="615" y1="140" x2="615" y2="168" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+  <text x="582" y="158" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#B7791F" text-anchor="end">jump 33E5</text>
+
+  <line x1="728" y1="250" x2="728" y2="276" stroke="#2C7A7B" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="762" y="267" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#2C7A7B" text-anchor="start">jump via TMP0</text>
+</svg>

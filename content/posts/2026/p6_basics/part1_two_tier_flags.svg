@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="320" viewBox="0 0 880 320">
+  <rect x="0" y="0" width="880" height="320" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#B7791F"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#C53030"/>
+    </marker>
+  </defs>
+
+  <text x="440" y="24" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="13" font-weight="bold" fill="#1B4965" text-anchor="middle">P6 Two-Tier Flag Model: Per-Register Flags (US5574942) vs. Architectural EFLAGS</text>
+
+  <rect x="28" y="108" width="182" height="108" rx="6" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.5"/>
+  <text x="119" y="133" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="12" font-weight="bold" fill="#1E242B" text-anchor="middle">ALU / Shift / Bit uop</text>
+  <text x="119" y="152" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.2" fill="#52606D" text-anchor="middle">Computes numeric result</text>
+  <text x="119" y="168" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.2" fill="#52606D" text-anchor="middle">+ 6 candidate flags</text>
+  <text x="119" y="184" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">(CF, PF, AF, ZF, SF, OF)</text>
+  <text x="119" y="201" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#2C7A7B" text-anchor="middle">on every operation</text>
+
+  <!-- Tier 1: Per-Register Flags -->
+  <rect x="280" y="42" width="268" height="92" rx="6" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="414" y="63" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Tier 1: Per-Register Flags (US5574942)</text>
+  <text x="414" y="81" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">Stored alongside data in LDest (e.g. TMP9)</text>
+  <text x="414" y="97" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">Always produced, even when U2 = 0</text>
+  <text x="414" y="114" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" font-weight="bold" fill="#B7791F" text-anchor="middle">Architectural EFLAGS untouched!</text>
+
+  <rect x="606" y="42" width="246" height="92" rx="6" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="729" y="63" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Microcode Flag Consumers</text>
+  <text x="729" y="82" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#1E242B" text-anchor="middle">U_JCC.&lt;cc&gt;(TMP1, target)</text>
+  <text x="729" y="98" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#1E242B" text-anchor="middle">MERGE / CMOV.&lt;cc&gt;(TMP0, alt)</text>
+  <text x="729" y="114" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#1E242B" text-anchor="middle">ADC / SBC carry-in from src1</text>
+
+  <!-- Tier 2: Masked Architectural Publication -->
+  <rect x="280" y="176" width="268" height="118" rx="6" fill="#FDECEC" stroke="#C53030" stroke-width="1.5"/>
+  <text x="414" y="198" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Tier 2: U2[4:0] FLAGS_PROFILE</text>
+  <text x="414" y="218" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#52606D" text-anchor="middle">00: FLAGS_NONE  (mask 000h)</text>
+  <text x="414" y="234" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#52606D" text-anchor="middle">09: FLAGS_CF    (mask 001h, BTS)</text>
+  <text x="414" y="250" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#52606D" text-anchor="middle">19: FLAGS_CF_OF (mask 801h, MUL)</text>
+  <text x="414" y="266" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#52606D" text-anchor="middle">1B: no-CF mask  (mask 8D4h, INC/DEC)</text>
+  <text x="414" y="282" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#52606D" text-anchor="middle">0F: FLAGS_ALL   (mask 8D5h, ADD/SUB)</text>
+
+  <rect x="606" y="176" width="246" height="118" rx="6" fill="#FDECEC" stroke="#C53030" stroke-width="1.5"/>
+  <text x="729" y="198" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Architectural EFLAGS</text>
+  <text x="729" y="220" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">Selective bitwise merge:</text>
+  <text x="729" y="240" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">EFLAGS' = (EFLAGS &amp; ~mask)</text>
+  <text x="729" y="256" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">        | (computed &amp; mask)</text>
+  <text x="729" y="278" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#C53030" text-anchor="middle">Read by x86 Jcc, CMOVcc, ADC, PUSHF</text>
+
+  <path d="M 210,138 L 245,138 L 245,88 L 280,88" fill="none" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+  <line x1="548" y1="88" x2="606" y2="88" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+
+  <path d="M 210,186 L 245,186 L 245,235 L 280,235" fill="none" stroke="#C53030" stroke-width="1.6" marker-end="url(#arrow-red)"/>
+  <line x1="548" y1="235" x2="606" y2="235" stroke="#C53030" stroke-width="1.6" marker-end="url(#arrow-red)"/>
+</svg>

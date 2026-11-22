@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="428" viewBox="0 0 920 428">
+  <rect x="0" y="0" width="920" height="428" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#334E68"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#B7791F"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#6B46C1"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2C7A7B"/>
+    </marker>
+  </defs>
+
+  <text x="460" y="22" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="13.2" font-weight="bold" fill="#1B4965" text-anchor="middle">Translating Variable-Length x86 Instructions into P6 Micro-Ops</text>
+
+  <!-- Column 1: Fetch & Instruction Steering -->
+  <rect x="20" y="104" width="132" height="192" rx="5" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="86" y="132" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">x86 Byte</text>
+  <text x="86" y="148" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Steering (ISB)</text>
+  <text x="86" y="168" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">16-byte fetch block</text>
+  <text x="86" y="186" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9" fill="#1E242B" text-anchor="middle">03 44 8B 08|49|75</text>
+  <text x="86" y="206" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">Length Decoder</text>
+  <text x="86" y="221" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">marks 1..15B bounds</text>
+  <text x="86" y="240" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">Aligns up to 3</text>
+  <text x="86" y="255" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">IA-32 insts/clk</text>
+
+  <!-- Column 2: Asymmetric 4-1-1 Decoders + Entry PLA + MAR -->
+  <rect x="188" y="62" width="178" height="64" rx="5" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="277" y="83" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Decoder 0 (General)</text>
+  <text x="277" y="100" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">XLAT4 PLA: 1-4 Cuops</text>
+  <text x="277" y="115" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">Load-op &amp; RMW forms</text>
+
+  <rect x="188" y="138" width="178" height="50" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="277" y="158" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Entry-Point PLA (D0)</text>
+  <text x="277" y="176" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10" fill="#52606D" text-anchor="middle">14-bit MSROM entry uIP</text>
+
+  <rect x="188" y="236" width="178" height="52" rx="5" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.4"/>
+  <text x="277" y="257" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Decoder 1 (Simple)</text>
+  <text x="277" y="275" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">XLAT1 PLA: 1 Cuop (&lt;=7B)</text>
+
+  <rect x="188" y="298" width="178" height="52" rx="5" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.4"/>
+  <text x="277" y="319" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Decoder 2 (Simple)</text>
+  <text x="277" y="337" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">XLAT1 PLA: 1 Cuop (&lt;=7B)</text>
+
+  <rect x="188" y="362" width="178" height="52" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.5"/>
+  <text x="277" y="381" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Field Extractor &amp; MAR</text>
+  <text x="277" y="397" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.6" fill="#52606D" text-anchor="middle">Opc/ModR/M/SIB/Disp/Imm</text>
+  <text x="277" y="410" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.6" fill="#52606D" text-anchor="middle">CS.D, SS.B, 66h/67h/Seg</text>
+
+  <!-- Column 3: Microcode Sequencer & MSROM + Companion ROMs -->
+  <rect x="404" y="72" width="192" height="106" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="500" y="92" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Microcode Sequencer</text>
+  <text x="500" y="108" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">&amp; MSROM (&gt;4 uops)</text>
+  <text x="500" y="126" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">4,096 rows x 3 Cuop slots</text>
+  <text x="500" y="141" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">(12,288 x 72-bit Cuops)</text>
+  <text x="500" y="156" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">uIP = (row&lt;&lt;2) | slot</text>
+  <text x="500" y="170" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#B7791F" text-anchor="middle">+ On-die Patch SRAM</text>
+
+  <rect x="404" y="190" width="192" height="56" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="500" y="208" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11" font-weight="bold" fill="#1E242B" text-anchor="middle">Companion Constant ROMs</text>
+  <text x="500" y="225" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">CROM: 512 x 64b integer</text>
+  <text x="500" y="239" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">FPROM: 86b x87 constants</text>
+
+  <!-- Column 4: Source & Alias Muxes -->
+  <rect x="632" y="84" width="110" height="200" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.5"/>
+  <text x="687" y="132" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Source &amp;</text>
+  <text x="687" y="148" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Alias Muxes</text>
+  <text x="687" y="172" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">Select XLAT</text>
+  <text x="687" y="186" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">vs. MSROM</text>
+  <text x="687" y="208" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">Apply MAR</text>
+  <text x="687" y="222" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#52606D" text-anchor="middle">aliases</text>
+  <text x="687" y="246" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.4" font-weight="bold" fill="#6B46C1" text-anchor="middle">Cuop -&gt; Auop</text>
+
+  <!-- Column 5: Concrete uop Stream -->
+  <rect x="768" y="84" width="134" height="200" rx="5" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.5"/>
+  <text x="835" y="108" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Concrete uop</text>
+  <text x="835" y="124" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Stream (Auop)</text>
+  <text x="835" y="142" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#2C7A7B" text-anchor="middle">Framed [BOM]..[EOM]</text>
+
+  <rect x="777" y="152" width="116" height="68" rx="4" fill="#FFFFFF" stroke="#2C7A7B" stroke-width="1.1"/>
+  <text x="835" y="168" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="8.5" fill="#1E242B" text-anchor="middle">[BOM] LOAD-&gt;TMP0</text>
+  <text x="835" y="182" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="8.5" fill="#1E242B" text-anchor="middle">[EOM] ADD -&gt;EAX</text>
+  <text x="835" y="198" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="8.5" fill="#1E242B" text-anchor="middle">[B.E] SUB -&gt;ECX</text>
+  <text x="835" y="212" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="8.5" fill="#1E242B" text-anchor="middle">[B.E] JNZ .loop</text>
+
+  <text x="835" y="242" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.2" fill="#52606D" text-anchor="middle">Sequential: p6.c</text>
+  <text x="835" y="260" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.2" font-weight="bold" fill="#2C7A7B" text-anchor="middle">OoO: RAT / RS / ROB</text>
+
+  <!-- Clean, non-overlapping routing channels -->
+  <line x1="152" y1="136" x2="188" y2="93" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="152" y1="170" x2="188" y2="163" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="152" y1="232" x2="188" y2="262" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="152" y1="266" x2="188" y2="324" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M 86,296 L 86,388 L 188,388" fill="none" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+
+  <!-- D0 XLAT4 top channel above MSROM -->
+  <path d="M 366,84 L 385,84 L 385,51 L 614,51 L 614,106 L 632,106" fill="none" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="500" y="45" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#334E68" text-anchor="middle">Fast path: 1-4 Cuops directly from D0 XLAT4 PLA</text>
+
+  <!-- Entry PLA -> MSROM -> Muxes -->
+  <line x1="366" y1="163" x2="404" y2="132" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+  <line x1="596" y1="132" x2="632" y2="142" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+  <line x1="596" y1="218" x2="632" y2="188" stroke="#B7791F" stroke-width="1.6" marker-end="url(#arrow-amber)"/>
+
+  <!-- D1 & D2 lower channels below Companion ROMs -->
+  <path d="M 366,262 L 610,262 L 610,228 L 632,228" fill="none" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M 366,324 L 620,324 L 620,256 L 632,256" fill="none" stroke="#334E68" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- MAR bottom channel into Source & Alias Muxes -->
+  <path d="M 366,388 L 687,388 L 687,284" fill="none" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+  <text x="526" y="381" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#6B46C1" text-anchor="middle">Decoded x86 fields latched in MAR for [BOM]..[EOM]</text>
+
+  <!-- Alias Muxes -> Concrete uop Stream -->
+  <line x1="742" y1="184" x2="768" y2="184" stroke="#2C7A7B" stroke-width="1.7" marker-end="url(#arrow-teal)"/>
+</svg>

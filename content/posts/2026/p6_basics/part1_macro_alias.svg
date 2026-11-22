@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="380" viewBox="0 0 920 380">
+  <rect x="0" y="0" width="920" height="380" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2B6CB0"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#B7791F"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#6B46C1"/>
+    </marker>
+  </defs>
+
+  <text x="460" y="24" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="13" font-weight="bold" fill="#1B4965" text-anchor="middle">Generic Programming in Hardware: Macro Alias Expansion (Cuop + MAR -&gt; Auop)</text>
+
+  <!-- Left Top: MAR -->
+  <rect x="24" y="46" width="222" height="154" rx="5" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="135" y="69" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Macro-Alias Register (MAR)</text>
+  <text x="135" y="85" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#2B6CB0" text-anchor="middle">Latched once per x86 instruction</text>
+  <text x="135" y="106" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">CS.D, SS.B, 66h, 67h, Seg</text>
+  <text x="135" y="122" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">Opcode TTT (3b) / cond (4b)</text>
+  <text x="135" y="138" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">ModR/M (ddd, sss) &amp; SIB</text>
+  <text x="135" y="154" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">M_DISP &amp; M_IMM (8/16/32b)</text>
+  <text x="135" y="176" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.2" fill="#52606D" text-anchor="middle">(+ D0 UAR donor selectors</text>
+  <text x="135" y="189" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.2" fill="#52606D" text-anchor="middle">for shared MSROM helpers)</text>
+
+  <!-- Left Bottom: 72-bit Cuop Template -->
+  <rect x="24" y="216" width="222" height="144" rx="5" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="135" y="240" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#1E242B" text-anchor="middle">72-Bit Cuop Template</text>
+  <text x="135" y="256" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.5" fill="#B7791F" text-anchor="middle">From XLAT PLA or MSROM</text>
+  <text x="135" y="278" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">OpAlias OA[3:0] + U1</text>
+  <text x="135" y="294" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">Opcode[11:0] + LSeg[3:0]</text>
+  <text x="135" y="310" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">LDest, LSrc1, LSrc2 [7:0]</text>
+  <text x="135" y="326" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#1E242B" text-anchor="middle">ImmAlias IA[4:0] + imm9</text>
+  <text x="135" y="342" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">U2[8:0] &amp; FlowM[3:0]</text>
+
+  <!-- Middle Column: 4 Alias Specialization Dimensions -->
+  <rect x="304" y="46" width="302" height="68" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="455" y="66" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.8" font-weight="bold" fill="#1E242B" text-anchor="middle">1. Three Orthogonal Widths (OA[3:2])</text>
+  <text x="455" y="84" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">OPSZ = CS.D ^ 66h  |  ASZ = CS.D ^ 67h</text>
+  <text x="455" y="99" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">SASZ = SS.B (independent stack width)</text>
+
+  <rect x="304" y="127" width="302" height="68" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="455" y="147" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.8" font-weight="bold" fill="#1E242B" text-anchor="middle">2. Logical Register Aliases (Selector[7:6])</text>
+  <text x="455" y="165" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">00 Fixed | 01 @REG_sss32 | 10 *_OPSZ/SASZ</text>
+  <text x="455" y="180" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">11 Full: @REG_ddd, @REG_sss, @REG_mem</text>
+
+  <rect x="304" y="208" width="302" height="68" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="455" y="228" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.8" font-weight="bold" fill="#1E242B" text-anchor="middle">3. Operation, Scale &amp; Segment (OA[1:0], U1)</text>
+  <text x="455" y="246" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">OA_OP: ALU.MGRP0 -&gt; ADD/SUB/AND/OR/XOR...</text>
+  <text x="455" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">OA_SCALE: x1/2/4/8  |  U1=1: Seg override</text>
+
+  <rect x="304" y="289" width="302" height="71" rx="5" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="455" y="309" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.8" font-weight="bold" fill="#1E242B" text-anchor="middle">4. Immediates &amp; Constant ROMs (IA + imm9)</text>
+  <text x="455" y="327" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">#imm9, M_IMM, M_DISP, M_OPSZ, M_STRIDE</text>
+  <text x="455" y="342" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.3" fill="#52606D" text-anchor="middle">CROM[imm9] (64b masks) &amp; packed uIP</text>
+
+  <!-- Right Column: Concrete Resolved Auop -->
+  <rect x="660" y="78" width="236" height="250" rx="6" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.5"/>
+  <text x="778" y="106" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="12" font-weight="bold" fill="#1E242B" text-anchor="middle">Resolved Concrete Auop</text>
+  <text x="778" y="124" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" fill="#2C7A7B" text-anchor="middle">Specialized from template + MAR</text>
+
+  <rect x="674" y="138" width="208" height="134" rx="4" fill="#FFFFFF" stroke="#2C7A7B" stroke-width="1.1"/>
+  <text x="778" y="158" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.7" fill="#1E242B" text-anchor="middle">Concrete EU opcode &amp; width</text>
+  <text x="778" y="177" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.7" fill="#1E242B" text-anchor="middle">Concrete logical registers</text>
+  <text x="778" y="192" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9" fill="#52606D" text-anchor="middle">(AL, AX, EAX, ESP, TMP0...)</text>
+  <text x="778" y="212" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.7" fill="#1E242B" text-anchor="middle">Effective segment &amp; SIB scale</text>
+  <text x="778" y="232" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.7" fill="#1E242B" text-anchor="middle">32/64-bit literal or CROM value</text>
+  <text x="778" y="252" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.7" fill="#1E242B" text-anchor="middle">U2 flag mask &amp; [BOM]/[EOM]</text>
+
+  <text x="778" y="294" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.3" fill="#52606D" text-anchor="middle">Sequential: executed directly in p6.c</text>
+  <text x="778" y="310" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.3" font-weight="bold" fill="#2C7A7B" text-anchor="middle">OoO core: RAT/RS/ROB (~118b Duop)</text>
+
+  <!-- Left -> Middle arrows (matching fig05_alias_expansion.svg) -->
+  <line x1="246" y1="122" x2="304" y2="72" stroke="#2B6CB0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="246" y1="122" x2="304" y2="153" stroke="#2B6CB0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="246" y1="122" x2="304" y2="234" stroke="#2B6CB0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="246" y1="122" x2="304" y2="315" stroke="#2B6CB0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <line x1="246" y1="288" x2="304" y2="88" stroke="#B7791F" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <line x1="246" y1="288" x2="304" y2="169" stroke="#B7791F" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <line x1="246" y1="288" x2="304" y2="250" stroke="#B7791F" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <line x1="246" y1="288" x2="304" y2="333" stroke="#B7791F" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+
+  <!-- Middle -> Right arrows -->
+  <line x1="606" y1="80" x2="660" y2="156" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+  <line x1="606" y1="161" x2="660" y2="188" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+  <line x1="606" y1="242" x2="660" y2="220" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+  <line x1="606" y1="324" x2="660" y2="252" stroke="#6B46C1" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+</svg>

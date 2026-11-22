@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360">
+  <rect x="0" y="0" width="920" height="360" fill="#FFFFFF"/>
+
+  <text x="460" y="25" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="13" font-weight="bold" fill="#1B4965" text-anchor="middle">Anatomy of a 72-Bit Control Micro-Op (Cuop) Template (Bit 71 MSB .. Bit 0 LSB)</text>
+
+  <!-- 72-bit Cuop field bar -->
+  <rect x="28" y="56" width="48" height="62" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="52" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">71:68</text>
+  <text x="52" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">OA</text>
+  <text x="52" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#6B46C1" text-anchor="middle">4b</text>
+
+  <rect x="76" y="56" width="134" height="62" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.4"/>
+  <text x="143" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">67:56</text>
+  <text x="143" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Opcode</text>
+  <text x="143" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">12b</text>
+
+  <rect x="210" y="56" width="112" height="62" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.4"/>
+  <text x="266" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">55:47</text>
+  <text x="266" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11" font-weight="bold" fill="#1E242B" text-anchor="middle">U2 (Flags/Ctrl)</text>
+  <text x="266" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">9b</text>
+
+  <rect x="322" y="56" width="92" height="62" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.4"/>
+  <text x="368" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">46:39</text>
+  <text x="368" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">LSrc2</text>
+  <text x="368" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">8b</text>
+
+  <rect x="414" y="56" width="92" height="62" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.4"/>
+  <text x="460" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">38:31</text>
+  <text x="460" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">LSrc1</text>
+  <text x="460" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">8b</text>
+
+  <rect x="506" y="56" width="92" height="62" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.4"/>
+  <text x="552" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">30:23</text>
+  <text x="552" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">LDest</text>
+  <text x="552" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">8b</text>
+
+  <rect x="598" y="56" width="28" height="62" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="612" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">22</text>
+  <text x="612" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9.8" font-weight="bold" fill="#1E242B" text-anchor="middle">U1</text>
+  <text x="612" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#6B46C1" text-anchor="middle">1b</text>
+
+  <rect x="626" y="56" width="50" height="62" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.4"/>
+  <text x="651" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">21:18</text>
+  <text x="651" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">LSeg</text>
+  <text x="651" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">4b</text>
+
+  <rect x="676" y="56" width="58" height="62" fill="#FBF0FF" stroke="#6B46C1" stroke-width="1.4"/>
+  <text x="705" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">17:13</text>
+  <text x="705" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">IA</text>
+  <text x="705" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#6B46C1" text-anchor="middle">5b</text>
+
+  <rect x="734" y="56" width="104" height="62" fill="#E6F7F2" stroke="#2C7A7B" stroke-width="1.4"/>
+  <text x="786" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">12:4</text>
+  <text x="786" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.2" font-weight="bold" fill="#1E242B" text-anchor="middle">Immediate</text>
+  <text x="786" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#52606D" text-anchor="middle">9b</text>
+
+  <rect x="838" y="56" width="54" height="62" fill="#FDECEC" stroke="#C53030" stroke-width="1.4"/>
+  <text x="865" y="48" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.2" fill="#52606D" text-anchor="middle">3:0</text>
+  <text x="865" y="82" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">FlowM</text>
+  <text x="865" y="101" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="9" fill="#C53030" text-anchor="middle">4b</text>
+
+  <!-- Opcode [67:56] Internal Sub-Layouts -->
+  <text x="460" y="150" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.8" font-weight="bold" fill="#1B4965" text-anchor="middle">Opcode [67:56] Internal Sub-Layouts by Operation Family</text>
+
+  <text x="208" y="186" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="end">Arithmetic:</text>
+  <rect x="218" y="167" width="92" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="264" y="185" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Base [11:10]</text>
+  <rect x="310" y="167" width="92" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="356" y="185" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">DSZ [9:7]</text>
+  <rect x="402" y="167" width="150" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="477" y="185" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Sub-op [6:0]</text>
+  <text x="566" y="185" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#52606D" text-anchor="start">e.g., 408 | DSZ = ADD.{8,16,32}</text>
+
+  <text x="208" y="224" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="end">Conditional:</text>
+  <rect x="218" y="205" width="212" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="324" y="223" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Family Prefix [11:4]</text>
+  <rect x="430" y="205" width="122" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="491" y="223" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Cond [3:0]</text>
+  <text x="566" y="223" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#52606D" text-anchor="start">e.g., 350 | cc = U_JCC.NT.&lt;cc&gt;</text>
+
+  <text x="208" y="262" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="end">Memory / AGU:</text>
+  <rect x="218" y="243" width="86" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="261" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Base [11:10]</text>
+  <rect x="304" y="243" width="76" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="342" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">DSZ [9:7]</text>
+  <rect x="380" y="243" width="56" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="408" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">ASZ[6]</text>
+  <rect x="436" y="243" width="66" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="469" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Scale[5:4]</text>
+  <rect x="502" y="243" width="50" height="28" fill="#E6F0F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="527" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.5" fill="#1E242B" text-anchor="middle">Op[3:0]</text>
+  <text x="566" y="261" font-family="DejaVu Sans Mono, Liberation Mono, monospace" font-size="9.8" fill="#52606D" text-anchor="start">e.g., 804=LOAD, 800=STA (+widths)</text>
+
+  <!-- MSROM Triad Row -->
+  <text x="460" y="300" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="11.5" font-weight="bold" fill="#B7791F" text-anchor="middle">MSROM Triad Row: 4,096 Rows x 3 Cuop Slots (3 x 72 = 216 Cuop Bits; uIP = (row[11:0] &lt;&lt; 2) | slot[1:0])</text>
+  <rect x="28" y="312" width="288" height="32" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="172" y="332" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Slot 0 (uIP ...0): 72 bits</text>
+  <rect x="316" y="312" width="288" height="32" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="460" y="332" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Slot 1 (uIP ...1): 72 bits</text>
+  <rect x="604" y="312" width="288" height="32" fill="#FEF5E7" stroke="#B7791F" stroke-width="1.5"/>
+  <text x="748" y="332" font-family="DejaVu Sans, Liberation Sans, sans-serif" font-size="10.5" font-weight="bold" fill="#1E242B" text-anchor="middle">Slot 2 (uIP ...2): 72 bits</text>
+</svg>
